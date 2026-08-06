@@ -32,7 +32,7 @@ If you fail recall on a topic, drop it back one rung. Update the two date column
 | [Adapter](structural-patterns/adapter/README.md) | Full repo | Learned | 2026-08-01 | 2026-08-02 | 3 |
 | [Composite](structural-patterns/composite/README.md) | Full repo | Not started | — | Study next | — |
 | [Decorator](structural-patterns/decorator/README.md) | Full repo | Not started | — | Study next | — |
-| [Facade](structural-patterns/facade/README.md) | Full repo | Not started | — | Study next | — |
+| [Facade](structural-patterns/facade/README.md) | Full repo | Learned | 2026-08-06 | 2026-08-07 | 3 |
 | [Proxy](structural-patterns/proxy/README.md) | Full repo | Not started | — | Study next | — |
 
 > **Legend — Status:** `Not started` = full repo ready, not yet studied · `Learned` = studied at least once, on the revision ladder. All five structural patterns now use the full template (README + code + exercises + cheatsheet + diagrams).
