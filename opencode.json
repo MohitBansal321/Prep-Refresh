@@ -1,0 +1,39 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "watcher": {
+    "ignore": ["node_modules/**", ".git/**", "*.js", "*.md"]
+  },
+  "formatter": {
+    "typescript": {
+      "command": ["npx", "ts-node", "--transpile-only", "$FILE"],
+      "extensions": [".ts"],
+      "disabled": false
+    }
+  },
+  "command": {
+    "run-pattern": {
+      "template": "Run the TypeScript pattern file at the given path using ts-node. Example: cd sys-design/creational-patterns && npx ts-node builder.ts",
+      "description": "Run a TypeScript pattern file",
+      "agent": "build"
+    },
+    "list-patterns": {
+      "template": "List all available design patterns in the sys-design directory, categorized by type (creational, behavioral, structural). Show the file paths and brief description of each pattern.",
+      "description": "List all design patterns",
+      "agent": "build"
+    },
+    "explain-pattern": {
+      "template": "Explain the design pattern in the given file path. Show the concept, use cases, and walk through the practice exercise if present.",
+      "description": "Explain a specific pattern",
+      "agent": "build"
+    }
+  },
+  "permission": {
+    "bash": {
+      "npx ts-node *": "allow",
+      "npx ts-node": "allow",
+      "ls *": "allow",
+      "cd *": "allow"
+    }
+  }
+}
