@@ -1,51 +1,75 @@
-# Repository Purpose
+# Agent Guide — js-refresh
 
-**Study material repository** for JavaScript, TypeScript, and system design learning. Not a production codebase.
+**Study material repo** (JS, TypeScript, GoF design patterns, C++ DSA patterns).
+Not a production codebase — read, run, and practice against, never deploy.
 
-## Layout
+## Repo layout
 
-- `js/` — standalone `.js` files (JS fundamentals)
-- `typescript-basics/` — 7 TS language feature modules (classes, generics, types, etc.), each with `README.md` + `cheatsheet.md` + `code.ts`
-- `sys-design/creational-patterns/` — 5 GoF creational pattern modules (builder, singleton, factory, abstract-factory, prototype)
-- `sys-design/behavioral-patterns/` — 5 GoF behavioral pattern modules (strategy, observer, command, state, iterator)
-- `sys-design/structural-patterns/` — 5 GoF structural pattern modules (adapter, composite, decorator, facade, proxy)
-- `.agent/skills/` — OpenCode skill definitions (design-patterns, js-fundamentals, js-ts-exercises, skill-creator)
+- `js/` — 4 standalone `.js` files (primitives, objects/refs, immutability, `undefined`).
+  Run with `node js/<file>.js`. No modules/config; each file is self-contained.
+- `typescript-basics/` — 7 TS topics, full module each
+  (`README.md` + `cheatsheet.md` + `code.ts`).
+- `sys-design/` — all **15 GoF patterns** (5 creational, 5 behavioral, 5 structural),
+  each a full module (`README.md` + `code.ts` + `exercises.md` + `cheatsheet.md` +
+  `images/`). Revision tracker: `INDEX.md`.
+- `dsa-patterns/` — 33 C++17 DSA patterns across 8 families (array/string,
+  linked-list, searching/sorting, tree/graph, recursion/backtracking, DP, greedy,
+  advanced DS). Three tiers: 17 Full (README+`code.cpp`+`exercises.md`+`cheatsheet.md`
+  +`images/`+`problems/`), 4 Partial, 12 Compact (tighter README). Revision tracker:
+  `INDEX.md`; quick lookup: `PATTERN-RECOGNITION-GUIDE.md`; walkthrough:
+  `LEARNING-PATHS.md` for newcomers.
+- `.agent/skills/` — OpenCode skills. Load with `/load <name>`:
+  `design-patterns`, `js-fundamentals`, `js-ts-exercises` (the review-mode workflow
+  below), `skill-creator`.
 
-All 15 GoF patterns use the same **full module** format: each pattern is a subdirectory containing `README.md`, `code.ts`, `exercises.md`, `cheatsheet.md`, `images/`.
+## Running code
 
-`sys-design/INDEX.md` and `typescript-basics/INDEX.md` serve as spaced-repetition revision trackers.
+- TypeScript: `npx ts-node <file>`. **No top-level `package.json`** exists, and
+  `npx` fetches `ts-node` on demand so `npm install` is not required. From a pattern
+  dir: `cd sys-design/structural-patterns && npx ts-node adapter/code.ts`.
+  `structural-patterns/` is the only dir with a `package.json` (`@types/node` for
+  strict Node-global typechecking); `npm install` there only if `@types/node` is
+  missing.
+- C++: `g++ -std=c++17 -Wall path/to/file.cpp -o /tmp/out && /tmp/out`
+  (every `.cpp` is standalone and self-checks via `assert`).
+- The `opencode.json` formatter runs `npx ts-node --transpile-only $FILE`.
 
-## Running TypeScript Files
+## Revision discipline (spaced repetition)
 
-Each `code.ts` is a standalone runnable file. Use `ts-node` from the module's parent directory, or from the pattern's own directory:
+Every `INDEX.md` tracks status/next-due/confidence. When revising a topic/pattern, do
+**NOT** re-read the full README — instead:
 
-```
-cd sys-design/structural-patterns && npx ts-node adapter/code.ts
-cd sys-design/creational-patterns && npx ts-node builder/code.ts
-cd typescript-basics && npx ts-node classes-and-inheritance/code.ts
-```
+1. **60 sec** — read `cheatsheet.md`.
+2. **Active recall** — answer the *Recall Questions* in the cheatsheet from memory, then
+   rebuild `code.ts`/`code.cpp` (or one `problems/` solution) without looking.
+3. **Only if you miss something** — open the relevant README section.
 
-There are **three `tsconfig.json`** files that control compilation scope:
-- `sys-design/tsconfig.json` — parent config covering all patterns
-- `sys-design/creational-patterns/tsconfig.json`
-- `sys-design/structural-patterns/tsconfig.json`
+After a successful recall, advance the next-due date along the ladder:
+`Learned → +1d → +3d → +1w → +2w → +1mo → +3mo`. A miss drops the card back one rung.
 
-`structural-patterns/` has its own `package.json` with `@types/node` (the only subdirectory with npm dependencies; run `npm install` there if types are missing).
+## Exercise workflow (review mode only)
 
-## Exercise Workflow
+Exercises in `exercises.md` are **deliberately solution-free** — they exist for the user
+to solve, not for agents to complete. When the user shares their attempt:
 
-When the user asks for help with exercises from a pattern's `exercises.md`:
-- **Review mode**: Compare their code against the pattern's `code.ts` to check correctness — point out mismatches, but explain *why*, not just "fix this line"
-- **Do NOT provide code solutions** — guide the user with hints, questions, and conceptual nudges so they arrive at the answer themselves. If asked to write the solution, decline and offer to review what they've written instead.
+- **Review only**: compare against the companion `code.ts`/`code.cpp` and point out
+  mismatches with *why* (conceptual reason), not "change this line".
+- **Never hand over a solution.** If asked directly, decline and offer to review what
+  they've written instead. If asked to "write the solution", point at the exercises'
+  no-solutions rule and offer guided hints.
+
+For generating/grading exercises use the `js-ts-exercises` skill (`/load js-ts-exercises`).
 
 ## Commands (via opencode.json)
 
-- `/run-pattern <path>` — run a pattern `code.ts` with ts-node
-- `/list-patterns` — list all design patterns by category
-- `/explain-pattern <path>` — explain a specific pattern
+- `/run-pattern <path>` — run a pattern `code.ts` with ts-node.
+- `/list-patterns` — list all design patterns by category.
+- `/explain-pattern <path>` — explain a specific pattern.
 
-## Constraints
+## Hard constraints
 
-- No test framework, no CI/CD, no linting, no build pipeline
-- No top-level `package.json`
-- Each `code.ts` is self-contained and verified by running it directly
+- No test framework, no CI/CD, no linter, no build pipeline, no top-level
+  `package.json`. There is **no npm test / tsc --noEmit gate** to satisfy — each file is
+  verified by running it directly.
+- `opencode.json` watcher ignores `*.js` and `*.md`; only `.ts` changes trigger reloads.
+- Do not commit (this is local study material); git is used only for local history.
