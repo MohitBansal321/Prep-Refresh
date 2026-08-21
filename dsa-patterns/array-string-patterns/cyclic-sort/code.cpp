@@ -20,10 +20,29 @@
 // ============================================================================
 
 #include <iostream>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+// --- Portability shim -------------------------------------------------------
+// std::optional is C++17, but libstdc++ only shipped <optional> in GCC 7. On
+// GCC 6 the same facility lives in <experimental/optional>. Alias whichever is
+// available so this file builds on both. Everything below uses `opt::optional`.
+// The experimental version predates the member function has_value(), so the
+// free function opt::has_value() below reads identically against either one.
+#if __has_include(<optional>)
+  #include <optional>
+  namespace opt { using std::optional; using std::nullopt; }
+#else
+  #include <experimental/optional>
+  namespace opt { using std::experimental::optional;
+                  using std::experimental::nullopt; }
+#endif
+namespace opt {
+template <typename T>
+bool has_value(const optional<T>& maybe) { return static_cast<bool>(maybe); }
+}  // namespace opt
+// ---------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 // cyclic_sort
@@ -80,7 +99,7 @@ void cyclic_sort(std::vector<int>& nums) {
 // The verification-pass helper. Scans an already-cyclically-sorted array
 // (one that cyclic_sort has already processed) and returns the first index
 // where nums[i] != i + 1 — i.e. the first slot that does not hold its
-// expected [1..n] value. Returns std::nullopt if every slot already holds
+// expected [1..n] value. Returns opt::nullopt if every slot already holds
 // its correct value (a clean permutation with nothing missing or
 // duplicated).
 //
@@ -91,13 +110,13 @@ void cyclic_sort(std::vector<int>& nums) {
 // interpreting the mismatch differently (the missing value, the duplicate
 // value, etc.).
 // ----------------------------------------------------------------------------
-std::optional<size_t> find_first_misplaced(const std::vector<int>& nums) {
+opt::optional<size_t> find_first_misplaced(const std::vector<int>& nums) {
   for (size_t i = 0; i < nums.size(); ++i) {
     if (nums[i] != static_cast<int>(i + 1)) {
       return i;
     }
   }
-  return std::nullopt;
+  return opt::nullopt;
 }
 
 // ============================================================================
@@ -123,7 +142,7 @@ int main() {
     cyclic_sort(nums);
     std::vector<int> expected = {1, 2, 3, 4, 5};
     check(nums == expected, "[3,1,5,4,2] -> [1,2,3,4,5]");
-    check(!find_first_misplaced(nums).has_value(),
+    check(!opt::has_value(find_first_misplaced(nums)),
           "fully sorted permutation -> no misplaced index");
   }
 
@@ -139,7 +158,7 @@ int main() {
     check(nums == expected, "[1,2,2,4] settles with the duplicate left in place");
 
     auto mismatch = find_first_misplaced(nums);
-    check(mismatch.has_value() && *mismatch == 2,
+    check(opt::has_value(mismatch) && *mismatch == 2,
           "first misplaced index is 2 (holds 2, should hold 3 -> reveals dup/missing)");
   }
 
@@ -155,7 +174,7 @@ int main() {
     check(nums == expected, "[3,0,1] -> [1,0,3] (0 is out of range, left in place)");
 
     auto mismatch = find_first_misplaced(nums);
-    check(mismatch.has_value() && *mismatch == 1,
+    check(opt::has_value(mismatch) && *mismatch == 1,
           "first misplaced index is 1 (holds out-of-range 0, should hold 2)");
   }
 

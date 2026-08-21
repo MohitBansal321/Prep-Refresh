@@ -74,7 +74,12 @@ int kthSmallest(const std::vector<std::vector<int>>& matrix, int k) {
 
   int popped_count = 0;
   while (!heap.empty()) {
-    auto [value, row, col] = heap.top();
+    // Unpack the tuple field by field with std::get<> rather than a C++17
+    // structured binding, so this file compiles on older toolchains too.
+    const HeapEntry top = heap.top();
+    const int value = std::get<0>(top);
+    const int row = std::get<1>(top);
+    const int col = std::get<2>(top);
     heap.pop();
     ++popped_count;
 

@@ -27,9 +27,29 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
+
+// --- Portability shim -------------------------------------------------------
+// std::optional is C++17, but libstdc++ only shipped <optional> in GCC 7. On
+// GCC 6 the same facility lives in <experimental/optional>. Alias whichever is
+// available so this file builds on both. Everything below uses `opt::optional`.
+// The experimental version predates the member function has_value(), so the
+// free function opt::has_value() below reads identically against either one.
+#if __has_include(<optional>)
+  #include <optional>
+  namespace opt { using std::optional; using std::nullopt; }
+#else
+  #include <experimental/optional>
+  namespace opt { using std::experimental::optional;
+                  using std::experimental::nullopt; }
+#endif
+namespace opt {
+template <typename T>
+bool has_value(const optional<T>& maybe) { return static_cast<bool>(maybe); }
+}  // namespace opt
+// ---------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 // Variant 1: Converging pointers on sorted data.
@@ -45,17 +65,17 @@
 //                 (default: a + b, i.e. classic "pair sum")
 //   value_type  — the type Combine returns, compared against `target`
 //
-// Returns the pair of INDICES (left, right) if found, std::nullopt otherwise.
+// Returns the pair of INDICES (left, right) if found, opt::nullopt otherwise.
 // The container MUST already be sorted in ascending order by whatever
 // ordering makes `combine(a, b)` monotonic as the pointers move — for plain
 // numeric addition, that means sorted ascending by value.
 // ----------------------------------------------------------------------------
 template <typename Container, typename Combine = std::plus<>>
-std::optional<std::pair<size_t, size_t>> two_pointer_find_pair(
+opt::optional<std::pair<size_t, size_t>> two_pointer_find_pair(
     const Container& sorted, typename Container::value_type target,
     Combine combine = Combine{}) {
   if (sorted.size() < 2) {
-    return std::nullopt;  // Need at least two elements to form a pair.
+    return opt::nullopt;  // Need at least two elements to form a pair.
   }
 
   size_t left = 0;
@@ -79,7 +99,7 @@ std::optional<std::pair<size_t, size_t>> two_pointer_find_pair(
     }
   }
 
-  return std::nullopt;  // Pointers crossed without finding a match.
+  return opt::nullopt;  // Pointers crossed without finding a match.
 }
 
 // ----------------------------------------------------------------------------
@@ -190,11 +210,11 @@ int main() {
     std::vector<int> nums = {2, 7, 11, 15, 18, 24};
     // Requires both pointers to move before converging: 7 + 15 = 22.
     auto result = two_pointer_find_pair(nums, 22);
-    check(result.has_value() && result->first == 1 && result->second == 3,
+    check(opt::has_value(result) && result->first == 1 && result->second == 3,
           "find pair summing to 22 -> indices (1, 3)");
 
     auto no_match = two_pointer_find_pair(nums, 100);
-    check(!no_match.has_value(), "no pair sums to 100 -> nullopt");
+    check(!opt::has_value(no_match), "no pair sums to 100 -> nullopt");
   }
 
   std::cout << "\n--- Variant 1b: two_pointer_max_area (converging, area) ---\n";

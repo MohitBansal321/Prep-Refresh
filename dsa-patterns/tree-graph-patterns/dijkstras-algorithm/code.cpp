@@ -27,11 +27,16 @@ std::vector<int> dijkstra(int n, int src,
   pq.push({0, src});
 
   while (!pq.empty()) {
-    auto [d, u] = pq.top();
+    // (structured bindings would be tidier here, but need GCC 7+)
+    const std::pair<int, int> top = pq.top();
+    const int d = top.first;   // tentative distance recorded when pushed
+    const int u = top.second;  // the node that distance belongs to
     pq.pop();
     if (d > dist[u]) continue;
 
-    for (auto [v, w] : adj[u]) {
+    for (const std::pair<int, int>& edge : adj[u]) {
+      const int v = edge.first;   // neighbour node
+      const int w = edge.second;  // weight of the u -> v edge
       if (dist[u] != kInf && dist[u] + w < dist[v]) {
         dist[v] = dist[u] + w;
         pq.push({dist[v], v});

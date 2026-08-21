@@ -83,11 +83,16 @@ std::vector<std::vector<int>> kSmallestPairs(const std::vector<int>& nums1,
   }
 
   while (!heap.empty() && static_cast<int>(result.size()) < k) {
-    auto [sum, i, j] = heap.top();
+    // Unpack the tuple field by field with std::get<> rather than a C++17
+    // structured binding, so this file compiles on older toolchains too.
+    const HeapEntry top = heap.top();
+    const int i = std::get<1>(top);
+    const int j = std::get<2>(top);
     heap.pop();
-    (void)sum;  // The actual sum isn't needed in the output, only the pair.
+    // std::get<0>(top) is the sum itself; it drove the heap's ordering but is
+    // not part of the required output, which is the (u, v) pair.
 
-    result.push_back({nums1[i], nums2[j]});
+    result.push_back(std::vector<int>{nums1[i], nums2[j]});
 
     // Advance the source pointer: this same i's next candidate is one
     // step further into nums2.

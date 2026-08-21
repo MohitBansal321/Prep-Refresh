@@ -33,9 +33,28 @@
 // ============================================================================
 
 #include <iostream>
-#include <optional>
 #include <string>
 #include <vector>
+
+// --- Portability shim -------------------------------------------------------
+// std::optional is C++17, but libstdc++ only shipped <optional> in GCC 7. On
+// GCC 6 the same facility lives in <experimental/optional>. Alias whichever is
+// available so this file builds on both. Everything below uses `opt::optional`.
+// The experimental version predates the member function has_value(), so the
+// free function opt::has_value() below reads identically against either one.
+#if __has_include(<optional>)
+  #include <optional>
+  namespace opt { using std::optional; using std::nullopt; }
+#else
+  #include <experimental/optional>
+  namespace opt { using std::experimental::optional;
+                  using std::experimental::nullopt; }
+#endif
+namespace opt {
+template <typename T>
+bool has_value(const optional<T>& maybe) { return static_cast<bool>(maybe); }
+}  // namespace opt
+// ---------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 // 1. Classic binary search: does `target` exist in a sorted (ascending)
@@ -46,7 +65,7 @@
 // remaining range by discarding the side of `mid` that provably cannot
 // contain it.
 // ----------------------------------------------------------------------------
-std::optional<int> binarySearch(const std::vector<int>& nums, int target) {
+opt::optional<int> binarySearch(const std::vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
 
@@ -68,7 +87,7 @@ std::optional<int> binarySearch(const std::vector<int>& nums, int target) {
     }
   }
 
-  return std::nullopt;  // lo > hi: range is empty, target is not present.
+  return opt::nullopt;  // lo > hi: range is empty, target is not present.
 }
 
 // ----------------------------------------------------------------------------
@@ -82,10 +101,10 @@ std::optional<int> binarySearch(const std::vector<int>& nums, int target) {
 // This is what makes it a "boundary" search rather than an exact-match
 // search: we are looking for the leftmost edge of a run of equal values.
 // ----------------------------------------------------------------------------
-std::optional<int> findFirstOccurrence(const std::vector<int>& nums, int target) {
+opt::optional<int> findFirstOccurrence(const std::vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
-  std::optional<int> result = std::nullopt;
+  opt::optional<int> result = opt::nullopt;
 
   while (lo <= hi) {
     int mid = lo + (hi - lo) / 2;
@@ -109,10 +128,10 @@ std::optional<int> findFirstOccurrence(const std::vector<int>& nums, int target)
 // On a match, keep searching the RIGHT half instead of the left half. Same
 // three-way comparison, same lo/hi/mid skeleton, one flipped branch.
 // ----------------------------------------------------------------------------
-std::optional<int> findLastOccurrence(const std::vector<int>& nums, int target) {
+opt::optional<int> findLastOccurrence(const std::vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
-  std::optional<int> result = std::nullopt;
+  opt::optional<int> result = opt::nullopt;
 
   while (lo <= hi) {
     int mid = lo + (hi - lo) / 2;
@@ -143,7 +162,7 @@ std::optional<int> findLastOccurrence(const std::vector<int>& nums, int target) 
 // (if it exists) must be in the OTHER half, which is guaranteed to still
 // contain it precisely because we ruled out the ordered half correctly.
 // ----------------------------------------------------------------------------
-std::optional<int> searchRotated(const std::vector<int>& nums, int target) {
+opt::optional<int> searchRotated(const std::vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
 
@@ -175,7 +194,7 @@ std::optional<int> searchRotated(const std::vector<int>& nums, int target) {
     }
   }
 
-  return std::nullopt;
+  return opt::nullopt;
 }
 
 // ============================================================================
@@ -199,60 +218,60 @@ int main() {
   {
     std::vector<int> nums = {-1, 0, 3, 5, 9, 12};
     auto r1 = binarySearch(nums, 9);
-    check(r1.has_value() && *r1 == 4, "find 9 in sorted array -> index 4");
+    check(opt::has_value(r1) && *r1 == 4, "find 9 in sorted array -> index 4");
 
     auto r2 = binarySearch(nums, 2);
-    check(!r2.has_value(), "2 is not present -> nullopt");
+    check(!opt::has_value(r2), "2 is not present -> nullopt");
 
     std::vector<int> empty;
-    check(!binarySearch(empty, 5).has_value(), "empty array -> nullopt");
+    check(!opt::has_value(binarySearch(empty, 5)), "empty array -> nullopt");
   }
 
   std::cout << "\n--- 2. findFirstOccurrence (leftmost boundary) ---\n";
   {
     std::vector<int> nums = {5, 7, 7, 8, 8, 8, 10};
     auto r1 = findFirstOccurrence(nums, 8);
-    check(r1.has_value() && *r1 == 3, "first occurrence of 8 -> index 3");
+    check(opt::has_value(r1) && *r1 == 3, "first occurrence of 8 -> index 3");
 
     auto r2 = findFirstOccurrence(nums, 7);
-    check(r2.has_value() && *r2 == 1, "first occurrence of 7 -> index 1");
+    check(opt::has_value(r2) && *r2 == 1, "first occurrence of 7 -> index 1");
 
     auto r3 = findFirstOccurrence(nums, 6);
-    check(!r3.has_value(), "6 not present -> nullopt");
+    check(!opt::has_value(r3), "6 not present -> nullopt");
   }
 
   std::cout << "\n--- 3. findLastOccurrence (rightmost boundary) ---\n";
   {
     std::vector<int> nums = {5, 7, 7, 8, 8, 8, 10};
     auto r1 = findLastOccurrence(nums, 8);
-    check(r1.has_value() && *r1 == 5, "last occurrence of 8 -> index 5");
+    check(opt::has_value(r1) && *r1 == 5, "last occurrence of 8 -> index 5");
 
     auto r2 = findLastOccurrence(nums, 7);
-    check(r2.has_value() && *r2 == 2, "last occurrence of 7 -> index 2");
+    check(opt::has_value(r2) && *r2 == 2, "last occurrence of 7 -> index 2");
 
     auto r3 = findLastOccurrence(nums, 10);
-    check(r3.has_value() && *r3 == 6, "last occurrence of 10 (single copy) -> index 6");
+    check(opt::has_value(r3) && *r3 == 6, "last occurrence of 10 (single copy) -> index 6");
   }
 
   std::cout << "\n--- 4. searchRotated (rotated sorted array) ---\n";
   {
     std::vector<int> nums = {4, 5, 6, 7, 0, 1, 2};
     auto r1 = searchRotated(nums, 0);
-    check(r1.has_value() && *r1 == 4, "find 0 in rotated array -> index 4");
+    check(opt::has_value(r1) && *r1 == 4, "find 0 in rotated array -> index 4");
 
     auto r2 = searchRotated(nums, 4);
-    check(r2.has_value() && *r2 == 0, "find pivot value 4 -> index 0");
+    check(opt::has_value(r2) && *r2 == 0, "find pivot value 4 -> index 0");
 
     auto r3 = searchRotated(nums, 3);
-    check(!r3.has_value(), "3 not present -> nullopt");
+    check(!opt::has_value(r3), "3 not present -> nullopt");
 
     std::vector<int> single = {1};
-    check(searchRotated(single, 1).has_value(), "single-element array, present");
-    check(!searchRotated(single, 2).has_value(), "single-element array, absent");
+    check(opt::has_value(searchRotated(single, 1)), "single-element array, present");
+    check(!opt::has_value(searchRotated(single, 2)), "single-element array, absent");
 
     std::vector<int> not_rotated = {1, 2, 3, 4, 5};
     auto r4 = searchRotated(not_rotated, 5);
-    check(r4.has_value() && *r4 == 4, "zero-rotation case still works -> index 4");
+    check(opt::has_value(r4) && *r4 == 4, "zero-rotation case still works -> index 4");
   }
 
   std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";

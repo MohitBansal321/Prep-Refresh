@@ -25,11 +25,31 @@
 // ============================================================================
 
 #include <iostream>
-#include <optional>
 #include <queue>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 #include <vector>
+
+// ----------------------------------------------------------------------------
+// A tiny "maybe an int" type, used as the return type of
+// kthSmallestInKSortedLists below: the k-th smallest may not exist at all if
+// k exceeds the total element count, and returning a sentinel like -1 would
+// be ambiguous (-1 is a perfectly valid element value). std::optional<int>
+// would be the idiomatic C++17 choice, but the <optional> header is not
+// available on every toolchain this repo is compiled with, so this three-line
+// stand-in provides the same has_value() / operator* interface.
+// ----------------------------------------------------------------------------
+struct MaybeInt {
+  bool present;
+  int value;
+
+  MaybeInt() : present(false), value(0) {}
+  explicit MaybeInt(int v) : present(true), value(v) {}
+
+  bool has_value() const { return present; }
+  int operator*() const { return value; }
+};
 
 // ----------------------------------------------------------------------------
 // The heap entry shared by both functions below: {value, list_index,
@@ -74,7 +94,13 @@ std::vector<int> mergeKSortedLists(const std::vector<std::vector<int>>& lists) {
                         // up front without a separate pass over all lists.
 
   while (!heap.empty()) {
-    auto [value, list_index, element_index] = heap.top();
+    // Unpack the tuple field by field with std::get<>. A C++17 structured
+    // binding (`auto [value, list_index, element_index] = heap.top();`) reads
+    // better but is not available on every toolchain this repo targets.
+    const HeapEntry top = heap.top();
+    const int value = std::get<0>(top);
+    const int list_index = std::get<1>(top);
+    const int element_index = std::get<2>(top);
     heap.pop();
     result.push_back(value);
 
@@ -102,10 +128,11 @@ std::vector<int> mergeKSortedLists(const std::vector<std::vector<int>>& lists) {
 // remaining n - k elements we were never going to look at.
 //
 // k is 1-indexed (k = 1 means "the smallest element overall").
-// Returns std::nullopt if k exceeds the total number of elements available.
+// Returns an empty MaybeInt if k exceeds the total number of elements
+// available.
 // ----------------------------------------------------------------------------
-std::optional<int> kthSmallestInKSortedLists(const std::vector<std::vector<int>>& lists, int k) {
-  if (k <= 0) return std::nullopt;
+MaybeInt kthSmallestInKSortedLists(const std::vector<std::vector<int>>& lists, int k) {
+  if (k <= 0) return MaybeInt();
 
   MinHeap heap;
   const int num_lists = static_cast<int>(lists.size());
@@ -118,12 +145,15 @@ std::optional<int> kthSmallestInKSortedLists(const std::vector<std::vector<int>>
 
   int popped_count = 0;
   while (!heap.empty()) {
-    auto [value, list_index, element_index] = heap.top();
+    const HeapEntry top = heap.top();
+    const int value = std::get<0>(top);
+    const int list_index = std::get<1>(top);
+    const int element_index = std::get<2>(top);
     heap.pop();
     ++popped_count;
 
     if (popped_count == k) {
-      return value;  // Early exit: stop the moment we have the k-th value.
+      return MaybeInt(value);  // Early exit: stop the moment we have the k-th value.
     }
 
     const int next_index = element_index + 1;
@@ -132,7 +162,7 @@ std::optional<int> kthSmallestInKSortedLists(const std::vector<std::vector<int>>
     }
   }
 
-  return std::nullopt;  // k exceeded the total number of elements available.
+  return MaybeInt();  // k exceeded the total number of elements available.
 }
 
 // ----------------------------------------------------------------------------
@@ -241,7 +271,7 @@ int main() {
   {
     std::vector<std::vector<int>> lists = {{1, 2}, {3}};
     auto result = kthSmallestInKSortedLists(lists, 10);
-    check(!result.has_value(), "kth smallest with out-of-range k returns nullopt");
+    check(!result.has_value(), "kth smallest with out-of-range k returns an empty result");
   }
 
   // ---- Test 10: kth smallest, k equal to total element count -----------------

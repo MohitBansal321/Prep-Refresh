@@ -1,0 +1,25 @@
+# Cyclic Sort — Worked Problems
+
+Four fully worked, heavily commented, standalone C++17 solutions demonstrating Cyclic Sort across the whole family it covers: one missing value, *all* missing values, a duplicate, and the smallest missing positive. Each file is self-contained — it reimplements the `cyclic_sort` pass inline rather than including [../code.cpp](../code.cpp), so it can be compiled and run on its own to see printed PASS/FAIL output against known expected answers.
+
+```bash
+g++ -std=c++17 -Wall problems/01-missing-number.cpp -o /tmp/out && /tmp/out
+```
+
+| Name | LeetCode # | Difficulty | One-line approach | Time / Space | File |
+|------|-----------|------------|--------------------|---------------|------|
+| Missing Number | [268](https://leetcode.com/problems/missing-number/) | Easy | Sort under the `[0..n-1]` convention (home index = value), then return the first index `j` where `nums[j] != j`; if none, the answer is `n`. | O(n) time, O(1) extra space | [01-missing-number.cpp](01-missing-number.cpp) |
+| Find All Numbers Disappeared in an Array | [448](https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/) | Easy | Same `[1..n]` pass, but the verification scan collects **every** index `j` with `nums[j] != j + 1` instead of stopping at the first. | O(n) time, O(1) extra space (output aside) | [02-find-all-numbers-disappeared-in-an-array.cpp](02-find-all-numbers-disappeared-in-an-array.cpp) |
+| Find the Duplicate Number | [287](https://leetcode.com/problems/find-the-duplicate-number/) | Medium | Same `[1..n]` pass over `n + 1` slots; at the first mismatch report the value **sitting there** (the stalled surplus copy), not the value expected there. | O(n) time, O(1) extra space | [03-find-the-duplicate-number.cpp](03-find-the-duplicate-number.cpp) |
+| First Missing Positive | [41](https://leetcode.com/problems/first-missing-positive/) | Hard | First *prove* the answer lies in `[1, n+1]` so arbitrary noise can be ignored, then run the standard pass and return the first unfilled home (`j + 1`), else `n + 1`. | O(n) time, O(1) extra space | [04-first-missing-positive.cpp](04-first-missing-positive.cpp) |
+
+## Why these four
+
+They cover every recognition signal called out in the [README](../README.md) — *values bounded to a range tied to the array's own length, a question about a missing/duplicate/misplaced value, and an O(1)-extra-space requirement* — by varying exactly one thing at a time:
+
+- **01** is the pattern at its plainest: place each value at its home index, scan once, report the single gap. It is also the file where the home-index formula is deliberately **not** `value - 1` — the `[0, n]` range forces the `[0..n-1]` convention (`home == value`) and makes the value `n` unplaceable, so the off-by-one that [README → Common Mistakes](../README.md#common-mistakes) warns about is confronted immediately rather than assumed away. Its comments also give the sum/XOR one-liners that match this file's complexity, and show exactly which of the next three problems break each of them — the case for learning the general mechanism instead of the trick.
+- **02** changes only the verification pass: same sorting pass, but collect every mismatch rather than the first. This is the "one mechanism, several interpretations" claim from the README made concrete, and it is where the in-place **marking** trick (sign-flipping `nums[|v| - 1]`) is a genuine rival — its comments spell out why marking works here, what it silently depends on (every value positive, so the sign bit is free scratch space), and why positional placement is the more general of the two ideas.
+- **03** flips the *reading* of the scan rather than the scan itself: the mismatched slot's **actual** value is the answer, not its expected value. It is also the one problem in the set where Cyclic Sort is arguably the wrong tool: 287 explicitly asks for the array **not** to be modified, which is precisely what this pattern cannot promise. The file names that conflict openly and contrasts Floyd's Cycle Detection (see [fast-slow-pointers](../../../linked-list-patterns/fast-slow-pointers/)), which is non-mutating but solves nothing beyond this single question. Recognising which constraint binds is the skill being practised.
+- **04** is the hardest and the only one where the pattern's precondition is **not given**. Nothing in the problem statement bounds the values; you have to establish that the answer must lie in `[1, n + 1]` — and therefore that negatives, zeros and huge values are noise — before the pattern applies at all. The loop body is then character-for-character identical to 01–03, which is the point: all of this problem's difficulty is in recognising the shape, none of it is in the code. It is also where the ordering of the bounds check matters for real, and its `INT_MIN`/`INT_MAX` test case pins down the undefined-behaviour bug that computing `nums[i] - 1` before the range check would introduce.
+
+For unguided practice on problems that are *not* worked out step by step, see [exercises.md](../exercises.md).

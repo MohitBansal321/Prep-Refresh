@@ -98,7 +98,12 @@ std::vector<int> smallestRange(const std::vector<std::vector<int>>& lists) {
                              // which overflows a 32-bit int (undefined behavior)
 
   while (true) {
-    auto [smallest_value, list_index, element_index] = heap.top();
+    // Unpack the tuple field by field with std::get<> rather than a C++17
+    // structured binding, so this file compiles on older toolchains too.
+    const HeapEntry top = heap.top();
+    const int smallest_value = std::get<0>(top);
+    const int list_index = std::get<1>(top);
+    const int element_index = std::get<2>(top);
     heap.pop();
 
     // Candidate range: [smallest_value, current_max] is guaranteed to touch

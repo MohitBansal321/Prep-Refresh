@@ -94,15 +94,125 @@ Responsibilities in one line each:
 
 ## Recognition Diagram
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart distinguishing K-way Merge from Top K Elements and from a plain "concatenate and sort," based on the signals in a problem statement.
+The first diamond is the whole pattern, and it is phrased to catch the *disguised* cases — a row-sorted matrix, or the implicit ascending sequence `nums1[i] + nums2[j]` for a fixed `i` — because that is where recognition actually fails. See [images/recognition-diagram.md](images/recognition-diagram.md) for the full "how to read it" walkthrough of every fork.
+
+```mermaid
+flowchart TD
+    Start([Read the problem statement]) --> Disguise{Is there a set of sequences<br/>that are EACH already sorted?<br/>Count the DISGUISED ones too:<br/>rows of a row-sorted matrix,<br/>nums1 i + nums2 j for fixed i,<br/>one sorted file per server}
+
+    Disguise -- "No -- one unsorted collection,<br/>and I want its K largest /<br/>smallest / most frequent" --> TopK[["Use Top K Elements<br/>(ONE heap capped at K over<br/>a single dataset; K is a<br/>RESULT-SIZE cutoff)"]]
+
+    Disguise -- "No -- one list of<br/>start,end ranges to collapse" --> MergeIntervals[["Use Merge Intervals<br/>(sort once by start, sweep<br/>linearly, no heap, no<br/>notion of K sources)"]]
+
+    Disguise -- "No -- nothing is sorted and<br/>I cannot rely on any order" --> PlainSort[["Just sort<br/>(O(n log n) -- there is no<br/>pre-existing order to exploit,<br/>so nothing is being wasted)"]]
+
+    Disguise -- Yes --> HowMany{How many sorted<br/>sources -- what is K?}
+
+    HowMany -- "K = 1" --> Trivial[["Nothing to merge<br/>(the single list IS<br/>the answer)"]]
+
+    HowMany -- "K = 2" --> TwoPtr[["Use a two-pointer merge<br/>(compare the two fronts<br/>directly; a heap adds<br/>ceremony for zero gain)"]]
+
+    HowMany -- "K >= 3" --> WhatOutput{Do I need the FULL merged<br/>sequence, or only the k-th<br/>smallest / the first k?}
+
+    WhatOutput -- "Full merged output" --> MergeAll["K-way Merge --<br/>MERGE EVERYTHING variant<br/>seed heap with each list's front,<br/>pop-and-replace until empty<br/>(mergeKSortedLists in code.cpp)"]
+
+    WhatOutput -- "Only the k-th smallest,<br/>or only the first k" --> EarlyExit["K-way Merge --<br/>EARLY-EXIT variant<br/>same loop, but stop at the<br/>k-th pop; never materialize<br/>the remaining n - k elements<br/>(kthSmallestInKSortedLists)"]
+
+    MergeAll --> Memory
+    EarlyExit --> Memory{Does all the data fit<br/>in memory at once?}
+
+    Memory -- Yes --> Done([K-way Merge applies])
+    Memory -- "No -- data dwarfs RAM" --> External[["Same algorithm, streaming form:<br/>each 'list' is a sorted chunk on<br/>disk; the heap holds only ONE<br/>current element per chunk<br/>-- this IS external sorting"]]
+    External --> Done
+```
 
 ## Flow Diagram
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the seed-heap-then-pop-and-replace loop described above.
+The seed loop runs exactly K times and must finish before the first pop; the main loop then runs `n` times, and `Pop` plus `Advance` are one indivisible unit. See [images/flow-diagram.md](images/flow-diagram.md) for the full "how to read it" walkthrough, including why the bounds check is `element_index + 1 < len(list)` and not `element_index < len(list)`.
+
+```mermaid
+flowchart TD
+    Start([K sorted lists arrive]) --> Empty[Create an empty min-heap of<br/>value, list_index, element_index<br/>-- std::priority_queue needs<br/>std::greater to become a MIN-heap]
+
+    Empty --> SeedLoop{For each list i<br/>from 0 to K-1}
+
+    SeedLoop -- "list i is EMPTY" --> SkipSeed[Push nothing for list i.<br/>Skipping the emptiness check here<br/>is an out-of-bounds read on<br/>lists i at index 0]
+    SkipSeed --> SeedLoop
+
+    SeedLoop -- "list i is non-empty" --> PushSeed["Push lists i at 0, i, 0<br/>-- its front element, tagged<br/>with its own list index and<br/>starting position 0"]
+    PushSeed --> SeedLoop
+
+    SeedLoop -- "all K lists seeded" --> HeapCheck{Is the heap empty?}
+
+    HeapCheck -- Yes --> Done([Done: every element from every<br/>list has been popped exactly<br/>once, in non-decreasing order])
+
+    HeapCheck -- No --> Pop["Pop the top tuple:<br/>value, list_index, element_index<br/>-- the smallest of the at-most-K<br/>current candidates, in O log K"]
+
+    Pop --> Variant{Which variant<br/>is this?}
+
+    Variant -- "MERGE EVERYTHING" --> Append[Append value to the<br/>output sequence. Output is<br/>sorted BY CONSTRUCTION --<br/>there is never a sort step]
+    Append --> Advance
+
+    Variant -- "K-TH SMALLEST /<br/>FIRST k ONLY" --> Count[Increment popped_count]
+    Count --> KCheck{popped_count == k?}
+    KCheck -- Yes --> EarlyExit([Return value immediately.<br/>The remaining n - k elements<br/>are never merged at all])
+    KCheck -- No --> Advance{"Does list_index have a next<br/>element? i.e. is<br/>element_index + 1 < len(lists[list_index])?"}
+
+    Advance -- "Yes" --> PushNext["Push lists list_index at<br/>element_index+1, list_index,<br/>element_index+1<br/>-- the replacement comes from<br/>the SAME source list, always"]
+    PushNext --> HeapCheck
+
+    Advance -- "No -- that list is exhausted" --> NoPush[Push nothing. The heap simply<br/>carries one fewer active<br/>candidate from now on; the<br/>loop continues with the rest]
+    NoPush --> HeapCheck
+```
 
 ## Trace Diagram
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of the heap's exact contents while merging three small concrete sorted lists.
+`mergeKSortedLists` merging `L0 = [1,4,7]`, `L1 = [2,5]`, `L2 = [3,6,8]` — K = 3, n = 8, with deliberately uneven lengths so you can watch `L1` exhaust mid-merge with no special-case code running. Heap entries are written `{value, list_index, element_index}`. See [images/trace-diagram.md](images/trace-diagram.md) for the full "how to read it" walkthrough.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Src as Source lists L0 L1 L2
+    participant Heap as Min-heap (max 3 entries)
+    participant Out as Output vector
+
+    Note over Heap: SEED PHASE -- push the front of every non-empty list
+    Src->>Heap: push {1,0,0}, {2,1,0}, {3,2,0}
+    Note over Heap: heap = {1,0,0} {2,1,0} {3,2,0}<br/>K entries, one per list
+
+    Heap->>Out: pop {1,0,0} -> emit 1
+    Src->>Heap: replenish L0 at index 1 -> push {4,0,1}
+    Note over Heap: heap = {2,1,0} {3,2,0} {4,0,1}<br/>out = [1]
+
+    Heap->>Out: pop {2,1,0} -> emit 2
+    Src->>Heap: replenish L1 at index 1 -> push {5,1,1}
+    Note over Heap: heap = {3,2,0} {4,0,1} {5,1,1}<br/>out = [1,2]
+
+    Heap->>Out: pop {3,2,0} -> emit 3
+    Src->>Heap: replenish L2 at index 1 -> push {6,2,1}
+    Note over Heap: heap = {4,0,1} {5,1,1} {6,2,1}<br/>out = [1,2,3]
+
+    Heap->>Out: pop {4,0,1} -> emit 4
+    Src->>Heap: replenish L0 at index 2 -> push {7,0,2}
+    Note over Heap: heap = {5,1,1} {6,2,1} {7,0,2}<br/>out = [1,2,3,4]
+
+    Heap->>Out: pop {5,1,1} -> emit 5
+    Note over Src: element_index+1 = 2, but len(L1) = 2<br/>L1 IS EXHAUSTED -- push nothing
+    Note over Heap: heap = {6,2,1} {7,0,2}<br/>only 2 entries now -- out = [1,2,3,4,5]
+
+    Heap->>Out: pop {6,2,1} -> emit 6
+    Src->>Heap: replenish L2 at index 2 -> push {8,2,2}
+    Note over Heap: heap = {7,0,2} {8,2,2}<br/>out = [1,2,3,4,5,6]
+
+    Heap->>Out: pop {7,0,2} -> emit 7
+    Note over Src: element_index+1 = 3, len(L0) = 3<br/>L0 IS EXHAUSTED -- push nothing
+    Note over Heap: heap = {8,2,2}<br/>out = [1,2,3,4,5,6,7]
+
+    Heap->>Out: pop {8,2,2} -> emit 8
+    Note over Src: element_index+1 = 3, len(L2) = 3<br/>L2 IS EXHAUSTED -- push nothing
+    Note over Heap: heap = EMPTY -> loop terminates
+    Note over Out: out = [1,2,3,4,5,6,7,8] -- fully sorted,<br/>and never sorted: built in order by construction
+```
 
 ## Implementation
 
@@ -117,7 +227,7 @@ It provides two function templates over `std::vector<std::vector<int>>`, deliber
 
 **`mergeKSortedLists`** (in [code.cpp](code.cpp)). Takes `std::vector<std::vector<int>>& lists` (each inner vector already sorted ascending). Builds a `std::priority_queue<std::tuple<int,int,int>, std::vector<std::tuple<int,int,int>>, std::greater<>>` — the `std::greater<>` comparator is what turns `std::priority_queue` (a *max*-heap by default) into a *min*-heap, so the top of the queue is always the smallest tuple. Because `std::tuple`'s comparison operators compare element-by-element in declaration order, ordering by `{value, listIdx, elemIdx}` means the heap orders primarily by `value` — exactly what merging needs — and only falls back to `listIdx`/`elemIdx` to break ties between equal values, which never changes correctness (any tie-break order among equal values is a valid sorted output). The seeding loop pushes `(lists[i][0], i, 0)` for every non-empty list. The main loop pops the top tuple, appends its value to `result`, and pushes `(lists[listIdx][elemIdx + 1], listIdx, elemIdx + 1)` whenever `elemIdx + 1` is still in bounds for that list. This function exists to show the "merge everything" variant in its purest, most generic form — the direct ancestor of [problems/01-merge-k-sorted-lists.cpp](problems/01-merge-k-sorted-lists.cpp) and [problems/02-kth-smallest-element-in-a-sorted-matrix.cpp](problems/02-kth-smallest-element-in-a-sorted-matrix.cpp).
 
-**`kthSmallestInKSortedLists`** (in [code.cpp](code.cpp)). Identical heap setup and replenishment logic to `mergeKSortedLists`, but instead of accumulating a result vector, it keeps a `popped_count` and returns the value of the tuple popped when `popped_count == k`. This function exists to demonstrate the early-exit optimization: when you only need the k-th smallest (not the full merge), you can stop as soon as you have it, which matters when `k` is much smaller than the total element count `n` — you do not pay for merging the remaining `n - k` elements you were never going to look at.
+**`kthSmallestInKSortedLists`** (in [code.cpp](code.cpp)). Identical heap setup and replenishment logic to `mergeKSortedLists`, but instead of accumulating a result vector, it keeps a `popped_count` and returns the value of the tuple popped when `popped_count == k`. It returns a small `MaybeInt` wrapper rather than a bare `int`, because "there is no k-th element" (k exceeded the total element count) is a genuinely different outcome from "the k-th element happens to be `-1`" — a sentinel value cannot distinguish the two when the data may legitimately contain negatives. This function exists to demonstrate the early-exit optimization: when you only need the k-th smallest (not the full merge), you can stop as soon as you have it, which matters when `k` is much smaller than the total element count `n` — you do not pay for merging the remaining `n - k` elements you were never going to look at.
 
 **`main()`** (in [code.cpp](code.cpp)). Exercises both functions against small, hand-checkable inputs — including lists of uneven length and a list that runs out early — and prints `[PASS]`/`[FAIL]` for each assertion, proving the template compiles and runs correctly end to end.
 
