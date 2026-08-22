@@ -12,7 +12,7 @@ You haven't built strong intuition for any of these patterns yet. Go in order, d
 2. **Go family by family in this order:** Array & String → Linked List → Searching & Sorting → Tree & Graph → Recursion & Backtracking → Dynamic Programming → Greedy → Advanced Data Structures. This isn't arbitrary — later families lean on earlier intuition (Bitmask DP assumes you're comfortable with Subsets' recursion tree; Segment Tree is motivated by having already felt Prefix Sum's limits; Topological Sort and Dijkstra both build directly on Graph BFS/DFS). Skipping ahead means hitting "why does this work" moments the repo already answered two families ago.
 3. **Within a family, follow its own "Recommended study order"** — every family `README.md` has one, and it's ordered the same way (simplest mental model first, hardest/most-composed pattern last).
 4. **For each individual pattern:**
-   - Read the `README.md` top to bottom. For a Full-tier pattern this is a real read (15-20 min); for Compact-tier it's short enough to read in one sitting.
+   - Read the `README.md` top to bottom � every pattern is a Full-tier module, so budget a real read (15-20 min).
    - Compile and run `code.cpp` yourself — don't just read it. `g++ -std=c++17 -Wall code.cpp -o /tmp/out && /tmp/out`.
    - If `exercises.md` exists, attempt at least the Easy and Medium problems **before** looking at `problems/`. `exercises.md` has no solutions on purpose.
    - If `problems/` exists, read the worked solutions afterward — compare your approach to theirs, not the other way around.
@@ -20,7 +20,7 @@ You haven't built strong intuition for any of these patterns yet. Go in order, d
    - Mark it `Learned` in [`INDEX.md`](./INDEX.md) and set a `+1 day` revision date on the spaced-repetition ladder.
 5. **Once a family is done, go solve 3-5 real problems tagged to it on NeetCode/LeetCode** before moving to the next family — reading a pattern and being able to execute it cold under time pressure are different skills, and this repo only builds the first one.
 
-Rough pace: 2-4 sessions per Full-tier pattern, ~1 session per Compact-tier pattern. There's no need to rush the order — a shaky Array & String foundation makes everything after it harder, not faster.
+Rough pace: 2-4 sessions per pattern. There's no need to rush the order — a shaky Array & String foundation makes everything after it harder, not faster.
 
 ---
 
@@ -39,7 +39,7 @@ You've solved problems before but never organized them by pattern, or you want t
 
 You've done this material before (a bootcamp, a CS course, a previous job-search cycle) but it's faded. Treat every pattern as a 5-10 minute check, not a re-read.
 
-1. **Don't open the full `README.md` first.** For a Full-tier pattern, read `cheatsheet.md` only. For a Compact-tier pattern, the README *is* the cheatsheet — read the whole thing, it's short.
+1. **Don't open the full `README.md` first.** Read `cheatsheet.md` only.
 2. **Answer the recall questions (or re-derive the template) from memory, no peeking.** Then try to re-solve one `problems/` file from scratch and compare against the worked solution.
 3. **Score yourself honestly in [`INDEX.md`](./INDEX.md)'s Confidence column right after**, not before — the point is to measure what you actually retained, not what you expect to remember.
 4. **Confidence ≤3 → that's where real time goes.** Read the full `README.md`, redo `exercises.md`, then re-test yourself again after a day. Confidence 4-5 → don't re-study it, just schedule its next revision date on the ladder (`+1 day → +3 days → +1 week → +2 weeks → +1 month → +3 months`) and move on. Re-studying something you already hold wastes the time this approach is meant to save.

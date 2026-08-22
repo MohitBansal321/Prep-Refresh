@@ -15,4 +15,4 @@ A single family with one pattern, because "greedy" is less a specific technique 
 
 1. **Greedy** — start with classic interval scheduling (maximize non-overlapping intervals) since the exchange-argument proof is the clearest one to internalize first, then move to jump games and assignment-style problems.
 
-Greedy is built as a Compact-tier module (README + code.cpp only). See [`../INDEX.md`](../INDEX.md) for details.
+Greedy is built as a Full-tier module. See [`../INDEX.md`](../INDEX.md) for details.

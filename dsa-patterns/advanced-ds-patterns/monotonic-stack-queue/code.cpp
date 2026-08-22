@@ -16,13 +16,14 @@
 
 // ----------------------------------------------------------------------------
 // For each index, the next element to its right that is strictly greater,
-// or -1 if none exists. Stack holds indices whose values increase from
-// bottom to top; a new larger value pops (and resolves) everything smaller.
+// or -1 if none exists. Stack holds indices whose values decrease from
+// bottom to top (smaller values wait on top); a new larger value pops
+// (and resolves) everything smaller.
 // ----------------------------------------------------------------------------
 std::vector<int> nextGreaterElement(const std::vector<int>& nums) {
   int n = static_cast<int>(nums.size());
   std::vector<int> result(n, -1);
-  std::vector<int> stack;  // holds indices; values increase bottom-to-top
+  std::vector<int> stack;  // holds indices; values decrease bottom-to-top
 
   for (int i = 0; i < n; ++i) {
     while (!stack.empty() && nums[stack.back()] < nums[i]) {

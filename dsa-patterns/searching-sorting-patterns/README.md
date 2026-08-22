@@ -23,4 +23,4 @@ These patterns lean on **sorted input** or a **heap's ordering guarantee** to av
 3. **Two Heaps** — extends to two heaps working together for a median.
 4. **K-way Merge** — a different heap use (one slot per source list) worth contrasting with #2 and #3.
 
-All four are built: Modified Binary Search, Two Heaps, and Top K Elements are Full-tier modules; K-way Merge is Partial-tier (README + code + worked problems, missing exercises/cheatsheet/diagrams). See [`../INDEX.md`](../INDEX.md) for details.
+All four are built as Full-tier modules. See [`../INDEX.md`](../INDEX.md) for details.

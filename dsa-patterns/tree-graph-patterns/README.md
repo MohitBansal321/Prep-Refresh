@@ -27,4 +27,4 @@ A tree is just a graph with no cycles and exactly one path between any two nodes
 4. **Topological Sort** — builds directly on graph BFS (Kahn's algorithm) or DFS (post-order + reverse).
 5. **Union Find** — a genuinely different tool (no traversal), best appreciated once you've felt DFS-based cycle detection's cost on repeated queries.
 
-Tree DFS and Union Find are Full-tier modules; Tree BFS, Graph BFS/DFS, and Topological Sort are Partial-tier (README + code + some but not all of exercises/cheatsheet/diagrams/problems); Dijkstra's Algorithm is Compact-tier (README + code.cpp only). See [`../INDEX.md`](../INDEX.md) for exactly what each one has.
+All six are Full-tier modules. See [`../INDEX.md`](../INDEX.md) for exactly what each one has.

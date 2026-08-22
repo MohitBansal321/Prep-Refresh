@@ -31,4 +31,4 @@ Every DP pattern is the same three questions applied to a different "shape" of s
 6. **Palindromic Subsequence/Substring** — interval DP, usually tackled last since it requires filling the table by increasing interval length rather than row-by-row.
 7. **Bitmask DP** — save for last; it depends on being comfortable with Subsets' enumeration (Recursion & Backtracking family) plus the 0/1 Knapsack include/exclude instinct, applied to a subset-identity-keyed state.
 
-Unbounded Knapsack, Longest Common Subsequence, and Longest Increasing Subsequence are Full-tier modules; 0/1 Knapsack, Palindromic Subsequence, DP on Grids, and Bitmask DP are Compact-tier (README + code.cpp only). See [`../INDEX.md`](../INDEX.md) for details.
+All seven are Full-tier modules. See [`../INDEX.md`](../INDEX.md) for details.

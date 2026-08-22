@@ -19,13 +19,9 @@ All code is **C++ (C++17)**, chosen because it forces you to think explicitly ab
 
 ## How to read this repo
 
-Each family folder has its own `README.md` explaining the family and how to tell its patterns apart. Individual patterns come in **three tiers** (17 Full, 4 Partial, 9 Compact — see [`INDEX.md`](./INDEX.md) for which is which):
+Each family folder has its own `README.md` explaining the family and how to tell its patterns apart. Every pattern is a **Full module** — a folder per pattern with `README.md`, `code.cpp`, `exercises.md`, `cheatsheet.md`, worked `problems/` (4 fully-solved C++ problems), and `images/` (Mermaid diagrams).
 
-- **Full module** (the target format) — a folder per pattern with `README.md`, `code.cpp`, `exercises.md`, `cheatsheet.md`, worked `problems/` (4 fully-solved C++ problems), and `images/` (Mermaid diagrams).
-- **Partial module** — README + `code.cpp`, plus some but not all of the Full tier's extras.
-- **Compact module** — a tighter README + `code.cpp` with a self-checking `main()`, no `exercises.md`/`cheatsheet.md`/`images/`/`problems/`.
-
-All 33 patterns are now built and every `.cpp` file compiles and passes its tests — see [`INDEX.md`](./INDEX.md) for the exact tier of each.
+All 33 patterns are built to this format and every `.cpp` file compiles and passes its tests — see [`INDEX.md`](./INDEX.md) for the tracker.
 
 For studying and revision, use the [revision tracker (INDEX.md)](./INDEX.md) — it lists every pattern's build status, the recommended study order, and a spaced-repetition schedule.
 

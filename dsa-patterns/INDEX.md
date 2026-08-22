@@ -7,12 +7,9 @@ This is the master index for the DSA patterns repo. Use it three ways:
 
 New here, or refreshing after a long break? [`LEARNING-PATHS.md`](./LEARNING-PATHS.md) has a specific walkthrough for how to use this index and the rest of the repo depending on where you're starting from — read that before diving into the tables below.
 
-All 33 patterns are built. They come in three tiers:
-- **Full module** (17) — README (full deep-dive) + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (3 diagrams), and most also have `problems/` with 4 fully worked LeetCode solutions.
-- **Partial module** (4) — README + `code.cpp`, plus some but not all of the Full tier's extras. See the Status overview at the bottom for exactly what each one has.
-- **Compact module** (12) — a tighter README (Intent, Recognition Signal, Core Idea, Template, Complexity, Common Mistakes, When To Use/Avoid, Similar Patterns) + `code.cpp` with a self-checking `main()`. No `exercises.md`/`cheatsheet.md`/`images/`/`problems/`.
+All 33 patterns are built to the same **Full module** depth: README (full deep-dive) + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace diagrams) + `problems/` with 4 fully worked LeetCode solutions.
 
-Every `.cpp` file in the repo (104 total) compiles with `g++ -std=c++17 -Wall` and passes its own test assertions.
+Every `.cpp` file in the repo (165 total) compiles with `g++ -std=c++17 -Wall` and passes its own test assertions.
 
 ---
 
@@ -23,8 +20,6 @@ For a **full module**, revise in tiers — do NOT re-read the full README:
 2. **5 min** — skim the 3 diagrams in `images/` (recognition, flow, trace).
 3. **Active recall** — answer the *Recall Questions* at the bottom of `cheatsheet.md` from memory, then re-derive one `problems/` solution from scratch without looking at the file.
 4. **Only if you miss something** — open the relevant README section. Nothing else.
-
-For a **compact module**, the README itself is short enough to serve as its own cheatsheet — read it top to bottom, then re-derive `code.cpp` from memory.
 
 ## Spaced-repetition schedule
 
@@ -79,7 +74,7 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 | [Modified Binary Search](searching-sorting-patterns/modified-binary-search/README.md) | Full | Not started | — | Study next | — |
 | [Two Heaps](searching-sorting-patterns/two-heaps/README.md) | Full | Not started | — | Study next | — |
 | [Top "K" Elements](searching-sorting-patterns/top-k-elements/README.md) | Full | Not started | — | Study next | — |
-| [K-way Merge](searching-sorting-patterns/k-way-merge/README.md) | Partial (README + code.cpp + problems/, no exercises/cheatsheet/images) | Not started | — | Study next | — |
+| [K-way Merge](searching-sorting-patterns/k-way-merge/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (searching & sorting)
 
@@ -94,12 +89,12 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 | Pattern | Tier | Status | Last Revised | Next Revision | Confidence (1-5) |
 |---------|------|--------|---------------|----------------|-------------------|
-| [Tree BFS](tree-graph-patterns/tree-bfs/README.md) | Partial (README + code.cpp + problems/, no exercises/cheatsheet/images) | Not started | — | Study next | — |
+| [Tree BFS](tree-graph-patterns/tree-bfs/README.md) | Full | Not started | — | Study next | — |
 | [Tree DFS](tree-graph-patterns/tree-dfs/README.md) | Full | Not started | — | Study next | — |
-| [Graph BFS/DFS](tree-graph-patterns/graph-bfs-dfs/README.md) | Partial (README + code.cpp + exercises.md, no cheatsheet/images/problems) | Not started | — | Study next | — |
-| [Topological Sort](tree-graph-patterns/topological-sort/README.md) | Partial (README + code.cpp + images/, no exercises/cheatsheet/problems) | Not started | — | Study next | — |
+| [Graph BFS/DFS](tree-graph-patterns/graph-bfs-dfs/README.md) | Full | Not started | — | Study next | — |
+| [Topological Sort](tree-graph-patterns/topological-sort/README.md) | Full | Not started | — | Study next | — |
 | [Union Find](tree-graph-patterns/union-find/README.md) | Full | Not started | — | Study next | — |
-| [Dijkstra's Algorithm](tree-graph-patterns/dijkstras-algorithm/README.md) | Compact | Not started | — | Study next | — |
+| [Dijkstra's Algorithm](tree-graph-patterns/dijkstras-algorithm/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (tree & graph)
 
@@ -115,7 +110,7 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 | Pattern | Tier | Status | Last Revised | Next Revision | Confidence (1-5) |
 |---------|------|--------|---------------|----------------|-------------------|
-| [Subsets](recursion-backtracking-patterns/subsets/README.md) | Compact | Not started | — | Study next | — |
+| [Subsets](recursion-backtracking-patterns/subsets/README.md) | Full | Not started | — | Study next | — |
 | [Backtracking](recursion-backtracking-patterns/backtracking/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (recursion & backtracking)
@@ -129,13 +124,13 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 | Pattern | Tier | Status | Last Revised | Next Revision | Confidence (1-5) |
 |---------|------|--------|---------------|----------------|-------------------|
-| [0/1 Knapsack](dynamic-programming-patterns/0-1-knapsack/README.md) | Compact | Not started | — | Study next | — |
+| [0/1 Knapsack](dynamic-programming-patterns/0-1-knapsack/README.md) | Full | Not started | — | Study next | — |
 | [Unbounded Knapsack](dynamic-programming-patterns/unbounded-knapsack/README.md) | Full | Not started | — | Study next | — |
 | [Longest Common Subsequence](dynamic-programming-patterns/longest-common-subsequence/README.md) | Full | Not started | — | Study next | — |
 | [Longest Increasing Subsequence](dynamic-programming-patterns/longest-increasing-subsequence/README.md) | Full | Not started | — | Study next | — |
-| [Palindromic Subsequence](dynamic-programming-patterns/palindromic-subsequence/README.md) | Compact | Not started | — | Study next | — |
-| [DP on Grids](dynamic-programming-patterns/dp-on-grids/README.md) | Compact | Not started | — | Study next | — |
-| [Bitmask DP](dynamic-programming-patterns/bitmask-dp/README.md) | Compact | Not started | — | Study next | — |
+| [Palindromic Subsequence](dynamic-programming-patterns/palindromic-subsequence/README.md) | Full | Not started | — | Study next | — |
+| [DP on Grids](dynamic-programming-patterns/dp-on-grids/README.md) | Full | Not started | — | Study next | — |
+| [Bitmask DP](dynamic-programming-patterns/bitmask-dp/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (dynamic programming)
 
@@ -153,7 +148,7 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 | Pattern | Tier | Status | Last Revised | Next Revision | Confidence (1-5) |
 |---------|------|--------|---------------|----------------|-------------------|
-| [Greedy](greedy-patterns/greedy/README.md) | Compact | Not started | — | Study next | — |
+| [Greedy](greedy-patterns/greedy/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (greedy)
 
@@ -165,11 +160,11 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 | Pattern | Tier | Status | Last Revised | Next Revision | Confidence (1-5) |
 |---------|------|--------|---------------|----------------|-------------------|
-| [Monotonic Stack/Queue](advanced-ds-patterns/monotonic-stack-queue/README.md) | Compact | Not started | — | Study next | — |
-| [Bit Manipulation](advanced-ds-patterns/bit-manipulation/README.md) | Compact | Not started | — | Study next | — |
-| [Trie](advanced-ds-patterns/trie/README.md) | Compact | Not started | — | Study next | — |
-| [Segment Tree / Fenwick Tree](advanced-ds-patterns/segment-tree-fenwick-tree/README.md) | Compact | Not started | — | Study next | — |
-| [LRU Cache (Design With Data Structures)](advanced-ds-patterns/lru-cache/README.md) | Compact | Not started | — | Study next | — |
+| [Monotonic Stack/Queue](advanced-ds-patterns/monotonic-stack-queue/README.md) | Full | Not started | — | Study next | — |
+| [Bit Manipulation](advanced-ds-patterns/bit-manipulation/README.md) | Full | Not started | — | Study next | — |
+| [Trie](advanced-ds-patterns/trie/README.md) | Full | Not started | — | Study next | — |
+| [Segment Tree / Fenwick Tree](advanced-ds-patterns/segment-tree-fenwick-tree/README.md) | Full | Not started | — | Study next | — |
+| [LRU Cache (Design With Data Structures)](advanced-ds-patterns/lru-cache/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (advanced data structures)
 
@@ -185,20 +180,20 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 ## Status overview
 
-| Family | Patterns | Full tier | Partial tier | Compact tier |
-|--------|----------|-----------|---------------|--------------|
-| Array & String | 6 | Two Pointers, Sliding Window, Prefix Sum, Cyclic Sort, Merge Intervals, Kadane's Algorithm | — | — |
-| Linked List | 2 | Fast & Slow Pointers, In-place Reversal | — | — |
-| Searching & Sorting | 4 | Modified Binary Search, Two Heaps, Top K Elements | K-way Merge | — |
-| Tree & Graph | 6 | Tree DFS, Union Find | Tree BFS, Graph BFS/DFS, Topological Sort | Dijkstra's Algorithm |
-| Recursion & Backtracking | 2 | Backtracking | — | Subsets |
-| Dynamic Programming | 7 | Unbounded Knapsack, LCS, LIS | — | 0/1 Knapsack, Palindromic Subsequence, DP on Grids, Bitmask DP |
-| Greedy | 1 | — | — | Greedy |
-| Advanced Data Structures | 5 | — | — | Monotonic Stack/Queue, Bit Manipulation, Trie, Segment Tree/Fenwick Tree, LRU Cache |
-| **Total** | **33** | **17** | **4** | **12** |
+All 33 patterns are now **Full tier** — every one has README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace) + `problems/` (4 worked solutions each).
 
-**Partial tier:** has README + `code.cpp` (both compile-verified) plus some but not all of `exercises.md`/`cheatsheet.md`/`images/`/`problems/` — see each row's note above for exactly what's there. Fully usable, just not built out to the same depth as the Full tier yet.
+| Family | Patterns | Full tier |
+|--------|----------|-----------|
+| Array & String | 6 | Two Pointers, Sliding Window, Prefix Sum, Cyclic Sort, Merge Intervals, Kadane's Algorithm |
+| Linked List | 2 | Fast & Slow Pointers, In-place Reversal |
+| Searching & Sorting | 4 | Modified Binary Search, Two Heaps, Top K Elements, K-way Merge |
+| Tree & Graph | 6 | Tree BFS, Tree DFS, Graph BFS/DFS, Topological Sort, Union Find, Dijkstra's Algorithm |
+| Recursion & Backtracking | 2 | Subsets, Backtracking |
+| Dynamic Programming | 7 | 0/1 Knapsack, Unbounded Knapsack, LCS, LIS, Palindromic Subsequence, DP on Grids, Bitmask DP |
+| Greedy | 1 | Greedy |
+| Advanced Data Structures | 5 | Monotonic Stack/Queue, Bit Manipulation, Trie, Segment Tree/Fenwick Tree, LRU Cache |
+| **Total** | **33** | **33** |
 
 ---
 
-*Convention: a Full-tier pattern lives in its own folder `pattern-name/` with README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (+ `problems/` for most). A Compact-tier pattern has a tighter README + `code.cpp` only — still fully correct and compile-verified, just without the exercises/cheatsheet/diagrams/worked-problems layer. See [`../repository_template_prompt.md`](../repository_template_prompt.md) for the master content template the Full tier follows.*
+*Convention: every pattern lives in its own folder `pattern-name/` with README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` + `problems/`. See [`../repository_template_prompt.md`](../repository_template_prompt.md) for the master content template.*

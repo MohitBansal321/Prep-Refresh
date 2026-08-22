@@ -26,4 +26,4 @@ These four don't share one unifying idea the way the other families do — each 
 4. **LRU Cache** — combines a hash map (which you already know) with a doubly linked list to get O(1) on both lookup and reordering; good bridge before the heavier tree structure below.
 5. **Segment Tree / Fenwick Tree** — the most involved structure here; save it for last, and only after Prefix Sum (in Array & String Patterns) so you feel *why* prefix sums aren't enough once updates enter the picture.
 
-All five are built as Compact-tier modules (README + code.cpp only): Monotonic Stack/Queue, Bit Manipulation, Trie, Segment Tree/Fenwick Tree, and LRU Cache. See [`../INDEX.md`](../INDEX.md) for details.
+All five are built as Full-tier modules: Monotonic Stack/Queue, Bit Manipulation, Trie, Segment Tree/Fenwick Tree, and LRU Cache. See [`../INDEX.md`](../INDEX.md) for details.

@@ -126,8 +126,8 @@ std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
     using FreqValue = std::pair<int, int>;  // (frequency, value)
     std::priority_queue<FreqValue, std::vector<FreqValue>, std::greater<FreqValue>> minHeap;
 
-    for (const auto& [value, count] : frequency) {
-        minHeap.push({count, value});
+    for (const auto& entry : frequency) {
+        minHeap.push({entry.second, entry.first});  // (frequency, value)
         if (static_cast<int>(minHeap.size()) > k) {
             minHeap.pop();  // evict the least-frequent value seen so far
         }

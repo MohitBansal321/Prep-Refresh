@@ -141,7 +141,9 @@ std::vector<std::vector<std::string>> accountsMerge(
 
   std::vector<std::vector<std::string>> result;
   result.reserve(root_to_emails.size());
-  for (const auto& [root, emails] : root_to_emails) {
+  for (const auto& group : root_to_emails) {
+    const int root = group.first;
+    const std::set<std::string>& emails = group.second;
     std::vector<std::string> row;
     row.push_back(accounts[root][0]);  // the person's name
     for (const auto& email : emails) {

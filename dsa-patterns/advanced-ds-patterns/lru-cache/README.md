@@ -23,7 +23,7 @@ A cache has to answer two completely different questions on every single operati
 
 The interview framing (LeetCode 146) is: implement a class with a fixed `capacity`, where `get(key)` returns the value or `-1` if absent, `put(key, value)` inserts or overwrites, and **both operations must run in `O(1)`** — and both operations count as a "use" that refreshes the key's recency. The `O(1)` requirement is not decoration; it is the entire problem. Drop it and this is a ten-line exercise.
 
-> **Term: recency vs. frequency.** *Recency* asks "how long ago was this key last touched?" — one timestamp per key, and one touch overwrites the previous one entirely. *Frequency* asks "how many times has this key been touched?" — a counter that accumulates. LRU evicts by recency, LFU (LeetCode 460, `problems/04-lfu-cache.cpp`) evicts by frequency. They disagree sharply on a key that was hammered a thousand times yesterday and not once today: LRU throws it out, LFU keeps it.
+> **Term: recency vs. frequency.** *Recency* asks "how long ago was this key last touched?" — one timestamp per key, and one touch overwrites the previous one entirely. *Frequency* asks "how many times has this key been touched?" — a counter that accumulates. LRU evicts by recency, LFU (LeetCode 460, `problems/02-lfu-cache.cpp`) evicts by frequency. They disagree sharply on a key that was hammered a thousand times yesterday and not once today: LRU throws it out, LFU keeps it.
 
 ### Why is this problem difficult?
 
@@ -196,7 +196,7 @@ It exposes `LRUCache(int capacity)`, `get`, `put`, and a `size()` accessor used 
 
 **`~LRUCache()`** (in [code.cpp](code.cpp)). Walks from `head_` following `next` and deletes every node including both sentinels. Worth noting for interview purposes: this class owns raw pointers and defines a destructor but no copy constructor or copy assignment operator, so copying an `LRUCache` would double-free. A production version would either delete those two operations explicitly or hold nodes in a `std::list`.
 
-**Files in [problems/](problems/).** Four standalone, independently compilable solutions, each redefining what it needs rather than including `code.cpp`. `01` (LeetCode 706) builds the hash map itself, so the `O(1)` lookup this pattern leans on is not a black box; `02` (LeetCode 146) is the canonical LRU build; `03` (LeetCode 380) composes a map with a *vector* instead of a list, showing that the pattern is "pick the structure that makes your specific operation `O(1)`", not "always use a linked list"; `04` (LeetCode 460) adds the frequency layer that LRU's structure does not generalize to for free. Index in [problems/README.md](problems/README.md).
+**Files in [problems/](problems/).** Four standalone, independently compilable solutions, each redefining what it needs rather than including `code.cpp`. `01` (LeetCode 146) is the canonical LRU build; `02` (LeetCode 460) adds the frequency layer that LRU's structure does not generalize to for free; `03` (LeetCode 1472) composes the same map-plus-sequence thinking around a different access pattern (browser back/forward), showing that the pattern is "pick the structure that makes your specific operation `O(1)`", not "always use a linked list"; `04` (LeetCode 1797) swaps recency ordering for time-based expiry, a design variant that needs only the hash-map half. Index in [problems/README.md](problems/README.md).
 
 ## Advantages
 
@@ -255,10 +255,10 @@ It exposes `LRUCache(int capacity)`, `get`, `put`, and a `size()` accessor used 
 
 ## When To Use
 
-- **Any "design a cache/structure with `O(1)` access plus an eviction policy" question.** LRU is the base case; LFU (LeetCode 460, `problems/04-lfu-cache.cpp`) is the same composition with one extra layer — a map from frequency to a list of keys at that frequency, plus a tracked minimum frequency.
+- **Any "design a cache/structure with `O(1)` access plus an eviction policy" question.** LRU is the base case; LFU (LeetCode 460, `problems/02-lfu-cache.cpp`) is the same composition with one extra layer — a map from frequency to a list of keys at that frequency, plus a tracked minimum frequency.
 - **You need a bounded-memory cache in front of an expensive resource** — a database, a remote API, a filesystem, a CPU-heavy pure computation — and recency is a reasonable predictor of reuse (which it is for most request-driven workloads).
 - **You have a hash map and you also need *some* order over its contents, maintained in `O(1)`.** The general move is "map for the lookup, second structure for the order"; LRU is the instance where the order is recency and the second structure is a doubly linked list.
-- **You need `O(1)` removal of an arbitrary element from a sequence.** This is the doubly-linked-list-plus-index composition in its own right, whether or not the ordering means "recency" — as in LeetCode 380 (`problems/03-insert-delete-getrandom.cpp`), where the second structure is a vector and the trick is swap-with-last.
+- **You need `O(1)` removal of an arbitrary element from a sequence.** This is the doubly-linked-list-plus-index composition in its own right, whether or not the ordering means "recency" — as in LeetCode 380 (Insert Delete GetRandom O(1), in [exercises.md](exercises.md)), where the second structure is a vector and the trick is swap-with-last.
 - **Memoizing inside a long-lived process** where an unbounded memo table would be a slow memory leak — bounding it with LRU turns "leaks until OOM" into "holds the hot set."
 
 ## When NOT To Use
@@ -305,10 +305,10 @@ Five concrete places in a Node/NestJS + Postgres + Redis stack:
 
 | Pattern | Structures composed | What becomes `O(1)` (or better) | Ordering rule |
 |---|---|---|---|
-| **LRU Cache** | Hash map + doubly linked list | Keyed lookup **and** evict-least-recently-used | Recency of access; a read reorders |
-| **LFU Cache** (`problems/04`) | Hash map + map from freq to list + `minFreq` | Keyed lookup **and** evict-least-frequently-used | Accumulated access count |
-| **Insert/Delete/GetRandom** (`problems/03`) | Hash map + vector | Insert, delete, **and** uniform random pick | None — position is arbitrary, so swap-with-last is legal |
-| **Hash map from scratch** (`problems/01`) | Array of buckets + chained lists | Keyed lookup | None |
+| **LRU Cache** (`problems/01`) | Hash map + doubly linked list | Keyed lookup **and** evict-least-recently-used | Recency of access; a read reorders |
+| **LFU Cache** (`problems/02`) | Hash map + map from freq to list + `minFreq` | Keyed lookup **and** evict-least-frequently-used | Accumulated access count |
+| **Browser History** (`problems/03`) | Array/list of visited pages + cursor | Back / forward / visit in amortized O(1) | Position relative to a moving cursor |
+| **Authentication Manager** (`problems/04`) | Hash map from token to expiry time | Generate, renew, and count unexpired tokens | Expiry timestamp per token |
 | **Monotonic Stack** | Single stack | Next-greater/next-smaller element | Value comparison against the incoming element |
 | **Trie** | Tree of per-character child maps | Prefix lookup / autocomplete | Lexicographic by construction |
 
@@ -321,7 +321,7 @@ The second thing being probed is whether you notice, unprompted, that **`get` mu
 Common follow-ups:
 
 - *"Now make it thread-safe."* A single `std::mutex` around every public method is the correct first answer, and you should immediately volunteer why it is unsatisfying: every operation — including reads — mutates the list head, so a reader-writer lock buys nothing (there are no pure readers), and the head becomes a single contention point. The real answers are **sharding** (partition the keyspace by hash into N independently locked sub-caches, which is what Java's Guava and Caffeine do) and **giving up exact LRU** so that reads no longer mutate shared structure — the Redis and Postgres decisions described above. Naming that second option is what separates a memorized answer from an understood one.
-- *"Make it LFU instead."* Expects the frequency layer: `key -> (value, freq)`, plus `freq -> doubly linked list of keys at that frequency`, plus a tracked `minFreq`. The two details that catch people: on a `get`, the key moves from bucket `f` to bucket `f+1` and bucket `f` may become empty, so `minFreq` needs updating; and ties *within* a frequency bucket are broken by LRU, which is why each bucket is itself a recency-ordered list rather than a set. See `problems/04-lfu-cache.cpp`.
+- *"Make it LFU instead."* Expects the frequency layer: `key -> (value, freq)`, plus `freq -> doubly linked list of keys at that frequency`, plus a tracked `minFreq`. The two details that catch people: on a `get`, the key moves from bucket `f` to bucket `f+1` and bucket `f` may become empty, so `minFreq` needs updating; and ties *within* a frequency bucket are broken by LRU, which is why each bucket is itself a recency-ordered list rather than a set. See `problems/02-lfu-cache.cpp`.
 - *"Add a TTL per entry."* Expects the recognition that TTL and LRU are independent axes. Two viable designs: lazy expiry (check the deadline on read, treat an expired entry as a miss, which is cheap but lets dead entries occupy capacity) or an active structure (a min-heap or timing wheel keyed by deadline, plus a background sweeper). Redis does both — lazy expiry on access *and* a background sampling cycle — and saying so is a strong answer.
 - *"Would you actually implement this in production?"* The expected answer is no: use `std::list` with `splice` in C++, Caffeine on the JVM, `lru-cache` in Node, or Redis with an appropriate `maxmemory-policy`. Being able to say *why* the library version is better (no raw pointers, no copy-constructor footgun, tested concurrency, better admission policies) matters more than the ability to write it from scratch — while still being able to write it from scratch.
 - *"What is the memory overhead per entry, really?"* Expects an actual estimate rather than "`O(1)` per entry": two 8-byte pointers, plus the `unordered_map` node's bucket pointer and stored key, plus per-allocation allocator overhead, plus the map's bucket array amortized across entries — realistically 60–100 bytes for a tiny key/value. This is the number that makes Redis's decision obviously correct, and it is a good place to bring that up.

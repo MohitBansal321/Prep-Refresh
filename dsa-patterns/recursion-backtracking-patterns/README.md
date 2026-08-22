@@ -19,4 +19,4 @@ In practice Subsets is often the *base case* — Backtracking adds a validity ch
 1. **Subsets** — learn the include/exclude recursion tree (or iterative doubling) with no pruning first.
 2. **Backtracking** — add the constraint check and the undo step to the same tree shape.
 
-Both are built: **Backtracking** is a Full-tier module; **Subsets** is Compact-tier (README + code.cpp only). See [`../INDEX.md`](../INDEX.md) for details.
+Both are built as Full-tier modules. See [`../INDEX.md`](../INDEX.md) for details.
