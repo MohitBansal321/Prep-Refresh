@@ -6,31 +6,9 @@ Work through these in order. The goal is to build three reflexes: (1) recognizin
 
 ---
 
-## Check your own work
-
-Every exercise here has a runnable self-test in [exercises/](exercises/). Each one is a stub plus assertions — **the assertions are the specification, not the answer.** Fill in the stub, compile, and you get `[PASS]`/`[FAIL]` immediately, with no solution to peek at.
-
-```bash
-g++ -std=c++17 -Wall exercises/01-average-of-levels.cpp -o /tmp/ex01 && /tmp/ex01
-```
-
-Each file compiles as-is, so your first run gives you a failing baseline to work against. Graduated hints sit in each header comment — read them one at a time, and only when you are genuinely stuck.
-
-| Exercise | Self-test | Tests | The trap it hides |
-|----------|-----------|-------|-------------------|
-| Easy — Average of Levels | [01-average-of-levels.cpp](exercises/01-average-of-levels.cpp) | 6 | a level whose sum overflows a 32-bit accumulator |
-| Medium — Right Side View | [02-right-side-view.cpp](exercises/02-right-side-view.cpp) | 7 | the tree where walking `node->right` looks right and is wrong |
-| Hard — Serialize/Deserialize | [03-serialize-deserialize.cpp](exercises/03-serialize-deserialize.cpp) | 8 | two different trees that collide if you drop null placeholders |
-| Real-World — Tenant Rollout | [04-tenant-hierarchy-rollout.cpp](exercises/04-tenant-hierarchy-rollout.cpp) | 17 | counts your queries: one per **level**, not one per node |
-| Bonus — All Nodes Distance K | [05-all-nodes-distance-k.cpp](exercises/05-all-nodes-distance-k.cpp) | 10 | the oscillation you get the moment you add parent pointers |
-
-Two things the harness deliberately cannot do. It never checks *how* you got there — exercise 03 accepts any string format that round-trips, because the encoding is your design choice. And it cannot grade the **"Think about"** and **"Then answer"** prompts in each exercise below, or exercise 04's parts 2, 3 and 5. Those are written answers, and they are the part an interviewer actually probes. Green tests are the floor here, not the finish line.
-
----
-
 ## Easy — Average of Levels in Binary Tree
 
-**LeetCode 637 — Average of Levels in Binary Tree.** · Self-test: [exercises/01-average-of-levels.cpp](exercises/01-average-of-levels.cpp)
+**LeetCode 637 — Average of Levels in Binary Tree.**
 
 Given the root of a binary tree, return a `vector<double>` of the average value of the nodes on each level, ordered from the root's level downward.
 
@@ -42,7 +20,7 @@ Given the root of a binary tree, return a `vector<double>` of the average value 
 
 ## Medium — Binary Tree Right Side View
 
-**LeetCode 199 — Binary Tree Right Side View.** · Self-test: [exercises/02-right-side-view.cpp](exercises/02-right-side-view.cpp)
+**LeetCode 199 — Binary Tree Right Side View.**
 
 Imagine standing to the right of a binary tree and looking at it. Return the values of the nodes you can see, ordered top to bottom — that is, the **rightmost** node of every level.
 
@@ -54,7 +32,7 @@ Imagine standing to the right of a binary tree and looking at it. Return the val
 
 ## Hard — Serialize and Deserialize Binary Tree
 
-**LeetCode 297 — Serialize and Deserialize Binary Tree.** · Self-test: [exercises/03-serialize-deserialize.cpp](exercises/03-serialize-deserialize.cpp)
+**LeetCode 297 — Serialize and Deserialize Binary Tree.**
 
 Design an algorithm to encode an arbitrary binary tree into a single string, and another to decode that string back into the identical tree structure. Values may be negative; nodes may have one child or none.
 
@@ -65,8 +43,6 @@ Design an algorithm to encode an arbitrary binary tree into a single string, and
 ---
 
 ## Real-World Challenge — Tenant Hierarchy Config Rollout
-
-Self-test for parts 1 and 4: [exercises/04-tenant-hierarchy-rollout.cpp](exercises/04-tenant-hierarchy-rollout.cpp) — it counts your queries, so a per-node solution fails even when its output is correct. Parts 2, 3 and 5 are written answers.
 
 You own a NestJS service that manages a hierarchy of customer tenants: a parent enterprise account, its sub-accounts, their sub-accounts, and so on, stored in Postgres as an adjacency list (`tenants(id, parent_id, name)`). Product wants to roll a risky config change out **one hierarchy level at a time**, pausing between levels so an on-call engineer can inspect metrics and abort before the change reaches more customers.
 
@@ -86,7 +62,7 @@ You own a NestJS service that manages a hierarchy of customer tenants: a parent 
 
 ## Bonus Challenge — All Nodes Distance K in Binary Tree
 
-**LeetCode 863 — All Nodes Distance K in Binary Tree.** · Self-test: [exercises/05-all-nodes-distance-k.cpp](exercises/05-all-nodes-distance-k.cpp)
+**LeetCode 863 — All Nodes Distance K in Binary Tree.**
 
 Given the root of a binary tree, a target node, and an integer `k`, return the values of all nodes that are **exactly distance `k`** from the target node, where distance is the number of edges between two nodes — counted in *any* direction, up toward the root as well as down.
 
@@ -98,4 +74,4 @@ Given the root of a binary tree, a target node, and an integer `k`, return the v
 
 ---
 
-*Solutions are intentionally omitted, and that is not an inconvenience to work around — it is why the self-tests in [exercises/](exercises/) exist. Run them to find out whether you are right. If you are stuck, work through the graduated hints in the file header, then ask for a **hint or a review of your attempt** rather than a solution.*
+*Solutions are intentionally omitted. Ask for a specific exercise's solution if you want it walked through.*
