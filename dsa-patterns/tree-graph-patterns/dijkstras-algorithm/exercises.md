@@ -71,4 +71,4 @@ An `n x m` grid where each cell contains an arrow (1=right, 2=left, 3=down, 4=up
 
 ---
 
-*Solutions are intentionally omitted. Ask for a specific exercise's solution if you want it walked through.*
+*Solutions are intentionally omitted, on purpose — that is not a gap to route around. If stuck, ask for a hint or a review of your attempt, not the answer.*

@@ -16,8 +16,8 @@ flowchart TD
 
     Q2 -- No fixed window --> Q3{What kind of lookup<br/>do you actually need?}
 
-    Q3 -- "Max/min over ARBITRARY ranges [l..r]" --> SegTree[["Use Segment Tree / Fenwick Tree<br/>(see ../segment-tree-fenwick-tree/)"]]
-    Q3 -- "Running median / order statistic" --> TwoHeaps[["Use Two Heaps<br/>(see ../../searching-sorting-patterns/two-heaps/)"]]
+    Q3 -- "Max/min over ARBITRARY ranges [l..r]" --> SegTree[["Use Segment Tree / Fenwick Tree<br/>(see ../../segment-tree-fenwick-tree/)"]]
+    Q3 -- "Running median / order statistic" --> TwoHeaps[["Use Two Heaps<br/>(see ../../../searching-sorting-patterns/two-heaps/)"]]
     Q3 -- "'Have I seen value X before?' / complement search" --> HashMap[["Use Hash Map<br/>O(n) time, O(n) space"]]
 
     MonoStack --> Done([Monotonic Stack applies])
@@ -30,4 +30,4 @@ Start at the top and answer each diamond honestly before moving on. The **first 
 
 The **second fork** separates the two flavors of this module. A *fixed-size* window whose answer is max/min specifically is the **monotonic deque**: max/min cannot be maintained by a plain running variable because removing an element from the window may remove the current max, and there is no way to "un-add" it the way you would for a sum. If your running quantity *is* subtractable (sum, count, product-with-care), you do not need any structure at all — that is the ordinary Sliding Window pattern.
 
-The **third fork** catches the classic misapplications: arbitrary range-max queries belong to Segment Trees ([../segment-tree-fenwick-tree/](../segment-tree-fenwick-tree/)), running medians to Two Heaps ([../../searching-sorting-patterns/two-heaps/](../../searching-sorting-patterns/two-heaps/)), and pure value-existence lookups to a hash map. When unsure between the deque flavor and the general Sliding Window pattern, re-read the Similar Patterns section of this module's [README](../README.md).
+The **third fork** catches the classic misapplications: arbitrary range-max queries belong to Segment Trees ([../../segment-tree-fenwick-tree/](../../segment-tree-fenwick-tree/)), running medians to Two Heaps ([../../../searching-sorting-patterns/two-heaps/](../../../searching-sorting-patterns/two-heaps/)), and pure value-existence lookups to a hash map. When unsure between the deque flavor and the general Sliding Window pattern, re-read the Similar Patterns section of this module's [README](../README.md).

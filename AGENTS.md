@@ -16,10 +16,12 @@ Not a production codebase — read, run, and practice against, never deploy.
   `images/`). Revision tracker: `INDEX.md`.
 - `dsa-patterns/` — 33 C++17 DSA patterns across 8 families (array/string,
   linked-list, searching/sorting, tree/graph, recursion/backtracking, DP, greedy,
-  advanced DS). Three tiers: 17 Full (README+`code.cpp`+`exercises.md`+`cheatsheet.md`
-  +`images/`+`problems/`), 4 Partial, 12 Compact (tighter README). Revision tracker:
-  `INDEX.md`; quick lookup: `PATTERN-RECOGNITION-GUIDE.md`; walkthrough:
-  `LEARNING-PATHS.md` for newcomers.
+  advanced DS). Every pattern has README+`code.cpp`+`exercises.md`+`cheatsheet.md`
+  +`images/`+`problems/`; each README opens with a one-line summary, a runnable
+  snippet, and a "pick your depth" table pointing at the cheatsheet, the code, or
+  the full prose, so a reader is never forced through the whole file to find the
+  loop. Revision tracker: `INDEX.md`; quick lookup: `PATTERN-RECOGNITION-GUIDE.md`;
+  walkthrough: `LEARNING-PATHS.md` for newcomers.
 - `.agent/skills/` — OpenCode skills. Load with `/load <name>`:
   `design-patterns`, `js-fundamentals`, `js-ts-exercises` (the review-mode workflow
   below), `skill-creator`.

@@ -65,10 +65,10 @@ You maintain a microservices platform where each service declares which other se
 
 You are given an `m x n` grid where each cell is one of: `-1` (a wall), `0` (a gate), or `INF` (an empty room, represented by `2147483647`). Fill each empty room with the distance to its **nearest** gate. If a room cannot reach any gate, it should remain `INF`.
 
-**Task:** implement this as **multi-source BFS**, starting the queue with *every* gate cell simultaneously (distance 0) rather than running a separate single-source BFS from each gate one at a time — the same core idea as [problems/03-rotting-oranges.cpp](problems/03-rotting-oranges.cpp), generalized from "rot spreads to all neighbors" to "distance-to-nearest-gate spreads to all neighbors."
+**Task:** implement this as **multi-source BFS**, starting the queue with *every* gate cell simultaneously (distance 0) rather than running a separate single-source BFS from each gate one at a time — the same core idea as multi-source BFS's classic example (LeetCode 994, Rotting Oranges), generalized from "rot spreads to all neighbors" to "distance-to-nearest-gate spreads to all neighbors."
 
 **Then, generalize in writing (no code required):** explain precisely why starting BFS from *all* gates at once and letting them expand together gives the correct "nearest gate" distance for every room, whereas running `n` separate single-source BFS passes (one per gate) and taking the minimum at each cell would produce the *same* answer but cost strictly more work. Quantify the difference using the O(V + E) bound from the [README](README.md)'s Complexity section: what is each approach's total time complexity in terms of `V`, `E`, and the number of gates `k`?
 
 ---
 
-*Solutions are intentionally omitted. Ask for a specific exercise's solution if you want it walked through.*
+*Solutions are intentionally omitted, on purpose — that is not a gap to route around. If stuck, ask for a hint or a review of your attempt, not the answer.*

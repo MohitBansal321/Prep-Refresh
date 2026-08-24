@@ -57,6 +57,12 @@ class Trie {
 };
 ```
 
+## Diagrams
+
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart for deciding whether a problem is a Trie fit.
+- [images/flow-diagram.md](images/flow-diagram.md) — control flow of insert/search/prefix-check.
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of inserting `"apple"` then `"app"`, showing exactly which nodes get shared vs. newly allocated, and why `search("appl")` returns `false` even though that node exists.
+
 ## Complexity
 
 **Time:** `O(length)` per insert/search/prefix-check, where `length` is the string's length — independent of how many words are stored.

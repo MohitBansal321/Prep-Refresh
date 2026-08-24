@@ -7,7 +7,7 @@ This is the master index for the DSA patterns repo. Use it three ways:
 
 New here, or refreshing after a long break? [`LEARNING-PATHS.md`](./LEARNING-PATHS.md) has a specific walkthrough for how to use this index and the rest of the repo depending on where you're starting from — read that before diving into the tables below.
 
-All 33 patterns are built to the same **Full module** depth: README (full deep-dive) + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace diagrams) + `problems/` with 4 fully worked LeetCode solutions.
+All 33 patterns share the same module shape: README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace diagrams) + `problems/` with 4 fully worked LeetCode solutions. Every README now opens with a one-line summary, a runnable snippet, and a "pick your depth" table — some (the shorter, code-forward ones) stop there; others follow with a longer deep-dive. Either way, you never have to read the whole file to find the loop.
 
 Every `.cpp` file in the repo (165 total) compiles with `g++ -std=c++17 -Wall` and passes its own test assertions.
 

@@ -34,7 +34,7 @@ flowchart TD
 
 ## How to read it
 
-Start at the top and answer each diamond honestly before moving on — the most common mistake is jumping straight to a technique because the word "palindrome" appeared, without checking **how many strings** are involved. Two strings means LCS territory ([../longest-common-subsequence/](../longest-common-subsequence/)); the only bridge is the identity `LPS(s) = LCS(s, reverse(s))`, which is why the LCS exit still points back at this module.
+Start at the top and answer each diamond honestly before moving on — the most common mistake is jumping straight to a technique because the word "palindrome" appeared, without checking **how many strings** are involved. Two strings means LCS territory ([../../longest-common-subsequence/](../../longest-common-subsequence/)); the only bridge is the identity `LPS(s) = LCS(s, reverse(s))`, which is why the LCS exit still points back at this module.
 
 The **second fork** is contiguous vs gaps, and it decides everything downstream. Expansion walks *adjacent* characters outward from a center, so it physically cannot see a subsequence that skips characters — if gaps are allowed, expansion is simply the wrong tool no matter how you bend it. Conversely, interval DP handles both flavors (a boolean variant for substring questions, an integer variant for subsequence questions), so when in doubt or when you need a reusable table, interval DP is the safe choice.
 

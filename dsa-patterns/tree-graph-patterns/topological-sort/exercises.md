@@ -68,4 +68,4 @@ Given `n` courses and prerequisite relations, you may take **any number** of cou
 
 ---
 
-*Solutions are intentionally omitted. Ask for a specific exercise's solution if you want it walked through.*
+*Solutions are intentionally omitted, on purpose — that is not a gap to route around. If stuck, ask for a hint or a review of your attempt, not the answer.*
