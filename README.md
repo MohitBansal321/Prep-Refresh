@@ -8,7 +8,7 @@ against, not deployed.
 
 | Folder | What it's for |
 |--------|----------------|
-| [js/](js/) | Standalone `.js` files covering core JavaScript fundamentals |
+| [js/](js/) | 12 core-JavaScript modules (concepts → runnable code → exercises → cheatsheets), with revision tracker and interview quick-recall guide |
 | [typescript-basics/](typescript-basics/) | TypeScript language features (generics, classes, access modifiers, utility types, etc.) that don't come up often enough to become muscle memory |
 | [sys-design/](sys-design/) | All 15 GoF design patterns (creational, structural, behavioral), each as a full module: `README.md` + `code.ts` + `exercises.md` + `cheatsheet.md` |
 | [dsa-patterns/](dsa-patterns/) | Interview-style DSA patterns in C++, organized by the 8 families (array/string, linked list, trees/graphs, DP, greedy, etc.) rather than by individual problem |

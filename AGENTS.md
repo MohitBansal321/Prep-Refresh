@@ -5,8 +5,10 @@ Not a production codebase — read, run, and practice against, never deploy.
 
 ## Repo layout
 
-- `js/` — 4 standalone `.js` files (primitives, objects/refs, immutability, `undefined`).
-  Run with `node js/<file>.js`. No modules/config; each file is self-contained.
+- `js/` — **12 JS topics** as full modules (`README.md` + runnable `code.js` +
+  solution-free `exercises.md` + `cheatsheet.md`). Run a module with
+  `node js/<topic>/code.js`. Trackers: `INDEX.md`, quick lookup:
+  `QUICK-RECALL-GUIDE.md` (interview question → topic).
 - `typescript-basics/` — 7 TS topics, full module each
   (`README.md` + `cheatsheet.md` + `code.ts`).
 - `sys-design/` — all **15 GoF patterns** (5 creational, 5 behavioral, 5 structural),

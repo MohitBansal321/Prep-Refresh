@@ -1,5 +1,37 @@
 # Tree BFS
 
+> **In one line:** snapshot `q.size()` *before* consuming the queue — that count is exactly the current level, because children pushed during the loop are invisible to it.
+
+```cpp
+while (!q.empty()) {
+  size_t level_size = q.size();        // <-- the whole pattern is this line
+  std::vector<int> level_values;
+
+  for (size_t i = 0; i < level_size; ++i) {
+    TreeNode* node = q.front();
+    q.pop();
+    level_values.push_back(node->val);
+
+    if (node->left  != nullptr) q.push(node->left);   // next level
+    if (node->right != nullptr) q.push(node->right);
+  }
+  result.push_back(std::move(level_values));
+}
+```
+
+**O(n)** time · **O(w)** space (w = widest level). Full runnable version, with `minDepth` and the edge cases: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — learning it | box above → [images/trace-diagram.md](images/trace-diagram.md) → [code.cpp](code.cpp) → [problems/](problems/) |
+| **40 min** — first exposure | read on ↓ then [exercises.md](exercises.md) |
+| **hands on keyboard** | [exercises/](exercises/) — 5 stub files with assertions and hints, no solutions. Compile and you get `[PASS]`/`[FAIL]` straight away. |
+
+---
+
 ## Intent
 
 Visit every node of a tree **level by level** — all nodes at depth 0, then all nodes at depth 1, then all at depth 2, and so on — using a queue, whenever a problem's answer depends on grouping nodes by their distance from the root rather than on the paths between them.
