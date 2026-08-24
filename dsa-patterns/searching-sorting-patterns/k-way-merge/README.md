@@ -1,5 +1,40 @@
 # K-way Merge
 
+
+> **In one line:** seed a min-heap with the first element of every list; repeatedly pop the smallest, and push the next element from that *same* source list.
+
+```cpp
+using HeapEntry = std::tuple<int, int, int>;   // {value, list_index, element_index}
+using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>>;
+
+MinHeap heap;
+for (int i = 0; i < k; ++i) {
+  if (!lists[i].empty()) heap.emplace(lists[i][0], i, 0);   // seed with each list's first element
+}
+
+while (!heap.empty()) {
+  const HeapEntry top = heap.top(); heap.pop();
+  const int value = std::get<0>(top), list_index = std::get<1>(top), element_index = std::get<2>(top);
+  result.push_back(value);
+
+  int next_index = element_index + 1;
+  if (next_index < (int)lists[list_index].size()) {
+    heap.emplace(lists[list_index][next_index], list_index, next_index);   // replenish from the SAME list
+  }
+}
+```
+
+**O(n log k)** time (n total elements, k lists) · **O(k)** space for the heap. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Merge K already-sorted sequences into one fully sorted sequence — or find the k-th smallest element across all of them — in O(n log k) time, by using a min-heap of size K that always knows, in O(log k), which of the K current "front" candidates is smallest.

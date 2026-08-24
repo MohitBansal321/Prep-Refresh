@@ -1,5 +1,7 @@
 # Trie (Prefix Tree)
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Store strings character-by-character in a tree so prefix search, autocomplete, and dictionary lookups run in `O(length)`, independent of how many words are in the dictionary.

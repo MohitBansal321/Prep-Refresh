@@ -1,5 +1,34 @@
 # Backtracking
 
+
+> **In one line:** choose a value for the next decision slot, recurse, then undo the choice before trying the next candidate — skipping (pruning) any candidate that cannot possibly lead to a valid solution.
+
+```cpp
+void backtrack(int n, int row, std::vector<int>& colOfRow,
+               std::vector<std::vector<std::string>>& solutions) {
+  if (row == n) { solutions.push_back(buildBoard(colOfRow, n)); return; }
+
+  for (int col = 0; col < n; ++col) {
+    if (!isSafe(colOfRow, row, col)) continue;   // PRUNE: skip without recursing
+
+    colOfRow[row] = col;                          // 1) CHOOSE
+    backtrack(n, row + 1, colOfRow, solutions);    // 2) RECURSE
+    colOfRow[row] = -1;                            // 3) UNDO — next sibling must see a clean slate
+  }
+}
+```
+
+Exponential in the worst case (N-Queens: bounded by O(n!)) — pruning via `isSafe` is what keeps it tractable in practice. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Build a solution incrementally, one choice at a time, and the instant a partial choice can no longer lead anywhere valid, undo it ("backtrack") and try the next option — instead of exploring every possibility to full depth before checking whether any of it was ever valid.

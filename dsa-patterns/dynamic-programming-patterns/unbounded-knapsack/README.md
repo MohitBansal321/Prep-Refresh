@@ -1,5 +1,34 @@
 # Unbounded Knapsack
 
+
+> **In one line:** the same table shape as 0/1 Knapsack, but each coin/item can be reused any number of times — shown here as coin-change, minimizing the count of coins that sum to a target amount.
+
+```cpp
+const int UNREACHABLE = INT_MAX / 2;
+std::vector<int> dp(amount + 1, UNREACHABLE);
+dp[0] = 0;   // base case: 0 coins needed to make amount 0
+
+for (int w = 1; w <= amount; ++w) {
+  for (int c : coins) {
+    if (c <= w && dp[w - c] != UNREACHABLE) {
+      dp[w] = std::min(dp[w], dp[w - c] + 1);   // reuse coin c any number of times
+    }
+  }
+}
+return dp[amount] == UNREACHABLE ? -1 : dp[amount];
+```
+
+**O(amount · coins)** time · **O(amount)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Given a capacity (or an exact target sum) and a set of items that can each be reused an **unlimited** number of times, compute the best achievable value, count, or minimum count — using a recurrence that is a single, deliberate change from 0/1 Knapsack ([../0-1-knapsack/](../0-1-knapsack/)): after taking an item, you are allowed to consider taking that **same item again**.

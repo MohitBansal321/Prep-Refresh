@@ -1,5 +1,35 @@
 # Sliding Window Pattern
 
+
+> **In one line:** grow the window from the right; shrink it from the left only while it still satisfies the condition — every element is added once and removed once, so the whole scan is O(n) despite the nested loop.
+
+```cpp
+int left = 0;
+long long windowSum = 0;
+int best = INT_MAX;
+
+for (int right = 0; right < n; ++right) {
+  windowSum += arr[right];                 // grow: bring the new element in
+
+  while (windowSum >= target) {            // shrink while still valid — we want the SHORTEST
+    best = std::min(best, right - left + 1);
+    windowSum -= arr[left];
+    ++left;
+  }
+}
+```
+
+**O(n)** time · **O(1)** space (a running sum; a frequency-map variant is O(k) for k distinct keys). Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Compute something about every contiguous subarray or substring of an array/string in a single linear pass, by maintaining a **window** `[left, right]` and a small running aggregate that is updated incrementally as the window moves — instead of re-examining every element of every window from scratch.

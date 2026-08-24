@@ -1,5 +1,33 @@
 # Fast & Slow Pointers
 
+
+> **In one line:** advance one pointer one step and another two steps every iteration — if the list has a cycle, the fast pointer eventually laps the slow one inside it.
+
+```cpp
+bool has_cycle(Node* head) {
+  Node* slow = head;
+  Node* fast = head;
+
+  while (fast != nullptr && fast->next != nullptr) {   // guard BOTH before dereferencing twice
+    slow = slow->next;
+    fast = fast->next->next;
+    if (slow == fast) return true;   // fast lapped slow inside a cycle
+  }
+  return false;   // fast (or fast->next) hit nullptr: the list terminates
+}
+```
+
+**O(n)** time · **O(1)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Detect a cycle in a sequence, or find its midpoint, by walking two pointers through it at different speeds — using O(1) extra memory instead of recording every value you have already seen.

@@ -1,5 +1,32 @@
 # Tree DFS
 
+
+> **In one line:** recurse into each child, carrying state built so far (here, a path string) down through the call — and act on it once you hit a leaf.
+
+```cpp
+void collectPaths(TreeNode* node, std::string pathSoFar, std::vector<std::string>& results) {
+  if (!node) return;
+  pathSoFar += std::to_string(node->val);
+
+  bool isLeaf = (!node->left && !node->right);   // BOTH children null, not just one
+  if (isLeaf) { results.push_back(pathSoFar); return; }
+
+  if (node->left)  collectPaths(node->left,  pathSoFar + "->", results);
+  if (node->right) collectPaths(node->right, pathSoFar + "->", results);
+}
+```
+
+**O(n)** time · **O(h)** space (recursion depth = tree height). Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Explore a binary tree one branch at a time, all the way to a leaf, before backtracking to try the next branch — carrying state (a running sum, a path so far) down the recursive call stack rather than tracking it in an explicit queue.

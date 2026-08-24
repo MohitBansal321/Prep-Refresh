@@ -1,5 +1,36 @@
 # Graph BFS/DFS
 
+
+> **In one line:** Tree BFS's exact queue-and-frontier mechanic, now guarding against revisiting a node — mark a node visited the moment it's *enqueued*, not when it's popped, since a graph (unlike a tree) can offer more than one path to the same node.
+
+```cpp
+std::vector<int> dist(n, -1);           // -1 means "not yet reached"
+std::queue<int> frontier;
+dist[src] = 0;                          // mark visited THE MOMENT we enqueue
+frontier.push(src);
+
+while (!frontier.empty()) {
+  int node = frontier.front(); frontier.pop();
+  for (int neighbor : adj[node]) {
+    if (dist[neighbor] == -1) {               // not yet discovered
+      dist[neighbor] = dist[node] + 1;
+      frontier.push(neighbor);                // mark-on-enqueue, not on-pop
+    }
+  }
+}
+```
+
+**O(V + E)** time · **O(V)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Traverse a general graph — one that may contain cycles and have no single root — using the same two traversal shapes as tree BFS/DFS, but guarded by an explicit `visited` marker so the traversal terminates and either the shortest hop-count (BFS) or reachability/structure (DFS) comes out correct.

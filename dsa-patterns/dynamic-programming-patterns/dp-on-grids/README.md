@@ -1,5 +1,7 @@
 # DP on Grids
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Fill a 2D table matching the shape of an input grid, where each cell's answer depends only on the cell above and/or to its left — turning path-counting and min/max-cost-path problems into a single pass instead of exponential path enumeration.

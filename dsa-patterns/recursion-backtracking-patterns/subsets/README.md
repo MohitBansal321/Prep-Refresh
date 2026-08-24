@@ -1,5 +1,33 @@
 # Subsets
 
+
+> **In one line:** for each element, recurse once *without* it and once *with* it — the recursion tree's `2^n` leaves are exactly the `2^n` subsets.
+
+```cpp
+void subsetsRecursiveHelper(const std::vector<int>& nums, size_t index,
+                            std::vector<int>& current,
+                            std::vector<std::vector<int>>& result) {
+  if (index == nums.size()) { result.push_back(current); return; }
+
+  subsetsRecursiveHelper(nums, index + 1, current, result);   // exclude nums[index]
+
+  current.push_back(nums[index]);                              // include it, recurse, undo
+  subsetsRecursiveHelper(nums, index + 1, current, result);
+  current.pop_back();
+}
+```
+
+**O(2ⁿ)** time (one leaf per subset) · **O(n)** recursion depth. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Systematically enumerate every subset (or combination, or permutation) of a given set of elements, using either an iterative "double the results so far" strategy or a recursive "include or exclude each element" strategy — with no pruning, because every possible answer is valid output.

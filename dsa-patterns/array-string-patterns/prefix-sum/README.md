@@ -1,5 +1,32 @@
 # Prefix Sum
 
+
+> **In one line:** precompute running totals once; any range sum afterward is a single subtraction — O(1), no matter how wide the range.
+
+```cpp
+void build(const std::vector<int>& arr) {
+  prefix_.assign(arr.size() + 1, 0LL);
+  for (size_t i = 1; i <= arr.size(); ++i) {
+    prefix_[i] = prefix_[i - 1] + arr[i - 1];
+  }
+}
+
+long long rangeSum(size_t i, size_t j) const {   // sum of arr[i..j] inclusive
+  return prefix_[j + 1] - prefix_[i];
+}
+```
+
+**O(n)** to build · **O(1)** per query · **O(n)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Precompute a running total over an array once, so that the sum of *any* contiguous range can be answered in O(1) time afterward, instead of re-scanning that range on every query.

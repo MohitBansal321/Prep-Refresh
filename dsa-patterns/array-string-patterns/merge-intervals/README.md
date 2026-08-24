@@ -1,5 +1,36 @@
 # Merge Intervals
 
+
+> **In one line:** sort by start time, then sweep once: keep extending the current interval while the next one overlaps, flush and start fresh the moment it doesn't.
+
+```cpp
+std::sort(intervals.begin(), intervals.end(),
+          [](auto& a, auto& b) { return a.first < b.first; });
+
+std::pair<int, int> current = intervals[0];
+for (size_t i = 1; i < intervals.size(); ++i) {
+  const auto& next = intervals[i];
+  if (next.first <= current.second) {
+    current.second = std::max(current.second, next.second);   // overlap: extend
+  } else {
+    merged.push_back(current);   // no overlap: flush, start a new "current"
+    current = next;
+  }
+}
+merged.push_back(current);   // the loop never flushes the final one — do it here
+```
+
+**O(n log n)** time (the sort dominates) · **O(n)** space for the output. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Sort a list of `[start, end]` intervals by start time and sweep through them exactly once, merging any that overlap — turning what looks like an all-pairs comparison problem into a single linear pass after one sort.

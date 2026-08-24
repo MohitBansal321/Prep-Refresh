@@ -1,5 +1,35 @@
 # Kadane's Algorithm
 
+
+> **In one line:** track the best sum of a subarray *ending exactly at* index i, restarting the running sum whenever it goes negative — a negative prefix can only drag down whatever follows it.
+
+```cpp
+long long current_sum = nums[0];
+long long best_sum = nums[0];
+
+for (size_t i = 1; i < nums.size(); ++i) {
+  // Extend the run, or abandon it and restart at nums[i] alone — restarting
+  // is better exactly when the carried-in run was negative.
+  if (current_sum + nums[i] >= nums[i]) {
+    current_sum += nums[i];
+  } else {
+    current_sum = nums[i];
+  }
+  best_sum = std::max(best_sum, current_sum);   // checked every iteration, not just on restart
+}
+```
+
+**O(n)** time, one pass · **O(1)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Find the maximum-sum contiguous subarray in a single linear pass, by tracking only the best sum ending at the current position and discarding it the moment it stops helping future choices.

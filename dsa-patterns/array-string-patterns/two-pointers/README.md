@@ -1,5 +1,35 @@
 # Two Pointers
 
+
+> **In one line:** start one pointer at each end and close the gap, always moving the pointer that provably cannot be part of a better answer.
+
+```cpp
+size_t left = 0, right = heights.size() - 1;
+long long best = 0;
+
+while (left < right) {
+  long long width = static_cast<long long>(right - left);
+  long long shorter_wall = std::min(heights[left], heights[right]);
+  best = std::max(best, width * shorter_wall);
+
+  // Move the SHORTER wall: keeping it in place can never beat what we
+  // already have, since width can only shrink from here.
+  if (heights[left] < heights[right]) ++left;
+  else --right;
+}
+```
+
+**O(n)** time, one pass · **O(1)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Replace a nested-loop scan over pairs (or triplets) of array elements with a single linear pass, by walking two indices through the array according to a rule that never needs to revisit a discarded position.

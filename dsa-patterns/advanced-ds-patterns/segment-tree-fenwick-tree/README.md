@@ -1,5 +1,7 @@
 # Segment Tree / Fenwick Tree (BIT)
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Support both range queries (sum/min/max over `[i, j]`) AND point updates in `O(log n)` each — for cases where a plain prefix-sum array can't handle updates efficiently, since any update to a prefix-sum array forces an `O(n)` rebuild of everything after it.

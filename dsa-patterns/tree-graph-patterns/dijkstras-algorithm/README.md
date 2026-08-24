@@ -1,5 +1,7 @@
 # Dijkstra's Algorithm (Weighted Shortest Path)
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Find the shortest-cost path from a single source to every other node in a graph whose edges carry **non-negative weights** — the case plain BFS cannot handle, because BFS's "shortest = fewest hops" guarantee only holds when every edge costs exactly 1.

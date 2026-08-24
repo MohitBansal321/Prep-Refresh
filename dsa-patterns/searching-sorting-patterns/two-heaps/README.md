@@ -1,5 +1,34 @@
 # Two Heaps
 
+
+> **In one line:** split the stream into a max-heap of the lower half and a min-heap of the upper half, rebalancing sizes after every insert — the median is then O(1) to read off the top(s).
+
+```cpp
+void addNum(int num) {
+  if (low_.empty() || num <= low_.top()) low_.push(num);   // route into the correct half
+  else high_.push(num);
+
+  if (low_.size() > high_.size() + 1) {        // rebalance: keep sizes within 1 of each other
+    high_.push(low_.top()); low_.pop();
+  } else if (high_.size() > low_.size()) {
+    low_.push(high_.top()); high_.pop();
+  }
+}
+// low_ is a MAX-heap (top = largest of the lower half); high_ is a MIN-heap
+// (top = smallest of the upper half). Odd total: low_ holds the extra element.
+```
+
+**O(log n)** per insert · **O(1)** per median query · **O(n)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Track a running median (or a similar "middle" order-statistic) of a growing set of numbers in O(log n) per insert, by splitting the data across two heaps that each hold one half of it.

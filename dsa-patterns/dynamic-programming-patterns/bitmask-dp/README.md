@@ -1,5 +1,7 @@
 # Bitmask DP
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Extend DP's "table of subproblems" idea to state that depends on **which specific subset** of a small set of items has been used so far — not just how many, or which prefix — by encoding that subset as the bits of an integer, making `2^n` distinct states enumerable and indexable in `O(1)`.

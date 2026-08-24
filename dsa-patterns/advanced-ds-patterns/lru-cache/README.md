@@ -1,5 +1,41 @@
 # LRU Cache (Design With Data Structures)
 
+
+> **In one line:** a hash map for O(1) lookup plus a doubly linked list for O(1) reordering — every access unlinks a node and re-inserts it at the front; eviction removes whatever sits at the tail.
+
+```cpp
+int get(int key) {
+  auto it = map_.find(key);
+  if (it == map_.end()) return -1;
+  unlink(it->second);
+  pushFront(it->second);          // touched: move to the front (most recently used)
+  return it->second->value;
+}
+
+void put(int key, int value) {
+  auto it = map_.find(key);
+  if (it != map_.end()) { it->second->value = value; unlink(it->second); pushFront(it->second); return; }
+  if (static_cast<int>(map_.size()) == capacity_) {
+    Node* lru = tail_->prev;      // the LEAST recently used node sits at the tail
+    unlink(lru); map_.erase(lru->key); delete lru;
+  }
+  Node* fresh = new Node{key, value, nullptr, nullptr};
+  pushFront(fresh);
+  map_[key] = fresh;
+}
+```
+
+**O(1)** for both `get` and `put` · **O(capacity)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Support `get(key)` and `put(key, value)` in `O(1)` each, while automatically evicting the **least recently used** entry once the cache is full — the canonical "design a data structure" interview question, and the template for a whole family of similar design problems (LFU Cache, design a browser history, design a rate limiter).

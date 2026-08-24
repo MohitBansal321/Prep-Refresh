@@ -1,5 +1,35 @@
 # Union Find (Disjoint Set)
 
+
+> **In one line:** `find()` walks up to a node's root, flattening the path as it unwinds; `unionSets()` attaches the shallower tree under the deeper one — together they answer \"are these connected?\" in near-O(1), without ever walking an edge list.
+
+```cpp
+int find(int x) {
+  if (parent_[x] != x) {
+    parent_[x] = find(parent_[x]);   // recurse to the root, then flatten (path compression)
+  }
+  return parent_[x];
+}
+
+bool unionSets(int x, int y) {
+  int root_x = find(x), root_y = find(y);
+  if (root_x == root_y) return false;   // already connected — union would be a no-op / cycle
+  // ...attach the shallower root under the deeper one (union by rank) — see code.cpp
+  return true;
+}
+```
+
+**O(1)** amortized per operation (with union-by-rank + path compression) · **O(n)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Track which elements belong to the same connected group, supporting near-`O(1)` amortized "are these connected?" and "merge these two groups" operations, without ever needing to traverse the underlying graph's edges.

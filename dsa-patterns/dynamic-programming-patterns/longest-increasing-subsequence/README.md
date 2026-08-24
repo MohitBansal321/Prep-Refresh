@@ -1,5 +1,33 @@
 # Longest Increasing Subsequence (LIS)
 
+
+> **In one line:** `dp[i]` = length of the longest increasing subsequence *ending exactly at* `i` — look back at every earlier smaller element and extend its best.
+
+```cpp
+std::vector<int> dp(n, 1);   // every single element is a subsequence of length 1
+int best = 1;
+
+for (size_t i = 1; i < n; ++i) {
+  for (size_t j = 0; j < i; ++j) {
+    if (nums[j] < nums[i]) {
+      dp[i] = std::max(dp[i], dp[j] + 1);   // place nums[i] after the subsequence ending at j
+    }
+  }
+  best = std::max(best, dp[i]);
+}
+```
+
+**O(n²)** for this version (shown here) · an O(n log n) patience-sorting variant lives alongside it in `code.cpp`. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Find the length (or the actual elements) of the longest subsequence of an array that is strictly increasing — not necessarily contiguous — using either an intuitive `O(n^2)` DP or a much sharper `O(n log n)` technique borrowed from a card-sorting trick called patience sorting.

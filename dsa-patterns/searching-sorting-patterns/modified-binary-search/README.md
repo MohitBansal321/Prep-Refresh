@@ -1,5 +1,34 @@
 # Modified Binary Search
 
+
+> **In one line:** the same `lo` / `hi` / `mid` halving as plain binary search, but the branch that decides which half to keep is rewritten around the problem's extra twist — here, which half is still sorted after a rotation.
+
+```cpp
+while (lo <= hi) {
+  int mid = lo + (hi - lo) / 2;
+  if (nums[mid] == target) return mid;
+
+  if (nums[lo] <= nums[mid]) {                         // left half is the sorted one
+    if (nums[lo] <= target && target < nums[mid]) hi = mid - 1;   // target's range is on the left
+    else lo = mid + 1;
+  } else {                                              // right half is the sorted one
+    if (nums[mid] < target && target <= nums[hi]) lo = mid + 1;
+    else hi = mid - 1;
+  }
+}
+```
+
+**O(log n)** time · **O(1)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Generalize classic binary search's "halve the search space" idea from a narrow "find this exact value" tool into a general technique for finding boundaries, first/last occurrences, and target values inside rotated or otherwise piecewise-sorted arrays.

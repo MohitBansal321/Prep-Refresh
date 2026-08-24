@@ -1,5 +1,7 @@
 # Palindromic Subsequence / Substring
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Find or count palindromic structures within a single string, using either expand-around-center (for contiguous substrings) or interval DP (for both substrings and non-contiguous subsequences).

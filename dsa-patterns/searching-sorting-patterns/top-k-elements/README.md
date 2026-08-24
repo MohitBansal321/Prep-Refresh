@@ -1,5 +1,31 @@
 # Top "K" Elements
 
+
+> **In one line:** keep a heap of exactly size `k`, evicting the weakest candidate every time a new one arrives — a **min-heap** for \"top K largest\" (the weakest of the K is the smallest), inverted for \"top K smallest.\"
+
+```cpp
+std::priority_queue<T, std::vector<T>, std::greater<T>> minHeap;
+
+for (const T& value : nums) {
+  minHeap.push(value);
+  if (static_cast<int>(minHeap.size()) > k) {
+    minHeap.pop();   // evict the current smallest of the top-K-so-far
+  }
+}
+// minHeap now holds exactly the K largest elements (unsorted among themselves).
+```
+
+**O(n log k)** time · **O(k)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Find the K largest, K smallest, or K most-frequent elements out of a much bigger collection by maintaining a heap of exactly size K, instead of sorting everything.

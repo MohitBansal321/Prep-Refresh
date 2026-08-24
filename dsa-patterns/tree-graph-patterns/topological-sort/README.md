@@ -1,5 +1,35 @@
 # Topological Sort
 
+
+> **In one line:** Kahn's algorithm: repeatedly peel off nodes with zero remaining prerequisites, decrementing their neighbours' in-degree as they're removed — if some nodes never reach in-degree 0, the graph has a cycle.
+
+```cpp
+std::queue<int> readyQueue;
+for (int node = 0; node < numNodes; ++node) {
+  if (inDegree[node] == 0) readyQueue.push(node);   // no prerequisites: safe to place first
+}
+
+while (!readyQueue.empty()) {
+  int current = readyQueue.front(); readyQueue.pop();
+  order.push_back(current);
+  for (int neighbor : adj[current]) {
+    if (--inDegree[neighbor] == 0) readyQueue.push(neighbor);   // one fewer unmet prerequisite
+  }
+}
+bool hasCycle = order.size() != static_cast<size_t>(numNodes);   // some nodes never got placed
+```
+
+**O(V + E)** time · **O(V + E)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Produce a linear ordering of the nodes of a directed graph such that every directed edge `u -> v` places `u` before `v` in the output — and detect, rather than silently mis-order, the case where no such ordering exists.

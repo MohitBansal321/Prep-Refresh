@@ -1,5 +1,33 @@
 # Greedy
 
+
+> **In one line:** sort by end time, then greedily keep any interval whose start doesn't overlap the last one kept — keeping the earliest-ending option always leaves the most room for what comes after.
+
+```cpp
+std::sort(intervals.begin(), intervals.end(),
+          [](auto& a, auto& b) { return a.second < b.second; });   // sort by END time
+
+int count = 0;
+int lastEnd = INT_MIN;
+for (const auto& interval : intervals) {
+  if (interval.first >= lastEnd) {   // no overlap with the last one KEPT
+    ++count;
+    lastEnd = interval.second;
+  }
+}
+```
+
+**O(n log n)** time (the sort dominates) · **O(1)** extra space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Make the locally-optimal choice at each step — usually after sorting by some key — and prove that choice never needs to be reconsidered, rather than exploring both "take it" and "skip it" the way Dynamic Programming does.

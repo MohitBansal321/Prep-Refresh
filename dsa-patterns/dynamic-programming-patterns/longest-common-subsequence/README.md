@@ -1,5 +1,34 @@
 # Longest Common Subsequence (LCS)
 
+
+> **In one line:** `dp[i][j]` = LCS length of the first `i` and first `j` characters — extend the diagonal on a match, else take the better of dropping one character from either side.
+
+```cpp
+std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+
+for (size_t i = 1; i <= n; ++i) {
+  for (size_t j = 1; j <= m; ++j) {
+    if (a[i - 1] == b[j - 1]) {
+      dp[i][j] = dp[i - 1][j - 1] + 1;              // extend the diagonal match
+    } else {
+      dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);  // best of dropping one side
+    }
+  }
+}
+return dp[n][m];
+```
+
+**O(n·m)** time and space, for strings of length n and m. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Compare two sequences by building a 2D table where each cell holds the best answer for a *pair of prefixes* (the first `i` elements of one sequence, the first `j` of the other), so that overlapping subproblems are computed once and reused instead of recomputed exponentially many times.

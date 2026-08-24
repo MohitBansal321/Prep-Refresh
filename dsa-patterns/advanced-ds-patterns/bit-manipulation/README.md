@@ -1,5 +1,7 @@
 # Bit Manipulation
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Use XOR/AND/OR/shift tricks to solve problems (single unpaired number, subset/mask generation, counting set bits) in `O(1)` extra space, without any auxiliary data structure.

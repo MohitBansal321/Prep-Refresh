@@ -1,5 +1,34 @@
 # In-place Reversal
 
+
+> **In one line:** walk the list once; at each node, save `next` before overwriting the pointer to point backwards, then advance both `prev` and `curr`.
+
+```cpp
+ListNode* reverseList(ListNode* head) {
+  ListNode* prev = nullptr;
+  ListNode* curr = head;
+
+  while (curr != nullptr) {
+    ListNode* next = curr->next;   // save before we overwrite curr->next
+    curr->next = prev;             // rewire this node to point backwards
+    prev = curr;
+    curr = next;
+  }
+  return prev;   // curr is nullptr; prev now stands on the new head
+}
+```
+
+**O(n)** time · **O(1)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Reverse a linked list — the whole thing, a sub-range of it, or consecutive groups of k nodes — by rewiring existing `next` pointers in a single pass, using O(1) extra memory instead of building a new list.

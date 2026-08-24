@@ -1,5 +1,33 @@
 # 0/1 Knapsack
 
+
+> **In one line:** `dp[i][w]` = best value using the first `i` items within capacity `w` — either skip item `i`, or take it and add its value to the best answer for the remaining capacity. Each item is used at most once.
+
+```cpp
+std::vector<std::vector<int>> dp(n + 1, std::vector<int>(capacity + 1, 0));
+
+for (int i = 1; i <= n; ++i) {
+  for (int w = 0; w <= capacity; ++w) {
+    dp[i][w] = dp[i - 1][w];                          // skip item i-1
+    if (weights[i - 1] <= w) {
+      dp[i][w] = std::max(dp[i][w], dp[i - 1][w - weights[i - 1]] + values[i - 1]);   // take it
+    }
+  }
+}
+return dp[n][capacity];
+```
+
+**O(n · capacity)** time and space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Choose a subset of items, each usable **at most once**, to maximize total value while never exceeding a fixed capacity constraint.

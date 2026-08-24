@@ -1,5 +1,38 @@
 # Cyclic Sort
 
+
+> **In one line:** swap each value into its home index (`v - 1`) until every in-range slot holds its correct value — no comparisons, no extra array.
+
+```cpp
+void cyclic_sort(std::vector<int>& nums) {
+  const int n = static_cast<int>(nums.size());
+  int i = 0;
+
+  while (i < n) {
+    const int correct_index = nums[i] - 1;          // home for value v is v-1
+    const bool in_range = nums[i] >= 1 && nums[i] <= n;
+
+    if (in_range && nums[i] != nums[correct_index]) {
+      std::swap(nums[i], nums[correct_index]);
+      // do NOT advance i: re-check whatever just landed here
+    } else {
+      ++i;   // out of range, already home, or a duplicate — move on
+    }
+  }
+}
+```
+
+**O(n)** time (each swap places at least one value home for good) · **O(1)** space. Full runnable version: [code.cpp](code.cpp)
+
+### Pick your depth
+
+| Time | Path |
+|------|------|
+| **5 min** — refresher | [cheatsheet.md](cheatsheet.md) → answer its recall questions from memory |
+| **20 min** — never seen this before | the code above → run [code.cpp](code.cpp) yourself → [problems/](problems/) |
+| **40 min** — want the *why* | read on ↓ for the reasoning and tradeoffs, then [exercises.md](exercises.md) |
+
+---
 ## Intent
 
 Place every value that belongs to a known, bounded index range directly at its "home" index in a single in-place pass, so that any slot whose value does not match its expected value exposes a missing, duplicate, or misplaced number — in O(n) time and O(1) extra space.

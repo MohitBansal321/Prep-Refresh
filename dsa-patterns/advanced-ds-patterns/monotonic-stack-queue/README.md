@@ -1,5 +1,7 @@
 # Monotonic Stack/Queue
 
+> **5-min refresher instead?** [cheatsheet.md](cheatsheet.md) has the one-table summary and recall questions.
+
 ## Intent
 
 Keep a stack (or deque) whose elements stay in strictly increasing or decreasing order, popping elements that can never be part of the answer again, to answer "next greater/smaller element" and sliding-window-max/min questions in `O(n)` total instead of `O(n^2)`.
