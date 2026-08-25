@@ -64,8 +64,8 @@ The interview framing (LeetCode 146) is: implement a class with a fixed `capacit
 ### Why is this problem difficult?
 
 - **Neither of the two obvious structures can answer both questions.** A hash map answers "where is this key" in `O(1)` and has, by construction, *no* notion of order — `std::unordered_map`'s iteration order is an artifact of bucket layout and rehashing, and carries no information about access time at all. A list or array answers "what is at the end" in `O(1)` and has *no* notion of keyed lookup — finding a given key means a linear scan. Each structure is complete for one question and useless for the other.
-- **A read has to mutate the structure.** This is the detail that surprises people. In a normal data structure, `get` is a pure query. In an LRU cache, `get` is a *write*: it must move the touched entry to the most-recently-used position. That single fact is responsible for most of LRU's real-world problems — it makes reads contend on shared state (which is why Postgres does not use LRU for its buffer pool; see Real Interview/Production Examples).
-- **Removing an entry from the middle of a sequence in `O(1)` needs the right kind of sequence.** On a `std::vector`, erasing from the middle shifts every following element: `O(n)`. On a *singly* linked list, unlinking a node requires its predecessor, which means a scan from the head: `O(n)`. Only a **doubly** linked list lets you unlink a node you already hold a pointer to in genuinely constant time, because the node itself knows both of its neighbours.
+- **A read has to mutate the structure.** This is the detail that surprises people. In a normal data structure, `get` is a pure query. In an LRU cache, `get` is a *write*: it must move the touched entry to the most-recently-used position. That single fact is responsible for most of LRU's real-world problems — it makes reads contend on shared state (which is why Postgres does not use LRU for its buffer pool; see Where This Shows Up).
+- **Removing an entry from the middle of a sequence in `O(1)` needs the right kind of sequence.** Only a **doubly** linked list lets you unlink a node you already hold a pointer to in genuinely constant time, because the node itself knows both of its neighbours — see Why Not Other Approaches for why a `std::vector` or a singly linked list both fall back to `O(n)` here.
 - **The two structures have to point at each other correctly, and stay consistent.** The map's values must be *pointers into the list*, not copies of the data and not positional indices — a position is invalidated by every other operation, and a copy leaves you with two sources of truth. Every eviction must remove the entry from *both* structures; forgetting either half leaves a dangling map entry pointing at freed memory, or an orphaned list node that can never be found again.
 
 ### What happens if we ignore it?
@@ -73,22 +73,6 @@ The interview framing (LeetCode 146) is: implement a class with a fixed `capacit
 - **The `O(n)` cache that is slower than no cache.** Store `(key, value, lastUsedTimestamp)` in a vector and scan for the minimum timestamp on every eviction. At capacity 100 nobody notices. At capacity 100,000 the eviction scan costs more than the database query the cache was supposed to avoid, and it costs it on the *hot path* of every miss.
 - **Insertion-order eviction masquerading as LRU.** Skip the move-to-front inside `get` and you have silently built a FIFO cache. It still compiles, still evicts, still passes a naive test, and quietly throws away your hottest key the moment it is the oldest *inserted* one — a bug that shows up as an unexplained cache hit-rate cliff in production, not as a crash.
 - **Unbounded memory growth.** A cache with no eviction policy is not a cache, it is a memory leak with good latency. In a long-lived Node or JVM service, an "optimization" that memoizes results in a plain map is one of the most common causes of a slow OOM over days of uptime.
-
-## Why Not Other Approaches?
-
-**"Hash map plus a timestamp per entry; scan for the oldest on eviction."**
-`get` and `put` are genuinely `O(1)` — you just stamp a counter into the entry. Eviction is the problem: finding the minimum timestamp is an `O(n)` scan over the whole cache. Since evictions happen on essentially every miss once the cache is warm, this is `O(n)` on the common path. It also needs no less memory than the linked-list version (a timestamp is 8 bytes, two pointers are 16 — the same order), so it buys nothing in exchange.
-
-**"Hash map plus a min-heap keyed on last-access time."**
-This fixes eviction to `O(log n)` — pop the min. But it breaks `get`: refreshing a key's recency means updating its key *inside* the heap, which requires a decrease-key/sift operation at a known heap position, so you now also need a map from key to heap index, and you must maintain that index map through every sift. You end up with more moving parts than the linked-list solution, and you have traded `O(1)` for `O(log n)` on both operations to get there. A heap is the right answer when the ordering key is a *value you cannot control* (a real deadline, a priority score); it is the wrong answer when the ordering key is "most recently touched," because that ordering only ever changes by moving one element to one end — and moving an element to the end of a list is `O(1)`.
-
-**"A `std::vector` in recency order, or a singly linked list to save a pointer."**
-Both are `O(n)` on the operation that matters most. `std::vector::erase` from the middle shifts every subsequent element down; a singly linked node cannot reach its predecessor, so unlinking it means walking from the head to find one. (For small caches the vector's cache locality can genuinely beat a pointer-chasing list in wall-clock terms despite the worse asymptotics — but the interview asks for `O(1)`, and at real cache sizes the memmove dominates. And the singly-linked "store a pointer to the *previous* node instead" workaround technically achieves `O(1)` while forcing every insert and evict to fix up *neighbouring* keys' map entries, which is a reliable source of bugs.)
-
-**"`std::map` (a balanced tree) ordered by access counter."**
-Ordered maps give you `begin()` as the minimum in `O(1)`, but every insert, erase, and re-key is `O(log n)`, and re-keying on every `get` means an erase plus an insert — two tree rebalances per read. Strictly worse than the target for no gain.
-
-**Tradeoff summary:** every alternative fails on exactly one of the two questions. Timestamp-scan and vector-erase fail on the ordering side (`O(n)`), heap and ordered-map fail on the constant-factor side (`O(log n)` and two rebalances per read), and singly-linked fails on the "unlink from the middle" requirement. The hash-map-plus-doubly-linked-list combination is the only arrangement where *both* questions are answered by the structure that is naturally good at it, with the map handing the list the one thing the list cannot find for itself — a pointer to the node.
 
 ## Solution
 
@@ -104,61 +88,25 @@ Two small techniques make the implementation clean rather than fiddly:
 
 **One shared "touch" operation.** Refreshing a key's recency is always the same two steps — `unlink(node)` then `pushFront(node)` — whether it was triggered by a `get`, by a `put` that overwrote an existing key, or by a fresh insertion (which skips the unlink, having nothing to unlink yet). Writing it once and calling it from all three places is what keeps the read-is-a-write requirement from being forgotten in one of the branches.
 
-## Architecture
+### How `get` and `put` use it
 
-Four participants, each with exactly one job:
+**`get(key)`:**
 
-1. **The hash map (`std::unordered_map<int, Node*>`).** The *index*. Its only responsibility is answering "given a key, what is the address of its node?" in `O(1)` average time. It stores pointers, never values — there is exactly one copy of each cached value, living in its node, so there is no synchronization problem between two copies. `map_.size()` doubles as the cache's current occupancy, which is why `code.cpp` needs no separate `size_` counter.
-
-2. **The doubly linked list.** The *recency order*. Its only responsibility is maintaining the sequence most-recently-used → least-recently-used, and supporting three `O(1)` primitives: unlink a given node, push a node to the front, and read the node at the back. It has no idea what a key is; it never searches for anything.
-
-3. **The sentinels (`head_`, `tail_`).** Fixed, dataless boundary markers. `head_->next` is *the* most-recently-used real entry; `tail_->prev` is *the* eviction victim. Their purpose is purely to guarantee that every real node has real neighbours on both sides.
-
-4. **The `Node` itself.** The single storage location for one cache entry: `key`, `value`, `prev`, `next`. It is simultaneously a member of both structures — the map points *at* it, the list threads *through* it — which is precisely how one `O(1)` lookup in the map yields an `O(1)` reposition in the list. Storing the `key` alongside the `value` is what makes eviction `O(1)` in the other direction, list → map.
-
-The invariant that ties it together, and the one to state out loud in an interview: **`map_` and the list always contain exactly the same set of keys, and `map_[k]` is always the address of the unique list node whose `key == k`.** Every operation must preserve it, and every bug in a hand-written LRU cache is a violation of it — a key erased from one structure but not the other, or a node freed while the map still points at it.
-
-## Execution Flow
-
-**`get(key)`**, step by step:
-
-1. Look `key` up in `map_`. If it is absent, return the sentinel miss value (`-1` in the LeetCode formulation) and stop — nothing about the recency order changes on a miss.
-2. It is present, so `it->second` is a `Node*` pointing directly at the entry. No scan of the list happened, and none will.
-3. `unlink(node)` — splice the node out of its current position by pointing its predecessor and successor at each other. Because sentinels guarantee both exist, this is two assignments with no branching. The node's own `prev`/`next` are now stale, which is harmless because the next step overwrites both.
-4. `pushFront(node)` — reinsert it immediately after `head_`, making it the most-recently-used entry. Four pointer assignments, no allocation: the node was never destroyed, only re-threaded.
+1. Look `key` up in `map_`. Absent → return the sentinel miss value (`-1` in the LeetCode formulation) and stop — nothing about the recency order changes on a miss.
+2. Present → `it->second` is a `Node*` pointing directly at the entry. No scan of the list happened, and none will.
+3. `unlink(node)` — splice it out by pointing its predecessor and successor at each other. Because the sentinels guarantee both exist, this is two assignments with no branching.
+4. `pushFront(node)` — reinsert it right after `head_`, making it the most-recently-used entry. Four pointer assignments, no allocation: the node was never destroyed, only re-threaded.
 5. Return `node->value`. Total work: one hash lookup and six pointer writes, independent of cache size.
 
-**`put(key, value)`**, step by step:
+**`put(key, value)`:**
 
 1. Look `key` up in `map_`.
-2. **If it is present** (an overwrite, not an insertion): set `node->value = value`, then `unlink` + `pushFront` exactly as in `get` — an overwrite is a use — and return. Critically, **do not evict here**: the entry count did not change, so the cache cannot have exceeded capacity. Evicting on this path is a real bug that silently shrinks the cache on every update.
-3. **If it is absent**, this is an insertion and the count is about to grow, so check capacity *before* inserting: is `map_.size() == capacity_`?
-4. **If at capacity, evict first.** Take `Node* lru = tail_->prev` — the least-recently-used real entry, reachable in `O(1)` precisely because the list is doubly linked and has a tail sentinel.
-5. `unlink(lru)` to remove it from the ordering.
-6. `map_.erase(lru->key)` to remove it from the index. This is the step that needs the key stored *inside* the node; going from a `Node*` back to its key any other way would be a linear search.
-7. `delete lru` to release the memory. In C++ this is mandatory — no garbage collector will do it — and skipping it leaks exactly one `Node` per eviction, which for a long-running cache is unbounded growth in the one component whose entire purpose was to bound memory.
-8. **Now insert.** Allocate `Node* fresh = new Node{key, value, nullptr, nullptr}`, `pushFront(fresh)` to make it most-recently-used, and record `map_[key] = fresh` so the index and the list agree again.
-9. The invariant from Architecture holds at every step boundary: after step 7 both structures have lost the victim; after step 8 both have gained the new entry.
-
-## Recognition Diagram
-
-```mermaid
-flowchart TD
-    Start([Problem says 'design a structure']) --> Q1{Is there a CAPACITY<br/>with automatic removal<br/>when it is exceeded?}
-    Q1 -- No --> PlainMap[["Plain hash map<br/>-- no eviction policy needed"]]
-    Q1 -- Yes --> Q2{What decides the victim?}
-    Q2 -- "Least recently USED<br/>-- reads count as a use" --> LRU[["LRU: hash map to node ptr<br/>+ doubly linked list<br/>ordered by recency"]]
-    Q2 -- "Least FREQUENTLY used<br/>-- a counter that accumulates" --> LFU[["LFU: add a second layer --<br/>map from frequency to a<br/>list of keys at that frequency"]]
-    Q2 -- "Oldest INSERTED<br/>-- reads do not matter" --> FIFO[["FIFO queue<br/>-- no move-to-front on get"]]
-    Q2 -- "Real deadline / priority score<br/>I do not control" --> Heap[["Min-heap on that score<br/>-- O log n, not O 1"]]
-    Q2 -- "Uniformly random" --> Rand[["Hash map + vector,<br/>swap-with-last on erase<br/>-- LeetCode 380"]]
-    LRU --> Done([Compose two structures: each<br/>answers what the other cannot])
-    LFU --> Done
-```
-
-Full walkthrough in [images/recognition-diagram.md](images/recognition-diagram.md).
-
-## Flow Diagram
+2. **If present** (an overwrite, not an insertion): set `node->value = value`, then touch (`unlink` + `pushFront`) exactly as in `get` — an overwrite is a use — and **return immediately**. Critically, do *not* evict here: the entry count did not change, so the cache cannot have exceeded capacity. Evicting on this path is a real bug that silently shrinks the cache on every update.
+3. **If absent**, this is an insertion and the count is about to grow, so check capacity *before* inserting: is `map_.size() == capacity_`?
+4. **If at capacity, evict first.** `Node* lru = tail_->prev` is the least-recently-used real entry, reachable in `O(1)` precisely because the list is doubly linked with a tail sentinel.
+5. `unlink(lru)`, then `map_.erase(lru->key)` — this is the step that needs the key stored *inside* the node; going from a `Node*` back to its key any other way would be a linear search — then `delete lru` to release the memory. In C++ this is mandatory; skipping it leaks exactly one `Node` per eviction, unbounded growth in the one component whose purpose was to bound memory.
+6. **Now insert.** Allocate `Node* fresh = new Node{key, value, nullptr, nullptr}`, `pushFront(fresh)`, and record `map_[key] = fresh` so the index and the list agree again.
+7. The Architecture invariant holds at every step boundary: after eviction both structures have lost the victim; after insertion both have gained the new entry.
 
 ```mermaid
 flowchart TD
@@ -177,9 +125,7 @@ flowchart TD
     Ins --> PDone
 ```
 
-Full walkthrough in [images/flow-diagram.md](images/flow-diagram.md).
-
-## Trace Diagram
+### Watch it run
 
 ```mermaid
 sequenceDiagram
@@ -208,67 +154,107 @@ sequenceDiagram
     M-->>C: -1 (evicted -- the read of key 1 saved it)
 ```
 
-Full walkthrough in [images/trace-diagram.md](images/trace-diagram.md).
+## Architecture
 
-## Implementation
+Four participants, each with exactly one job:
 
-[code.cpp](code.cpp) is a **generic, reusable template** rather than a LeetCode submission — the goal is to see the composition (map indexing into a sentinel-bracketed doubly linked list) in isolation before reading the four worked problems in [problems/](problems/).
+1. **The hash map (`std::unordered_map<int, Node*>`).** The *index*. Its only responsibility is answering "given a key, what is the address of its node?" in `O(1)` average time. It stores pointers, never values — there is exactly one copy of each cached value, living in its node, so there is no synchronization problem between two copies. `map_.size()` doubles as the cache's current occupancy, which is why `code.cpp` needs no separate `size_` counter.
 
-It exposes `LRUCache(int capacity)`, `get`, `put`, and a `size()` accessor used by the tests, and keeps the pointer surgery in two private one-line helpers, `unlink` and `pushFront`, so that every public operation reads as a sequence of named intentions rather than raw pointer assignments. `main()` runs eleven assertions covering the update-in-place path, the eviction path, and a capacity-1 cache.
+2. **The doubly linked list.** The *recency order*. Its only responsibility is maintaining the sequence most-recently-used → least-recently-used, and supporting three `O(1)` primitives: unlink a given node, push a node to the front, and read the node at the back. It has no idea what a key is; it never searches for anything.
 
-## Code Walkthrough
+3. **The sentinels (`head_`, `tail_`).** Fixed, dataless boundary markers. `head_->next` is *the* most-recently-used real entry; `tail_->prev` is *the* eviction victim. Their purpose is purely to guarantee that every real node has real neighbours on both sides.
 
-**`struct Node`** (in [code.cpp](code.cpp)). Four fields: `key`, `value`, `prev`, `next`, all default-initialized so the sentinels can be built with `new Node()`. Storing `key` in the node — not just `value` — is what makes step 6 of the `put` execution flow `O(1)`; it is the single most commonly omitted field when writing this from memory.
+4. **The `Node` itself.** The single storage location for one cache entry: `key`, `value`, `prev`, `next`. It is simultaneously a member of both structures — the map points *at* it, the list threads *through* it — which is precisely how one `O(1)` lookup in the map yields an `O(1)` reposition in the list. Storing the `key` alongside the `value` is what makes eviction `O(1)` in the other direction, list → map.
+
+The invariant that ties it together, and the one to state out loud in an interview: **`map_` and the list always contain exactly the same set of keys, and `map_[k]` is always the address of the unique list node whose `key == k`.** Every operation must preserve it, and every bug in a hand-written LRU cache is a violation of it — a key erased from one structure but not the other, or a node freed while the map still points at it.
+
+## Why Not Other Approaches?
+
+**"Hash map plus a timestamp per entry; scan for the oldest on eviction."**
+`get` and `put` are genuinely `O(1)` — you just stamp a counter into the entry. Eviction is the problem: finding the minimum timestamp is an `O(n)` scan over the whole cache. Since evictions happen on essentially every miss once the cache is warm, this is `O(n)` on the common path. It also needs no less memory than the linked-list version (a timestamp is 8 bytes, two pointers are 16 — the same order), so it buys nothing in exchange.
+
+**"Hash map plus a min-heap keyed on last-access time."**
+This fixes eviction to `O(log n)` — pop the min. But it breaks `get`: refreshing a key's recency means updating its key *inside* the heap, which requires a decrease-key/sift operation at a known heap position, so you now also need a map from key to heap index, and you must maintain that index map through every sift. You end up with more moving parts than the linked-list solution, and you have traded `O(1)` for `O(log n)` on both operations to get there. A heap is the right answer when the ordering key is a *value you cannot control* (a real deadline, a priority score); it is the wrong answer when the ordering key is "most recently touched," because that ordering only ever changes by moving one element to one end — and moving an element to the end of a list is `O(1)`.
+
+**"A `std::vector` in recency order, or a singly linked list to save a pointer."**
+Both are `O(n)` on the operation that matters most. `std::vector::erase` from the middle shifts every subsequent element down; a singly linked node cannot reach its predecessor, so unlinking it means walking from the head to find one. (For small caches the vector's cache locality can genuinely beat a pointer-chasing list in wall-clock terms despite the worse asymptotics — but the interview asks for `O(1)`, and at real cache sizes the memmove dominates. And the singly-linked "store a pointer to the *previous* node instead" workaround technically achieves `O(1)` while forcing every insert and evict to fix up *neighbouring* keys' map entries, which is a reliable source of bugs.)
+
+**"`std::map` (a balanced tree) ordered by access counter."**
+Ordered maps give you `begin()` as the minimum in `O(1)`, but every insert, erase, and re-key is `O(log n)`, and re-keying on every `get` means an erase plus an insert — two tree rebalances per read. Strictly worse than the target for no gain.
+
+```mermaid
+flowchart TD
+    Start([Problem says 'design a structure']) --> Q1{Is there a CAPACITY<br/>with automatic removal<br/>when it is exceeded?}
+    Q1 -- No --> PlainMap[["Plain hash map<br/>-- no eviction policy needed"]]
+    Q1 -- Yes --> Q2{What decides the victim?}
+    Q2 -- "Least recently USED<br/>-- reads count as a use" --> LRU[["LRU: hash map to node ptr<br/>+ doubly linked list<br/>ordered by recency"]]
+    Q2 -- "Least FREQUENTLY used<br/>-- a counter that accumulates" --> LFU[["LFU: add a second layer --<br/>map from frequency to a<br/>list of keys at that frequency"]]
+    Q2 -- "Oldest INSERTED<br/>-- reads do not matter" --> FIFO[["FIFO queue<br/>-- no move-to-front on get"]]
+    Q2 -- "Real deadline / priority score<br/>I do not control" --> Heap[["Min-heap on that score<br/>-- O log n, not O 1"]]
+    Q2 -- "Uniformly random" --> Rand[["Hash map + vector,<br/>swap-with-last on erase<br/>-- LeetCode 380"]]
+    LRU --> Done([Compose two structures: each<br/>answers what the other cannot])
+    LFU --> Done
+```
+
+**Net:** every alternative fails on exactly one of the two questions. Timestamp-scan and vector-erase fail on the ordering side (`O(n)`), the heap and the ordered tree fail on the constant-factor side (`O(log n)`, and two rebalances per read for the tree), and singly-linked fails on the "unlink from the middle" requirement. The hash-map-plus-doubly-linked-list combination is the only arrangement where *both* questions are answered by the structure that is naturally good at it, with the map handing the list the one thing the list cannot find for itself — a pointer to the node.
+
+## Diagrams
+
+- [images/recognition-diagram.md](images/recognition-diagram.md) — full walkthrough of the flowchart above: how to tell LRU apart from LFU, FIFO, a min-heap, and randomized eviction, based on what decides the victim.
+- [images/flow-diagram.md](images/flow-diagram.md) — full walkthrough of `get`/`put`'s control flow, showing exactly where the touch (unlink + pushFront) happens and where eviction sits relative to insertion.
+- [images/trace-diagram.md](images/trace-diagram.md) — full walkthrough of the sequence trace above: `map_` and the list's contents across the same `put`/`get`/`put` run that [code.cpp](code.cpp)'s `main()` uses.
+
+## The Code
+
+[code.cpp](code.cpp) is a **generic, reusable template** rather than a LeetCode submission — the goal is to see the composition (map indexing into a sentinel-bracketed doubly linked list) in isolation before reading the four worked problems in [problems/](problems/). It exposes `LRUCache(int capacity)`, `get`, `put`, and a `size()` accessor used by the tests, and keeps the pointer surgery in two private one-line helpers, `unlink` and `pushFront`, so that every public operation reads as a sequence of named intentions rather than raw pointer assignments. `main()` runs eleven assertions covering the update-in-place path, the eviction path, and a capacity-1 cache.
+
+**`struct Node`.** Four fields: `key`, `value`, `prev`, `next`, all default-initialized so the sentinels can be built with `new Node()`. Storing `key` in the node — not just `value` — is what makes the eviction step of `put` `O(1)`; it is the single most commonly omitted field when writing this from memory.
 
 **The constructor.** Allocates both sentinels and links them to each other (`head_->next = tail_; tail_->prev = head_;`). From this moment the list is a valid, non-empty chain, so `unlink` and `pushFront` never need a null check. `capacity_` is stored as-is; note the class does not defend against `capacity <= 0`, which is fine for the LeetCode constraints (`1 <= capacity`) but is called out in Common Mistakes as something to raise unprompted in an interview.
 
-**`unlink(Node* n)`** (in [code.cpp](code.cpp)). `n->prev->next = n->next; n->next->prev = n->prev;`. Two assignments, no branches, no null tests — the sentinels are doing all the work here. It deliberately does *not* clear `n->prev`/`n->next`; every caller either immediately re-inserts the node (which overwrites both) or deletes it, so clearing them would be dead stores.
+**`unlink(Node* n)`.** `n->prev->next = n->next; n->next->prev = n->prev;`. Two assignments, no branches, no null tests — the sentinels are doing all the work here. It deliberately does *not* clear `n->prev`/`n->next`; every caller either immediately re-inserts the node (which overwrites both) or deletes it, so clearing them would be dead stores.
 
-**`pushFront(Node* n)`** (in [code.cpp](code.cpp)). Splices `n` between `head_` and the current first real node. The order of the four assignments matters: `n->next` and `n->prev` are set *before* `head_->next->prev` and `head_->next` are overwritten, because the second pair destroys the pointer the first pair needs to read. Reordering these lines is the classic way this function breaks.
+**`pushFront(Node* n)`.** Splices `n` between `head_` and the current first real node. The order of the four assignments matters: `n->next` and `n->prev` are set *before* `head_->next->prev` and `head_->next` are overwritten, because the second pair destroys the pointer the first pair needs to read. Reordering these lines is the classic way this function breaks.
 
-**`get(int key)`** (in [code.cpp](code.cpp)). One `map_.find`, an early return of `-1` on a miss, then `unlink` + `pushFront` on the found node, then return its value. The two lines that look optional are the whole pattern: a `get` that skips them is a FIFO cache.
+**`get(int key)`.** One `map_.find`, an early return of `-1` on a miss, then `unlink` + `pushFront` on the found node, then return its value. The two lines that look optional are the whole pattern: a `get` that skips them is a FIFO cache.
 
-**`put(int key, int value)`** (in [code.cpp](code.cpp)). Three distinct paths, in the order the execution flow describes: overwrite-and-touch-then-*return* (the early `return` is load-bearing — falling through would run the eviction check on an operation that did not grow the cache), evict-if-full, then insert. The capacity comparison is written `static_cast<int>(map_.size()) == capacity_` because `size()` returns an unsigned `size_t` and comparing it directly against a signed `int` is exactly the `-Wall` sign-compare warning this repo's compile flags surface.
+**`put(int key, int value)`.** Three distinct paths, in the order the Solution section describes: overwrite-and-touch-then-*return* (the early `return` is load-bearing — falling through would run the eviction check on an operation that did not grow the cache), evict-if-full, then insert. The capacity comparison is written `static_cast<int>(map_.size()) == capacity_` because `size()` returns an unsigned `size_t` and comparing it directly against a signed `int` is exactly the `-Wall` sign-compare warning this repo's compile flags surface.
 
-**`~LRUCache()`** (in [code.cpp](code.cpp)). Walks from `head_` following `next` and deletes every node including both sentinels. Worth noting for interview purposes: this class owns raw pointers and defines a destructor but no copy constructor or copy assignment operator, so copying an `LRUCache` would double-free. A production version would either delete those two operations explicitly or hold nodes in a `std::list`.
+**`~LRUCache()`.** Walks from `head_` following `next` and deletes every node including both sentinels. Worth noting for interview purposes: this class owns raw pointers and defines a destructor but no copy constructor or copy assignment operator, so copying an `LRUCache` would double-free. A production version would either delete those two operations explicitly or hold nodes in a `std::list`.
 
 **Files in [problems/](problems/).** Four standalone, independently compilable solutions, each redefining what it needs rather than including `code.cpp`. `01` (LeetCode 146) is the canonical LRU build; `02` (LeetCode 460) adds the frequency layer that LRU's structure does not generalize to for free; `03` (LeetCode 1472) composes the same map-plus-sequence thinking around a different access pattern (browser back/forward), showing that the pattern is "pick the structure that makes your specific operation `O(1)`", not "always use a linked list"; `04` (LeetCode 1797) swaps recency ordering for time-based expiry, a design variant that needs only the hash-map half. Index in [problems/README.md](problems/README.md).
 
-## Advantages
+## Tradeoffs
 
-- **True `O(1)` worst case on the ordering half.** Unlike heap- or tree-based schemes, nothing here is logarithmic. The list operations are a fixed number of pointer writes regardless of how many entries the cache holds, and eviction requires no search at all.
-- **Exact LRU semantics, not an approximation.** The entry evicted is provably the least recently used one, which makes the structure easy to reason about and easy to test deterministically — a property that matters more in an interview and in a unit test than it does in a production cache (see the Redis discussion below).
+**What this design buys you**
+
+- **True `O(1)` worst case on the ordering half.** The list operations are a fixed number of pointer writes regardless of how many entries the cache holds, and eviction requires no search at all — see Why Not Other Approaches for why the heap and tree alternatives can't say the same.
+- **Exact LRU semantics, not an approximation.** The entry evicted is provably the least recently used one, which makes the structure easy to reason about and easy to test deterministically — a property that matters more in an interview and in a unit test than it does in a production cache at Redis's scale (see Where This Shows Up).
 - **Reads and writes share one code path for recency.** `unlink` + `pushFront` is the only recency-mutating operation in the class, called from three places. There is exactly one place to get it right.
 - **Sentinels eliminate boundary conditions.** No "if this is the head", no "if the list is empty", no null checks in the hot path. The two wasted node allocations buy a measurable reduction in bug surface.
 - **The composition generalizes.** "Index with a hash map, order with the structure whose `O(1)` operation you actually need" solves LFU (map to frequency buckets), `O(1)` random access (map to a vector index), and browser history (map plus a cursor into a list) — the four `problems/` files are four instances of the same move.
 
-## Disadvantages
+**What it costs you**
 
-- **Per-entry memory overhead is large relative to small values.** Every entry costs two pointers (16 bytes on a 64-bit build) for the list, plus the `unordered_map` node's own bucket pointer and stored key, plus two separate heap allocations with their own allocator headers. Caching an `int` keyed by an `int` — 8 bytes of payload — can easily cost 80–100 bytes of real memory. At a few million keys this is the dominant cost, and it is the specific reason Redis refuses to implement true LRU (see Real Interview/Production Examples).
+- **Per-entry memory overhead is large relative to small values.** Every entry costs two pointers (16 bytes on a 64-bit build) for the list, plus the `unordered_map` node's own bucket pointer and stored key, plus two separate heap allocations with their own allocator headers. Caching an `int` keyed by an `int` — 8 bytes of payload — can easily cost 80–100 bytes of real memory. At a few million keys this is the dominant cost, and it is the specific reason Redis refuses to implement true LRU (see Where This Shows Up).
 - **Pointer chasing is cache-hostile.** Each node is a separate allocation at an arbitrary address, so walking or touching entries means dependent loads that miss L1/L2. A `std::vector`-based cache with worse asymptotics can win in wall-clock time at small sizes purely on locality.
 - **A read mutates shared state, so reads cannot be concurrent.** `get` writes to four nodes and to the list head. Under concurrency every read needs the same exclusive lock as a write, which turns the cache into a single serialization point — the head of the list is touched by *every* operation, making it the hottest possible contention point. This is not a small caveat; it is why real multi-core caches use sharding, striped locks, or an entirely different eviction algorithm.
 - **Exact LRU is not scan-resistant.** One sequential pass over a large key range — a batch job, an analytics query, a `SCAN` — touches every key once, and each touch promotes a key that will never be read again to the front, flushing the genuinely hot working set out of the cache. LRU has no way to distinguish "read once, ever" from "read constantly." LFU, ARC, 2Q, and W-TinyLFU all exist primarily to fix this one flaw.
-- **Manual memory management in C++.** Raw `new`/`delete` with a hand-written destructor, no copy semantics, and a dangling-pointer failure mode if the map and list ever disagree. The `std::list` + iterator variant (see Tradeoffs) avoids all of this.
+- **Manual memory management in C++.** Raw `new`/`delete` with a hand-written destructor, no copy semantics, and a dangling-pointer failure mode if the map and list ever disagree.
 
-## Tradeoffs
+**Compared to specific alternatives**
 
-**What we gain versus a timestamp scan:** eviction drops from `O(n)` to `O(1)` for the same order of memory overhead (two pointers instead of one timestamp). Pure win at any nontrivial capacity.
+(The wins against a timestamp-scan and a min-heap are the flip side of Why Not Other Approaches above — `O(n)` and `O(log n)` operations both collapse to `O(1)` here, for no worse memory order; the loss against a plain hash map is the flip side of the two bullets just above — extra pointers, worse locality, a mutation on every read, all for a policy When NOT To Use says not to pay for if you never evict.)
 
-**What we gain versus a heap:** `O(1)` instead of `O(log n)` on both operations, and no key-to-heap-index map to maintain through sifts. The heap wins only when the ordering key is externally determined (a TTL deadline, a priority) rather than "whatever was touched last."
-
-**What we lose versus a plain hash map:** roughly 16–24 bytes per entry, worse locality, and a mutation on every read. If nothing ever needs to be evicted, all of that is pure cost.
-
-**Hand-rolled nodes versus `std::list` + iterators.** `std::unordered_map<int, std::list<std::pair<int,int>>::iterator>` plus `list.splice(list.begin(), list, it)` implements the same cache in about a third of the code, with no raw pointers, no sentinels, and no destructor — `splice` moves a node between positions in `O(1)` and, crucially, **does not invalidate the iterator**, which is what makes the stored iterators stay valid across every operation. The hand-rolled version exists here because interviewers usually want to see that you know *why* it needs to be doubly linked, and `splice` hides exactly that. In production code, reach for `std::list`.
-
-**Exact LRU versus approximated LRU.** Exact LRU costs two pointers and a structural mutation per read. Sampled/approximated LRU (pick `k` random keys, evict the oldest of those) costs zero pointers and only a timestamp write per read, and gets a *statistically* near-identical hit rate. At Redis's scale the approximation is strictly the better engineering decision; at interview scale the exact version is what is being asked for. Knowing which one you are being asked for — and that the other exists — is the actual signal.
-
-**Recency versus frequency.** LRU adapts instantly to a shifting working set and is trivially cheap to maintain; LFU resists scan pollution but needs a decay mechanism or it ossifies around keys that were hot last week. Neither dominates; hybrids (ARC, W-TinyLFU) exist because the right answer is workload-dependent.
+- **Hand-rolled nodes versus `std::list` + iterators.** `std::unordered_map<int, std::list<std::pair<int,int>>::iterator>` plus `list.splice(list.begin(), list, it)` implements the same cache in about a third of the code, with no raw pointers, no sentinels, and no destructor — `splice` moves a node between positions in `O(1)` and, crucially, **does not invalidate the iterator**, which is what makes the stored iterators stay valid across every operation. The hand-rolled version exists here because interviewers usually want to see that you know *why* it needs to be doubly linked, and `splice` hides exactly that. In production code, reach for `std::list`.
+- **Exact LRU versus approximated LRU.** Exact LRU costs two pointers and a structural mutation per read. Sampled/approximated LRU (pick `k` random keys, evict the oldest of those) costs zero pointers and only a timestamp write per read, and gets a *statistically* near-identical hit rate. At Redis's scale the approximation is strictly the better engineering decision; at interview scale the exact version is what is being asked for. Knowing which one you are being asked for — and that the other exists — is the actual signal.
+- **Recency versus frequency.** LRU adapts instantly to a shifting working set and is trivially cheap to maintain; LFU resists scan pollution but needs a decay mechanism or it ossifies around keys that were hot last week. Neither dominates; hybrids (ARC, W-TinyLFU) exist because the right answer is workload-dependent.
 
 ## Complexity
 
 **Time:** `get` and `put` are **`O(1)`** — but the two halves of that claim have different strengths, and the distinction is a good interview answer. The doubly linked list operations (`unlink`, `pushFront`, reading `tail_->prev`) are `O(1)` **worst case**: a fixed number of pointer writes, no loop, no size dependence. The `unordered_map` operations are `O(1)` **average**, degrading to `O(n)` in the pathological case where every key hashes to the same bucket, and with an *amortized* cost from occasional rehashing (which is `O(n)` for the one insertion that triggers it, spread over the `n` insertions that preceded it). So the honest statement is: `O(1)` worst case for the ordering, `O(1)` average and amortized for the lookup — and the hash map, not the list, is the part with a bad case.
 
-**Space:** **`O(capacity)`** — exactly one `Node` and one map entry per cached key, and the cache never exceeds `capacity` entries by construction. The constant factor is the concern rather than the asymptotics: see Disadvantages for why 8 bytes of payload can cost 80+ bytes of resident memory.
+**Space:** **`O(capacity)`** — exactly one `Node` and one map entry per cached key, and the cache never exceeds `capacity` entries by construction. The constant factor is the concern rather than the asymptotics: see Tradeoffs for why 8 bytes of payload can cost 80+ bytes of resident memory.
 
 | Approach | `get` | `put` (with eviction) | Extra space per entry |
 |---|---|---|---|
@@ -306,15 +292,15 @@ It exposes `LRUCache(int capacity)`, `get`, `put`, and a `size()` accessor used 
 - **The number of entries is small and fixed.** At a dozen entries, a linear scan over a flat array beats pointer chasing on wall-clock time and is a tenth of the code.
 - **Frequency, not recency, predicts reuse in your data.** If a small set of keys is overwhelmingly popular over long horizons and access order is bursty, LFU's hit rate is materially better — which is precisely why Redis added `allkeys-lfu` in 4.0 rather than leaving LRU as the only serious option.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 LeetCode 146 is one of the most frequently asked "design" questions in the industry, and it is asked for a specific reason: it is the shortest problem that forces a candidate to *compose* two data structures and then defend the composition. The follow-up is almost always either 460 (LFU) or "now make it thread-safe," both of which are in this module.
 
 Beyond interviews, this exact set of tradeoffs shows up in systems the reader already runs:
 
-**Redis — `maxmemory-policy`, and why it deliberately does *not* implement true LRU.** When `maxmemory` is reached, Redis evicts according to `maxmemory-policy`: `noeviction` (fail writes), `allkeys-lru`, `allkeys-lfu`, `allkeys-random`, and the `volatile-*` variants that only consider keys with a TTL set (`volatile-ttl` evicts the nearest expiry first). The important part for this module is that **`allkeys-lru` is not the structure in `code.cpp`** — it is an *approximation*. Redis does not maintain a doubly linked list of all keys in recency order. Instead, every object carries a small `lru` field (24 bits, holding a coarse clock at roughly second granularity), and on eviction Redis **samples** `maxmemory-samples` keys at random (default 5) and evicts the oldest one it sampled; since Redis 3.0 the sampled candidates go into a persistent 16-entry eviction pool so good victims found in one cycle carry over to the next. The reason this is the right call is exactly the Disadvantages section above: a true LRU list would add ~16 bytes of pointers to *every single key* in a database that routinely holds hundreds of millions of them, and — worse — it would turn every `GET` into a structural write to a globally shared list, which is a disaster for memory locality and for anything resembling concurrency. The approximation costs three bytes of clock per object, mutates nothing shared on a read, and yields a hit rate close enough to exact LRU that the difference is measurable only in synthetic benchmarks. Redis 4.0 added `allkeys-lfu` for scan-resistant workloads, reusing the same 24-bit field split into 16 bits of "last decay time" and an 8-bit *logarithmic* counter (tuned by `lfu-log-factor` and decayed by `lfu-decay-time`), so that a key hit a million times and a key hit ten thousand times remain distinguishable in 8 bits. `OBJECT IDLETIME` and `OBJECT FREQ` expose the respective fields per key.
+**Redis — `maxmemory-policy`, and why it deliberately does *not* implement true LRU.** When `maxmemory` is reached, Redis evicts according to `maxmemory-policy`: `noeviction` (fail writes), `allkeys-lru`, `allkeys-lfu`, `allkeys-random`, and the `volatile-*` variants that only consider keys with a TTL set (`volatile-ttl` evicts the nearest expiry first). The important part for this module is that **`allkeys-lru` is not the structure in `code.cpp`** — it is an *approximation*: every object carries a small `lru` field (24 bits, a coarse clock at roughly second granularity), and on eviction Redis **samples** `maxmemory-samples` keys at random (default 5) and evicts the oldest one sampled; since Redis 3.0 the sampled candidates go into a persistent 16-entry eviction pool so good victims found in one cycle carry over to the next. The reason is exactly the concurrency and memory points from Tradeoffs, multiplied across a database holding hundreds of millions of keys: the approximation costs three bytes of clock per object instead of two pointers, mutates nothing shared on a read instead of writing to a global list on every `GET`, and still yields a hit rate close enough to exact LRU that the difference is measurable only in synthetic benchmarks. Redis 4.0 added `allkeys-lfu` for scan-resistant workloads, reusing the same 24-bit field split into 16 bits of "last decay time" and an 8-bit *logarithmic* counter (tuned by `lfu-log-factor` and decayed by `lfu-decay-time`), so that a key hit a million times and a key hit ten thousand times remain distinguishable in 8 bits. `OBJECT IDLETIME` and `OBJECT FREQ` expose the respective fields per key.
 
-**PostgreSQL's buffer pool — clock sweep, and why it is not LRU.** `shared_buffers` is a fixed array of 8 KB pages that needs a replacement policy, and Postgres does *not* use LRU. Each buffer descriptor carries a `usage_count` capped at a small value (5), and `StrategyGetBuffer` advances a single circular `nextVictimBuffer` pointer: if the buffer it lands on has a nonzero `usage_count` it decrements it and moves on; the first buffer it finds with `usage_count == 0` and no pins becomes the victim. That is GCLOCK / clock-sweep, an approximation of LRU. The motivation is the concurrency point from Disadvantages: with dozens of backends servicing millions of buffer hits per second, a strict LRU list would require taking a lock on one global list *on every read hit* — turning the buffer pool's happiest path into its worst contention point. Clock sweep touches only the descriptor of the buffer being hit (a `usage_count` bump), with no shared list to reorder. Postgres separately solves LRU's scan-pollution problem with `BufferAccessStrategy` ring buffers: sequential scans, `VACUUM`, and bulk writes are given a small fixed ring of buffers to recycle among themselves, so a `VACUUM` over a terabyte table cannot flush the working set. (Historically 8.0 used an ARC-like policy and moved to clock sweep in 8.1.)
+**PostgreSQL's buffer pool — clock sweep, and why it is not LRU.** `shared_buffers` is a fixed array of 8 KB pages that needs a replacement policy, and Postgres does *not* use LRU. Each buffer descriptor carries a `usage_count` capped at a small value (5), and `StrategyGetBuffer` advances a single circular `nextVictimBuffer` pointer: if the buffer it lands on has a nonzero `usage_count` it decrements it and moves on; the first buffer it finds with `usage_count == 0` and no pins becomes the victim. That is GCLOCK / clock-sweep, an approximation of LRU. The motivation is the same concurrency point from Tradeoffs, at a scale of dozens of backends and millions of buffer hits per second: clock sweep touches only the descriptor of the buffer being hit (a `usage_count` bump) instead of taking a lock on one global list on every read hit. Postgres separately solves LRU's scan-pollution problem with `BufferAccessStrategy` ring buffers: sequential scans, `VACUUM`, and bulk writes are given a small fixed ring of buffers to recycle among themselves, so a `VACUUM` over a terabyte table cannot flush the working set. (Historically 8.0 used an ARC-like policy and moved to clock sweep in 8.1.)
 
 **CDN edge caches.** A POP's RAM tier is usually LRU or segmented-LRU, but the interesting production detail is **admission** rather than eviction: the majority of objects requested at an edge are one-hit wonders, and admitting them means each one evicts something popular. So edge caches gate insertion — "cache on second hit," tracked with a Bloom filter or a compact frequency sketch — which is the core idea of TinyLFU/W-TinyLFU (the algorithm behind Caffeine, the standard JVM cache). The lesson generalizes: once your miss stream contains a lot of never-to-be-repeated keys, *what you let in* matters more than *what you throw out*.
 
@@ -322,9 +308,7 @@ Beyond interviews, this exact set of tradeoffs shows up in systems the reader al
 
 **Memcached.** Uses a segmented LRU (HOT/WARM/COLD queues since 1.5) with a background LRU crawler, plus a deliberate optimization worth knowing: an item is only bumped toward the head if it has not been bumped in the last ~60 seconds. Same reasoning as Redis — avoiding a structural mutation on every single read is worth more than exact ordering.
 
-## Where I Can Use This
-
-Five concrete places in a Node/NestJS + Postgres + Redis stack:
+Closer to home, five concrete places this shows up in a Node/NestJS + Postgres + Redis stack:
 
 1. **An in-process L1 cache in front of Redis, inside a NestJS service.** Redis is a network hop — sub-millisecond, but a hop, plus serialization on both ends. For a config table, a feature-flag set, or a permissions map read on nearly every request, a bounded in-process LRU (the `lru-cache` npm package, or `@nestjs/cache-manager` with an in-memory store) collapses that hop to a pointer dereference. The bound is the whole point: a plain `Map` here is a slow OOM across days of uptime, and the `max` option is what makes it a cache instead of a leak. Worth knowing how the JS implementation differs: `lru-cache` v7+ stores its linked list as index-based `Uint32Array`s rather than per-entry objects with `prev`/`next` properties, specifically to avoid allocating two object references per entry and the GC pressure that comes with it — the same memory-overhead concern that drove Redis to sampling, solved differently. Pair it with a short TTL, because an in-process cache has no invalidation channel: if another pod writes to Postgres, your L1 copy is stale until it expires.
 2. **Memoizing expensive pure computations per request-handler.** A permissions-tree resolution, a pricing-rule evaluation, a compiled JSONLogic expression, a parsed and validated schema. These are deterministic in their inputs and expensive to recompute, and the input space is unbounded (so an unbounded memo is unsafe) but heavily skewed (so a small LRU captures most of the value). Key on a stable hash of the inputs and size the cache by measured hit rate, not by guess.
@@ -352,49 +336,37 @@ Five concrete places in a Node/NestJS + Postgres + Redis stack:
 
 Nobody spends interview time on whether you can write `n->prev->next = n->next`. What gets probed is whether you understand **why two structures are necessary**, and whether you can state the invariant that couples them. The strongest possible opening is not code — it is one sentence: *"a hash map gives me `O(1)` lookup but no order, a doubly linked list gives me `O(1)` reordering and `O(1)` tail removal but no lookup, so I'll store `key -> Node*` in the map and keep those same nodes threaded through the list in recency order."* Everything after that is mechanical, and interviewers relax visibly once they hear it.
 
-The second thing being probed is whether you notice, unprompted, that **`get` mutates**. Candidates who describe `get` as a read-only lookup and only later bolt on the move-to-front have not internalized what "least recently *used*" means, and it is the difference between LRU and FIFO.
+The second thing being probed, less mechanically, is whether you notice — unprompted — that **`get` mutates**. Candidates who describe `get` as a read-only lookup and only later bolt on the move-to-front have not internalized what "least recently *used*" means; that hesitation, not the code itself, is the tell.
 
 Common follow-ups:
 
-- *"Now make it thread-safe."* A single `std::mutex` around every public method is the correct first answer, and you should immediately volunteer why it is unsatisfying: every operation — including reads — mutates the list head, so a reader-writer lock buys nothing (there are no pure readers), and the head becomes a single contention point. The real answers are **sharding** (partition the keyspace by hash into N independently locked sub-caches, which is what Java's Guava and Caffeine do) and **giving up exact LRU** so that reads no longer mutate shared structure — the Redis and Postgres decisions described above. Naming that second option is what separates a memorized answer from an understood one.
+- *"Now make it thread-safe."* A single `std::mutex` around every public method is the correct first answer, and you should immediately volunteer why it is unsatisfying: every operation — including reads — mutates the list head, so a reader-writer lock buys nothing (there are no pure readers), and the head becomes a single contention point. The real answers are **sharding** (partition the keyspace by hash into N independently locked sub-caches, which is what Java's Guava and Caffeine do) and **giving up exact LRU** so that reads no longer mutate shared structure — the Redis and Postgres decisions described in Where This Shows Up. Naming that second option is what separates a memorized answer from an understood one.
 - *"Make it LFU instead."* Expects the frequency layer: `key -> (value, freq)`, plus `freq -> doubly linked list of keys at that frequency`, plus a tracked `minFreq`. The two details that catch people: on a `get`, the key moves from bucket `f` to bucket `f+1` and bucket `f` may become empty, so `minFreq` needs updating; and ties *within* a frequency bucket are broken by LRU, which is why each bucket is itself a recency-ordered list rather than a set. See `problems/02-lfu-cache.cpp`.
 - *"Add a TTL per entry."* Expects the recognition that TTL and LRU are independent axes. Two viable designs: lazy expiry (check the deadline on read, treat an expired entry as a miss, which is cheap but lets dead entries occupy capacity) or an active structure (a min-heap or timing wheel keyed by deadline, plus a background sweeper). Redis does both — lazy expiry on access *and* a background sampling cycle — and saying so is a strong answer.
-- *"Would you actually implement this in production?"* The expected answer is no: use `std::list` with `splice` in C++, Caffeine on the JVM, `lru-cache` in Node, or Redis with an appropriate `maxmemory-policy`. Being able to say *why* the library version is better (no raw pointers, no copy-constructor footgun, tested concurrency, better admission policies) matters more than the ability to write it from scratch — while still being able to write it from scratch.
-- *"What is the memory overhead per entry, really?"* Expects an actual estimate rather than "`O(1)` per entry": two 8-byte pointers, plus the `unordered_map` node's bucket pointer and stored key, plus per-allocation allocator overhead, plus the map's bucket array amortized across entries — realistically 60–100 bytes for a tiny key/value. This is the number that makes Redis's decision obviously correct, and it is a good place to bring that up.
+- *"Would you actually implement this in production?"* The expected answer is no — see When NOT To Use for the specific libraries. What matters here is being able to say *why* the library version is better (no raw pointers, no copy-constructor footgun, tested concurrency, better admission policies), while still being able to write the hand-rolled version from scratch.
+- *"What is the memory overhead per entry, really?"* Expects an actual estimate rather than "`O(1)` per entry" — see Tradeoffs for the breakdown (roughly 80–100 bytes for a tiny key/value, dominated by two pointers plus per-allocation allocator overhead). This is exactly the number that makes Redis's sampling decision obviously correct, and it is a good place to bring that up.
 
 Common misconceptions:
 
-- **"`O(1)` here is worst case."** Only the list half is. The hash map is `O(1)` *average*, with `O(n)` worst-case bucket collisions and amortized rehashing — and under adversarially chosen keys against a known hash function, that worst case is reachable on purpose (this is the hash-flooding DoS class of attack).
+- **"`O(1)` here is worst case."** Only the list half is — see Complexity for the average/amortized split on the hash map side. Worth adding here: under adversarially chosen keys against a known hash function, the map's worst case is reachable *on purpose*, which is the hash-flooding class of DoS attack.
 - **"LRU gives the best hit rate."** LRU is a *heuristic*, and the theoretical optimum (Bélády's MIN — evict the entry that will be used furthest in the future) requires knowing the future. LRU is beaten in practice by LFU on scan-heavy workloads and by ARC/W-TinyLFU on mixed ones; its real selling points are that it is cheap, adaptive, and easy to reason about.
-- **"The linked list stores the values, so the map is just an index."** The list nodes store both key and value, and the key is not redundant — eviction is `key`-less without it, because you arrive at the victim holding only a `Node*` and still need to erase the right map entry.
+- **"The linked list stores the values, so the map is just an index."** The list nodes store both key and value — see Solution for why: eviction starts from a bare `Node*`, and without the key inside it, finding the matching map entry to erase would be an `O(n)` search.
 - **"A hash map has no order, so `unordered_map`'s iteration order is roughly insertion order."** It is not any order you can rely on; it reflects bucket layout and changes on rehash. (JavaScript's `Map` *is* specified to preserve insertion order, which is why the smallest JS LRU implementations can get away with `delete` + `set` on read and `keys().next().value` for the victim — a genuine language difference worth knowing if you write both C++ and Node.)
 - **"Capacity is the only thing that triggers removal."** In real caches, TTL expiry, explicit invalidation, and memory pressure all remove entries too, and they are separate mechanisms with separate failure modes.
 
-## Summary
-
-- An LRU cache must answer two unrelated questions fast on every operation: "where is this key" (unordered lookup) and "what is the least recently used entry" (a total order that changes on every access, including reads).
-- No single standard container answers both: a hash map has `O(1)` lookup and no order; a list has `O(1)` reordering and `O(n)` lookup. The pattern is to **compose** them so each supplies the other's missing input.
-- The concrete design: `unordered_map<key, Node*>` for the index, plus a **doubly** linked list of those same nodes in recency order, most-recently-used at the front, victim at `tail_->prev`.
-- Doubly linked, not singly: unlinking a node you already hold requires reaching its predecessor, and only a doubly linked node can.
-- Each node stores its **key as well as its value**, so eviction can go from a `Node*` back to a map key in `O(1)`.
-- Sentinel `head_`/`tail_` nodes remove every boundary condition from `unlink`/`pushFront` at the cost of two permanent allocations.
-- `get` is a **write**: it must move the touched node to the front, or the cache silently degrades to FIFO.
-- `put` on an existing key must update, touch, and **return early** — it did not grow the cache, so it must not evict.
-- Complexity: `O(1)` worst case for the list operations, `O(1)` average/amortized for the map, `O(capacity)` space with a large constant factor (60–100 bytes for a tiny entry).
-- The two production weaknesses are that reads mutate shared state (fatal for concurrency) and that LRU is not scan-resistant (one full pass flushes the hot set) — which is exactly why Redis uses **sampled, approximate** LRU with an optional LFU mode, and why Postgres uses a **clock sweep** with scan-specific buffer rings instead of LRU at all.
-
 ## Key Takeaways
 
-1. The pattern is *composition*: hash map for `O(1)` keyed lookup, doubly linked list for `O(1)` reordering and tail eviction, with the map's values being pointers into the list.
+1. The pattern is *composition*, answering two unrelated questions with the structure that is naturally good at each: hash map for `O(1)` keyed lookup, doubly linked list for `O(1)` reordering and tail eviction, with the map's values being pointers into the list.
 2. The list must be **doubly** linked, because unlinking a node in `O(1)` requires reaching its predecessor without a scan.
 3. Every node stores its **key** as well as its value — otherwise eviction cannot find the map entry to erase without an `O(n)` search.
-4. Sentinel head/tail nodes turn `unlink` and `pushFront` into unconditional pointer assignments with zero boundary cases.
+4. Sentinel head/tail nodes turn `unlink` and `pushFront` into unconditional pointer assignments with zero boundary cases, at the cost of two permanent allocations.
 5. A `get` is a mutation. Skip the move-to-front and you have built a FIFO cache that still compiles, still evicts, and quietly tanks your hit rate.
-6. The overwrite path of `put` must not evict — the entry count did not change.
-7. The `O(1)` claim is worst-case for the list and average/amortized for the hash map; the hash map is the half with a bad case.
-8. Per-entry memory overhead (two pointers plus map node plus allocator headers) is the reason production systems at scale — Redis above all — deliberately choose an *approximated* LRU over an exact one.
+6. The overwrite path of `put` must `return` early rather than fall through to eviction — the entry count did not change.
+7. The `O(1)` claim is worst-case for the list and average/amortized for the hash map; the hash map is the half with a bad case (collisions, rehashing).
+8. Space is `O(capacity)`, but the constant factor is large — roughly 80–100 bytes of real memory for a tiny `(int, int)` entry (two pointers, a map node, allocator headers) — which is the reason production systems at scale, Redis above all, deliberately choose an *approximated* LRU over an exact one.
 9. Reads mutating shared state is LRU's fatal concurrency flaw; the real-world fixes are sharding (Caffeine, Guava) or abandoning exact LRU (Redis sampling, Postgres clock sweep).
-10. LRU is a heuristic, not an optimum: it is not scan-resistant, which is why `allkeys-lfu`, 2Q, ARC, and W-TinyLFU exist — and why knowing *when* recency is the wrong proxy matters more than knowing how to write the linked list.
+10. LRU is a heuristic, not the theoretical optimum (Bélády's MIN): it is not scan-resistant, which is why `allkeys-lfu`, 2Q, ARC, and W-TinyLFU exist — and why knowing *when* recency is the wrong proxy matters more than knowing how to write the linked list.
+11. Recognition signal: "design a cache/structure with `O(1)` access plus an eviction policy." LRU is the base case; LFU, `O(1)` random access, and browser history (the `problems/` files) are the same map-plus-ordered-structure move applied to a different ordering rule.
 
 ---
 

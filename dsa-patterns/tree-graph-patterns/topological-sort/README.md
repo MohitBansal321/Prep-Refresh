@@ -71,34 +71,21 @@ The engineering problem, stated precisely: given `N` items and a list of directe
 - **A cyclic dependency set can hang a naive scheduler.** If your build system or course planner does not detect cycles, it can loop forever trying to find "the next thing with no unmet prerequisites," because a cycle guarantees there will always be at least one item stuck waiting on another item that is itself stuck waiting on it.
 - **Silently returning a partial or arbitrary order on a cyclic input is worse than crashing.** A build tool that ships half-built artifacts because it silently gave up mid-cycle, or a course planner that tells a student a schedule is valid when two of their courses secretly require each other, causes damage that surfaces much later and far from the actual bug.
 
-## Why Not Other Approaches?
-
-**"Try every permutation of items and check which ones respect all the constraints."**
-Correct, but `O(N!)` time. Even ignoring runtime, this approach gives you no insight into *why* an order works or fails — you are blindly guessing and verifying rather than reasoning about the dependency structure. Utterly impractical past a handful of items.
-
-**"Randomly shuffle the list, then repeatedly swap violating adjacent pairs until no violations remain."**
-This resembles bubble sort applied to a partial (not total) order. There is no guarantee of termination in a reasonable number of passes, no guarantee two arbitrary items are even comparable (topological order is a **partial** order — many pairs of unrelated items have no required relationship at all), and — critically — this approach has **no way to detect a cycle**. It will either loop indefinitely or converge on a state that still has a violation, with no signal telling you the input was actually invalid.
-
-**"Sort items by some heuristic proxy, like alphabetically or by how many total dependents they have."**
-This ignores the actual constraint structure entirely. Alphabetical order has nothing to do with prerequisite relationships; a "sort by dependency count" heuristic can still place an item before one of its direct prerequisites if the heuristic does not exactly encode the edge relationships (and if it did exactly encode them, you would already have solved the problem).
-
-**Tradeoff summary:** every alternative either pays an exponential cost (brute-force permutation checking), offers no termination or cycle-detection guarantee (repeated shuffle-and-fix), or ignores the actual dependency graph in favor of an unrelated heuristic (proxy sorting). What all of them lack is a way to *directly compute*, from the edges themselves, which items are safe to place next — that direct computation is exactly what Topological Sort provides.
-
 ## Solution
 
 The key insight: an item is safe to place in the output the moment **all of its prerequisites have already been placed**. Track that fact directly instead of guessing.
 
 > **Term: In-degree.** For a node `v`, the in-degree is the number of directed edges pointing *into* `v` — i.e., the number of prerequisites `v` still has. A node with in-degree 0 has no unmet prerequisites and is safe to process right now.
 
-**Kahn's algorithm** (the BFS-based approach this module builds around) works like this:
+**Kahn's algorithm** (the BFS-based approach this module builds around), step by step:
 
-1. Compute the in-degree of every node by scanning all edges once.
-2. Any node whose in-degree is 0 has no prerequisites at all — it can go first. Collect all such nodes into a queue.
-3. Repeatedly take a node out of the queue, append it to the output order, and then "remove" that node from the graph by decrementing the in-degree of each of its neighbors (the nodes it pointed to) — because one of *their* prerequisites (this node) has now been satisfied.
-4. Whenever decrementing a neighbor's in-degree brings it down to 0, that neighbor now has no unmet prerequisites either, so push it onto the queue.
-5. Repeat until the queue is empty.
+1. Build the adjacency list `adj` from the edge list: for every edge `u -> v`, append `v` to `adj[u]`.
+2. Compute the in-degree of every node by scanning all edges once: initialize `inDegree[v] = 0` for every node, then increment `inDegree[v]` for each edge `u -> v`.
+3. Seed a queue with every node whose in-degree is 0 — these have no prerequisites at all and can go first.
+4. While the queue is not empty: pop a node `u`, append it to the output order (`u` is now finalized), then for every neighbor `v` in `adj[u]`, decrement `inDegree[v]` by 1 — because one of its prerequisites (`u`) is now satisfied — and if `inDegree[v]` just became 0, push `v` onto the queue.
+5. When the queue empties, compare the output list's length to the total node count. **Equal** means every node was placed and the list is a valid topological order. **Shorter** means the remaining, never-placed nodes are stuck in a cycle — none of them ever reached in-degree 0, because each was waiting on another node in the same cycle that was, in turn, waiting on it. Report failure rather than returning the partial list as if it were complete.
 
-If, at the end, the output order contains **every** node, you have a valid topological order. If it contains **fewer** nodes than the graph has, the remaining nodes are stuck in a cycle — none of them ever reached in-degree 0, because each was waiting on another node in the same cycle that was, in turn, waiting on it. That stuck state is exactly how you detect "no valid order exists," and it falls directly out of the algorithm's own bookkeeping — no separate cycle-detection pass is needed.
+That stuck state is exactly how "no valid order exists" is detected, and it falls directly out of the algorithm's own bookkeeping — no separate cycle-detection pass is needed.
 
 There is a second, equally standard way to get a topological order: **DFS post-order, reversed.** Run a depth-first search from every unvisited node; whenever a node's DFS call finishes (all its descendants have been fully explored), push it onto a stack. When all nodes have been visited, popping the stack (equivalently, reversing the order nodes finished in) gives a valid topological order. Cycle detection in this version requires tracking nodes currently "on the recursion stack" (the "in-progress" / gray-colored nodes in the classic white/gray/black DFS coloring) — if DFS ever reaches a node that is already gray, that back-edge proves a cycle exists. This module implements Kahn's algorithm because its cycle-detection signal (final order length versus node count) is simpler to state and to get right than DFS's recursion-stack tracking, but both approaches are standard and interviewers expect you to at least know the DFS alternative exists.
 
@@ -120,80 +107,55 @@ Responsibilities in one line each:
 - **Queue:** always holds exactly the currently-processable nodes — the algorithm's frontier.
 - **Output list:** the accumulating answer, whose final length doubles as the cycle check.
 
-## Execution Flow
+## Why Not Other Approaches?
 
-Kahn's algorithm, step by step:
+**"Try every permutation of items and check which ones respect all the constraints."**
+Correct, but `O(N!)` time. Even ignoring runtime, this approach gives you no insight into *why* an order works or fails — you are blindly guessing and verifying rather than reasoning about the dependency structure. Utterly impractical past a handful of items.
 
-1. Build the adjacency list `adj` from the edge list: for every edge `u -> v`, append `v` to `adj[u]`.
-2. Initialize `inDegree[v] = 0` for every node, then scan every edge `u -> v` once more and increment `inDegree[v]` by 1 for each.
-3. Initialize an empty queue. Scan every node; for each node whose `inDegree` is exactly 0, push it onto the queue (these are the nodes with no prerequisites at all).
-4. Initialize an empty output list.
-5. While the queue is not empty:
-   a. Pop a node `u` from the front of the queue.
-   b. Append `u` to the output list — `u` is now finalized in the order.
-   c. For every neighbor `v` in `adj[u]` (every node that had `u` as a direct prerequisite): decrement `inDegree[v]` by 1, because one of its prerequisites (`u`) is now satisfied.
-   d. If `inDegree[v]` just became 0, push `v` onto the queue — it now has no unmet prerequisites left.
-6. When the queue becomes empty, compare the output list's length to the total number of nodes.
-   - If they are **equal**, the output list is a valid topological order — every node was eventually placed.
-   - If the output list is **shorter**, the remaining, never-placed nodes are part of (or depend exclusively on) a cycle — report that no valid order exists rather than returning the partial list as if it were complete.
+**"Randomly shuffle the list, then repeatedly swap violating adjacent pairs until no violations remain."**
+This resembles bubble sort applied to a partial (not total) order. There is no guarantee of termination in a reasonable number of passes, no guarantee two arbitrary items are even comparable (topological order is a **partial** order — many pairs of unrelated items have no required relationship at all), and — critically — this approach has **no way to detect a cycle**. It will either loop indefinitely or converge on a state that still has a violation, with no signal telling you the input was actually invalid.
 
-## Recognition Diagram
+**"Sort items by some heuristic proxy, like alphabetically or by how many total dependents they have."**
+This ignores the actual constraint structure entirely. Alphabetical order has nothing to do with prerequisite relationships; a "sort by dependency count" heuristic can still place an item before one of its direct prerequisites if the heuristic does not exactly encode the edge relationships (and if it did exactly encode them, you would already have solved the problem).
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart distinguishing Topological Sort from plain Graph BFS/DFS and from Union Find, based on the signals in a problem statement.
+**Net:** every alternative either pays an exponential cost (brute-force permutation checking), offers no termination or cycle-detection guarantee (repeated shuffle-and-fix), or ignores the actual dependency graph in favor of an unrelated heuristic (proxy sorting). What all of them lack is a way to *directly compute*, from the edges themselves, which items are safe to place next — that direct computation is exactly what Topological Sort provides.
 
-## Flow Diagram
+## Diagrams
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of Kahn's algorithm (compute in-degrees, seed the queue, pop/emit/decrement/enqueue, check final order length).
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart distinguishing Topological Sort from plain Graph BFS/DFS and from Union Find, based on the signals in a problem statement.
+- [images/flow-diagram.md](images/flow-diagram.md) — control-flow diagram of Kahn's algorithm (compute in-degrees, seed the queue, pop/emit/decrement/enqueue, check final order length).
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of in-degree values and queue contents on a concrete 5-course prerequisite graph.
 
-## Trace Diagram
+## The Code
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of in-degree values and queue contents on a concrete 5-course prerequisite graph.
+[code.cpp](code.cpp) provides one generic, reusable function, deliberately separated from any single LeetCode problem so the pattern's shape is visible on its own: `topologicalSort(numNodes, edges)` — takes the total number of nodes (numbered `0` to `numNodes - 1`) and a list of directed edges `{u, v}` meaning "`u` must come before `v`," and returns a small struct containing the computed order and a `hasCycle` boolean. The function is intentionally graph-shape-agnostic: it does not know or care whether the nodes represent courses, build targets, or spreadsheet cells — that mapping is the caller's job (see [problems/](problems/) for four such mappings). Returning `hasCycle` explicitly, rather than an empty order, keeps "no valid order exists" and "the valid order happens to be empty because there are zero nodes" unambiguous to callers.
 
-## Implementation
+Internally, it builds `adj` (size `numNodes`, each entry a list of direct dependents) and `inDegree` (size `numNodes`, initialized to 0) in a single pass over `edges`: for every `{u, v}` pair, `v` is appended to `adj[u]` and `inDegree[v]` is incremented. A `std::queue<int>` is then seeded with every node whose `inDegree` is 0 — the initial frontier of "no prerequisites at all" nodes. The main loop pops a node, appends it to the `order` output vector, and walks its adjacency list, decrementing each neighbor's `inDegree` and enqueuing any neighbor that just reached 0 — mechanically implementing the steps described in Solution above. After the loop, `hasCycle` is computed as `order.size() != static_cast<size_t>(numNodes)`, and the function returns `{order, hasCycle}` as a small aggregate struct so callers get both pieces of information without needing an ambiguous sentinel value.
 
-[code.cpp](code.cpp) provides one generic, reusable function, deliberately separated from any single LeetCode problem so the pattern's shape is visible on its own:
-
-- `topologicalSort(numNodes, edges)` — takes the total number of nodes (numbered `0` to `numNodes - 1`) and a list of directed edges `{u, v}` meaning "`u` must come before `v`," and returns a small struct containing the computed order and a `hasCycle` boolean. Internally it builds `std::vector<std::vector<int>> adj` (the adjacency list) and `std::vector<int> inDegree`, then runs Kahn's algorithm exactly as described in Execution Flow above.
-
-The function is intentionally graph-shape-agnostic: it does not know or care whether the nodes represent courses, build targets, or spreadsheet cells — that mapping is the caller's job (see [problems/](problems/) for four such mappings). Returning `hasCycle` explicitly, rather than an empty order, keeps "no valid order exists" and "the valid order happens to be empty because there are zero nodes" unambiguous to callers.
-
-## Code Walkthrough
-
-**`topologicalSort(int numNodes, const std::vector<std::pair<int,int>>& edges)`** (in [code.cpp](code.cpp)). First builds `adj` (size `numNodes`, each entry a list of direct dependents) and `inDegree` (size `numNodes`, initialized to 0) in a single pass over `edges`: for every `{u, v}` pair, `v` is appended to `adj[u]` and `inDegree[v]` is incremented. This exists to turn the flat edge list into the two structures Kahn's algorithm actually needs — a way to find a node's dependents, and a way to check whether a node currently has zero unmet prerequisites.
-
-A `std::queue<int>` is then seeded with every node whose `inDegree` is 0 — the initial frontier of "no prerequisites at all" nodes. The main loop pops a node, appends it to the `order` output vector, and walks its adjacency list, decrementing each neighbor's `inDegree` and enqueuing any neighbor that just reached 0. This exists to mechanically implement steps 5a-5d of Execution Flow.
-
-After the loop, `hasCycle` is computed as `order.size() != static_cast<size_t>(numNodes)` — the direct implementation of step 6. The function returns `{order, hasCycle}` as a small aggregate struct so callers get both pieces of information without needing a sentinel value (like an empty vector) that could be ambiguous between "zero nodes" and "cycle detected."
-
-**`main()`** (in [code.cpp](code.cpp)). Exercises `topologicalSort` against two hand-checked cases: a valid DAG (a small course-prerequisite graph where the expected order is checked by confirming every edge constraint holds, since Kahn's algorithm on a DAG with multiple in-degree-0 nodes at once does not guarantee one single "the" answer — only "a" valid one), and a graph containing a deliberate cycle, checking that `hasCycle` comes back `true` and that the returned partial order is strictly shorter than `numNodes`. Both cases print `[PASS]`/`[FAIL]` lines, proving the implementation compiles and behaves correctly end to end.
+**`main()`** exercises `topologicalSort` against two hand-checked cases: a valid DAG (a small course-prerequisite graph, where the expected order is checked by confirming every edge constraint holds rather than an exact sequence, since Kahn's algorithm on a DAG with multiple in-degree-0 nodes at once does not guarantee one single "the" answer — only "a" valid one), and a graph containing a deliberate cycle, checking that `hasCycle` comes back `true` and that the returned partial order is strictly shorter than `numNodes`. Both cases print `[PASS]`/`[FAIL]` lines, proving the implementation compiles and behaves correctly end to end.
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem, reimplementing Kahn's algorithm inline (rather than calling the generic template directly) so every file stays dependency-free and independently readable — mirroring the same choice made in this repo's other full pattern modules. See [problems/README.md](problems/README.md) for the index. Briefly: `01` is pure cycle detection (does *any* valid order exist?); `02` is the same graph but asking for the order itself; `03` is the hardest of the four, requiring you to first *derive* the edges from an unrelated-looking input (a sorted word list) before topological sort even begins; `04` is a variant that peels graph "leaves" layer by layer on an *undirected* tree rather than following directed prerequisite edges, showing how the same in-degree/queue machinery generalizes.
 
-## Advantages
+## Tradeoffs
+
+**What Topological Sort buys you**
 
 - **Linear time, not exponential.** `O(V + E)` (V = nodes, E = edges) instead of the `O(N!)` a brute-force permutation search would need — the difference between "instant" and "will never finish" once `N` grows past roughly 15-20 items.
 - **Built-in cycle detection, for free.** The exact same bookkeeping that produces the order (in-degree tracking) also tells you, via the final order length, whether a valid order existed at all — no separate pass is required.
-- **Directly models the problem's real structure.** Unlike a proxy heuristic (alphabetical, dependency count), the algorithm operates directly on the "must come before" edges themselves, so its correctness is easy to argue: a node is placed exactly when its prerequisites are actually satisfied, nothing more, nothing less.
-- **Naturally produces a legal execution order, not just a yes/no answer.** Build systems, package managers, and course planners need the *actual order*, not merely confirmation that one exists — Kahn's algorithm gives you both from the same run.
-- **Extends cleanly to weighted "priority among ties" variants.** Swapping the plain queue for a min-heap costs only a factor of `log V` per operation and directly gives the lexicographically smallest valid order — a small, well-understood extension rather than a redesign.
+- **Directly models the problem's real structure.** Unlike a proxy heuristic (alphabetical, dependency count), the algorithm operates directly on the "must come before" edges themselves, so a node is placed exactly when its prerequisites are actually satisfied — nothing more, nothing less.
+- **Produces a legal execution order, not just a yes/no answer.** Build systems, package managers, and course planners need the *actual order*, not merely confirmation that one exists — Kahn's algorithm gives you both from the same run.
+- **Extends cleanly to tie-breaking variants.** Swapping the plain queue for a min-heap costs only a factor of `log V` per operation and directly gives the lexicographically smallest valid order.
+- **A simpler cycle-detection signal than the DFS alternative.** Comparing final order length to node count is more directly stateable than tracking a "currently on the recursion stack" set during DFS, and it naturally produces the order in forward-build order, with no reversal step needed.
 
-## Disadvantages
+**What it costs you**
 
-- **Only works on a DAG (Directed Acyclic Graph).** If the input graph has a cycle, there is **no valid topological order at all** — not a degraded one, not a "best effort" one. This is not an edge case to patch around; it is a structural precondition of the whole technique.
-- **The algorithm must actively detect and report cycles, not silently return a partial order.** A naive implementation that forgets to check `order.size() == numNodes` will return a truncated list as if it were a complete, valid answer — which is a correctness bug, not a performance one, and can be far more dangerous than crashing outright.
-- **Only one arbitrary valid order is produced by default, not a stable or "preferred" one.** If two nodes both have in-degree 0 at the same moment, which one appears first depends on incidental factors like node numbering and the standard queue's FIFO behavior — if the problem needs a *specific* valid order (e.g. lexicographically smallest), the plain queue is insufficient on its own.
-- **Requires building auxiliary structures up front.** The in-degree array and adjacency list are `O(V + E)` to build, which is asymptotically free but is still real, non-trivial setup work compared to a pattern that needs no preprocessing at all.
+- **Only works on a DAG.** If the input graph has a cycle, there is **no valid topological order at all** — not a degraded one, not a "best effort" one. This is a structural precondition of the whole technique, not an edge case to patch around.
+- **Must actively detect and report cycles, not silently return a partial order.** A naive implementation that forgets to check `order.size() == numNodes` returns a truncated list as if it were a complete, valid answer — a correctness bug, not a performance one, and often more dangerous than crashing outright.
+- **Only one arbitrary valid order is produced by default, not a stable or "preferred" one.** If two nodes both have in-degree 0 at the same moment, which one appears first depends on incidental factors like node numbering and the standard queue's FIFO behavior — a specific (e.g. lexicographically smallest) order needs a min-heap instead of a plain queue.
+- **Requires building auxiliary structures up front.** The in-degree array and adjacency list are `O(V + E)` to build — asymptotically free, but still real, non-trivial setup work compared to a pattern that needs no preprocessing at all.
 - **Undirected graphs need a different mental model.** Kahn's algorithm as described assumes directed edges with a clear "prerequisite" meaning; applying the same in-degree machinery to an undirected graph (as in Minimum Height Trees) requires reframing "in-degree" as plain degree and reinterpreting what "reaching 0" means (see `problems/04`).
-
-## Tradeoffs
-
-**What we gain versus brute-force permutation checking:** we go from `O(N!)` to `O(V + E)` by directly tracking which nodes are currently unblocked, instead of blindly generating and validating whole candidate orderings.
-
-**What we gain versus the DFS + reverse-post-order alternative:** a simpler, more directly-stateable cycle-detection signal (final order length versus node count) instead of tracking a "currently on the recursion stack" set during DFS. The two approaches have identical asymptotic complexity; Kahn's is generally considered easier to implement correctly under interview time pressure, and it naturally produces the order in forward-build order (no reversal step needed).
-
-**What we lose versus DFS-based topological sort:** DFS-based topological sort is sometimes preferred when you are already doing a DFS for another reason in the same pass (e.g. simultaneously detecting strongly connected components), since you get the ordering "for free" as a side effect of a traversal you needed anyway. Kahn's algorithm needs its own dedicated queue-driven pass.
-
-**What we lose in general:** applicability outside DAGs. There is no partial-credit version of Topological Sort for a graph with cycles — either the whole graph is a DAG and a full valid order exists, or it is not and no valid order exists at all for the *entire* graph (even though acyclic portions of a cyclic graph could, in principle, still be locally orderable — the standard formulation reports failure for the whole input rather than a fragmented "order what I can" result).
+- **No partial credit for a graph with cycles.** Either the whole graph is a DAG and a full valid order exists, or it is not and no valid order exists at all for the *entire* graph — even though acyclic portions of a cyclic graph could, in principle, still be locally orderable, the standard formulation reports failure for the whole input rather than a fragmented "order what I can" result.
+- **Loses the "free traversal" benefit the DFS alternative sometimes offers.** DFS-based topological sort is preferable when you are already doing a DFS for another reason in the same pass (e.g. simultaneously detecting strongly connected components), getting the ordering as a side effect of a traversal you needed anyway; Kahn's algorithm needs its own dedicated queue-driven pass.
 
 ## Complexity
 
@@ -233,25 +195,19 @@ After the loop, `hasCycle` is computed as `order.size() != static_cast<size_t>(n
 - **The graph is undirected and you just need connectivity or cycle detection as edges are added incrementally.** That is Union Find's job — it answers "connected?" and "would adding this edge create a cycle?" without ever needing a full traversal or ordering.
 - **The relationships between items are not really "must happen before" at all**, but something else entirely (similarity, distance, weight) — forcing those into a topological-sort shape produces a meaningless "order."
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 Topological Sort appears constantly in both interview settings and production infrastructure:
 
-- **Build system task ordering.** `make`, Bazel, Gradle, and similar tools model every build target and its dependencies as a DAG, and use a topological-sort-equivalent algorithm to decide the compilation/link order, so no target is built before its dependencies.
+- **Build system task ordering.** `make`, Bazel, Gradle, and similar tools model every build target and its dependencies as a DAG, and use a topological-sort-equivalent algorithm to decide the compilation/link order — the same shape as an **internal build/task DAG validator** for a monorepo, run in CI to reject a newly introduced dependency cycle between internal packages before it merges, rather than discovering the cycle only when a build mysteriously hangs.
 - **Package manager dependency resolution.** `npm`, `pip`, and `cargo` all need to install a package's dependencies before the package itself; the dependency graph they resolve is exactly the DAG this pattern operates on (and a version-conflict "cannot resolve dependencies" error is often, at its core, a cycle or contradiction in that graph).
 - **Course/curriculum scheduling.** University degree-planning tools and LeetCode's own "Course Schedule" family of problems (207, 210) model prerequisites directly as this pattern's canonical example.
-- **Spreadsheet formula recalculation order.** Spreadsheet engines (and reactive/dataflow systems more generally, like build graphs in Bazel or task graphs in Airflow) recompute derived cells/values in dependency order so a value is never read before it is freshly computed.
+- **Spreadsheet and dataflow recalculation order.** Spreadsheet engines (and reactive/dataflow systems more generally, like build graphs in Bazel or task graphs in Airflow) recompute derived cells/values in dependency order so a value is never read before it is freshly computed.
 - **CI/CD pipeline stage ordering.** Pipeline definitions that declare "stage B depends on stage A" are DAGs whose valid execution order is a topological sort; a pipeline with a dependency cycle is a misconfiguration the CI system should detect and reject, not silently misrun.
-
-## Where I Can Use This
-
-Five realistic ideas for your own backend/systems work:
-
-1. **A lightweight task-runner for a data pipeline** (e.g. an internal ETL job scheduler) that lets teams declare "this transform depends on that one" and computes a safe run order automatically, rejecting the configuration up front if it contains a dependency cycle.
-2. **Database migration ordering.** If migrations declare dependencies on other migrations (rather than relying purely on filename/timestamp ordering), topological sort gives you a robust way to compute a valid apply order and to detect a broken, circular migration dependency before it reaches production.
-3. **Feature-flag or config dependency resolution.** If one feature flag's rollout requires another to be enabled first, modeling this as a DAG and topologically sorting it catches contradictory flag dependencies before a bad rollout config ships.
-4. **A microservice startup orchestrator.** For a local dev environment (e.g. `docker-compose` service startup ordering) where service B must be healthy before service C starts, topological sort over the declared "depends_on" edges computes a safe startup sequence and can flag an accidental circular dependency between services.
-5. **An internal build/task DAG validator** for a monorepo, run in CI to reject any newly introduced dependency cycle between internal packages/modules before it merges, rather than discovering the cycle only when a build mysteriously hangs.
+- **Database migration ordering.** If migrations declare dependencies on other migrations (rather than relying purely on filename/timestamp ordering), topological sort gives a robust way to compute a valid apply order and to detect a broken, circular migration dependency before it reaches production.
+- **Feature-flag or config dependency resolution.** If one feature flag's rollout requires another to be enabled first, modeling this as a DAG and topologically sorting it catches contradictory flag dependencies before a bad rollout config ships.
+- **Microservice startup orchestration.** For a local dev environment (e.g. `docker-compose` service startup ordering) where service B must be healthy before service C starts, topological sort over the declared `depends_on` edges computes a safe startup sequence and can flag an accidental circular dependency between services.
+- **Data pipeline task scheduling.** A lightweight internal ETL job scheduler that lets teams declare "this transform depends on that one" can compute a safe run order automatically, rejecting the configuration up front if it contains a dependency cycle.
 
 ## Similar Patterns
 
@@ -270,29 +226,15 @@ Five realistic ideas for your own backend/systems work:
 
 Experienced engineers rarely dwell on the mechanics of writing the Kahn's-algorithm loop itself — that is mechanical. What they actually probe is whether you understand the **precondition and the failure mode**: do you know that a valid order requires a DAG, and do you handle the cyclic case *explicitly* rather than assuming well-behaved input?
 
-Common follow-up questions:
-- *"What if the graph has a cycle?"* — expects you to state clearly that no valid topological order exists in that case, and to point at exactly where in your code that gets detected (comparing final order length to node count, in Kahn's algorithm).
+Follow-up questions worth rehearsing:
 - *"Can you get the lexicographically smallest valid order instead of just any valid one?"* — expects recognizing that swapping the plain queue for a min-heap (`priority_queue`) achieves this, at the cost of an added `log V` factor per operation.
-- *"How would you do this with DFS instead of BFS?"* — expects you to describe DFS post-order plus a final reversal, and to know that cycle detection there requires tracking nodes currently on the recursion stack (the "gray" set), not just a plain visited/unvisited boolean.
+- *"How would you do this with DFS instead of BFS?"* — expects the post-order-plus-reversal description from Solution above, and knowing that its cycle detection needs a recursion-stack ("gray set") check rather than a simple length comparison.
 - *"Give me a real system that needs this."* — expects a genuine production example (build systems, package managers, CI pipelines), not just "Course Schedule on LeetCode."
-- *"What's the time complexity, and why?"* — expects the precise `O(V + E)` argument: every node is enqueued/dequeued exactly once, and every edge contributes exactly one in-degree decrement across the whole run, not per iteration.
 
-Common misconceptions:
-- "Topological sort always produces a unique answer." False — any graph with more than one node having in-degree 0 at some point admits multiple valid orders; "a" valid order, not "the" valid order, is the default contract.
-- "If my code runs without crashing on a cyclic input, it handled the cycle correctly." False — a naive implementation can complete without error while silently returning a truncated, invalid order; the *length check* is what actually detects the cycle, not the absence of a crash.
-- "Topological sort only applies to explicitly-graph-shaped problems like course scheduling." False — the pattern applies the moment you can identify discrete items and directed "must precede" relationships between them, even when the input looks nothing like a graph on the surface (see `problems/03`, where the graph has to be derived from a sorted word list first).
-- "In-degree and out-degree are interchangeable for this algorithm." False — Kahn's algorithm specifically tracks in-degree (unmet prerequisites); confusing the two produces an algorithm that processes nodes in the wrong order or never terminates correctly.
-
-## Summary
-
-- Topological Sort orders the nodes of a directed graph so every edge `u -> v` places `u` before `v`, or reports that no such order exists.
-- A valid order exists **if and only if** the graph is a DAG (Directed Acyclic Graph) — this precondition is the single most important fact in the whole pattern.
-- **Kahn's algorithm** (BFS-based): track each node's in-degree, repeatedly remove/emit nodes with in-degree 0, decrementing their neighbors' in-degrees, until the queue empties.
-- A **stuck state** — the queue empties before every node has been emitted — is exactly how a cycle is detected: compare the final output length to the total node count.
-- The **DFS post-order + reverse** alternative achieves the same result via a different traversal, with cycle detection via a "currently on the recursion stack" set instead of a length check.
-- Typical complexity win versus brute-force permutation checking: `O(N!)` down to `O(V + E)`.
-- A plain FIFO queue gives *a* valid order; a min-heap gives the *lexicographically smallest* valid order, at an added `log V` cost per operation.
-- Real production uses: build systems (Make, Bazel), package managers (npm, pip), course/curriculum planning, spreadsheet/dataflow recalculation, and CI/CD pipeline stage ordering.
+Misconceptions worth killing early:
+- **"Topological sort always produces a unique answer."** False — any graph with more than one node having in-degree 0 at some point admits multiple valid orders; "a" valid order, not "the" valid order, is the default contract.
+- **"Topological sort only applies to explicitly-graph-shaped problems like course scheduling."** False — the pattern applies the moment you can identify discrete items and directed "must precede" relationships between them, even when the input looks nothing like a graph on the surface (see `problems/03`, where the graph has to be derived from a sorted word list first).
+- **"In-degree and out-degree are interchangeable for this algorithm."** False — Kahn's algorithm specifically tracks in-degree (unmet prerequisites); confusing the two produces an algorithm that processes nodes in the wrong order or never terminates correctly.
 
 ## Key Takeaways
 

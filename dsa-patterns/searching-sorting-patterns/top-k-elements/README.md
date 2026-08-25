@@ -66,22 +66,6 @@ The naive instinct is: sort the entire collection, then take the first (or last)
 - **Unnecessary memory.** A full sort (or a sorted copy) holds all `n` elements in sorted form; a size-K heap holds only K elements at any time, which matters when `n` is large and the service is memory-constrained (a batch job processing millions of events, a request handler with a tight memory budget).
 - **Worse behavior on streaming data.** If the data arrives incrementally (a live event stream, a series of incoming requests) rather than all at once, "sort everything, then take K" requires buffering the *entire* stream before you can answer anything. A size-K heap can report a correct, up-to-date top-K after every single new element, using bounded memory the whole time.
 
-## Why Not Other Approaches?
-
-**"Sort the whole array, then take the first/last K elements."**
-Correct, and simple to write, but it costs **O(n log n)** time no matter how small K is. If `K` is 10 and `n` is a million, you did roughly 100,000x more ordering work than necessary — you fully resolved the relative order of every pair of elements, when the problem only ever asked "which K are the biggest," not "what is the exact rank of every single element." This is the single most common mistake engineers make on this problem shape: reaching for the tool they already know (`sort()`) instead of the tool sized to the actual question.
-
-**"Scan the array K times, each time picking out the next-largest remaining element (selection sort style)."**
-This avoids a full sort's log factor per element but costs **O(n·K)** overall (K passes, each O(n)) — worse than O(n log k) whenever K is more than a handful and n is large, and it still touches every element K times instead of once.
-
-**"Use `std::nth_element` (quickselect) to partition around the K-th largest, then take everything past that partition."**
-This is a legitimate, genuinely competitive alternative — average-case **O(n)** time, better than a heap's O(n log k) in the average case. Its downsides: worst-case O(n²) without care (though `std::nth_element` guards against this in practice), it needs the entire input materialized in memory up front (no streaming), and it gives you the K elements in **no particular order** with no easy way to maintain that top-K incrementally as new elements arrive. The heap-of-size-K approach trades a log(k) factor for the ability to process data as a single streaming pass and maintain a "top K so far" answer at every point in the stream — a real advantage whenever data arrives over time rather than sitting in memory all at once (log ingestion, live leaderboards, trending-content feeds).
-
-**"Keep a plain sorted array/list of size K and insert new candidates with binary search + shift."**
-Finding the insertion point is O(log k) via binary search, but *inserting* into a sorted array requires shifting up to K elements over — O(k) per insertion, O(n·k) overall. A heap does the equivalent work in O(log k) per insertion because it only needs to preserve the much weaker "root is the min/max" invariant, not full sorted order at every position.
-
-**Tradeoff summary:** every alternative either pays for full ordering you do not need (sort), pays a worse multiplicative factor (K-pass selection, sorted-array insertion), or gives up the ability to process a stream incrementally (quickselect). A size-K heap is the only approach that gets O(n log k) time, O(k) space, *and* works correctly one element at a time on a live stream — that combination is its entire value proposition.
-
 ## Solution
 
 The core idea: maintain a heap that holds **exactly K elements** at any point after the first K have been seen. As each new candidate arrives, compare it only against the *weakest* member currently held — the one sitting at the top of the heap — and decide in O(log k) whether it deserves a spot.
@@ -96,6 +80,14 @@ So the rule is: **the heap type is inverted relative to what you are searching f
 - Want the K **most frequent** elements → same min-heap-of-size-K shape, but ordered by *frequency* instead of raw value (compute frequencies first, then apply the identical push/evict rule).
 
 The mechanism, once you accept the inversion, is a single repeated rule applied once per input element: **push the new element onto the heap; if the heap's size now exceeds K, pop.** That is it. There is no separate "should I even consider this element" check beforehand — every element gets pushed, and the heap itself, via the pop, decides whether it was worth keeping. This looks wasteful at first glance (why push something you might immediately discard?) but it is not: the push-then-maybe-pop sequence is exactly O(log k) either way, and it is simpler and less error-prone than writing a separate "is this candidate even competitive" comparison before deciding whether to push at all.
+
+Step by step:
+
+1. Decide the heap type based on what you are looking for: min-heap for "K largest," max-heap for "K smallest," min-heap-by-frequency for "K most frequent."
+2. (Frequency variant only) Make one full pass over the input building a hash map from value to occurrence count — a separate O(n) step that happens *before* the heap pass begins.
+3. For each element (or each distinct value, in the frequency variant): push it onto the heap, then if the heap's size is now greater than K, pop once — evicting the current weakest member. Repeat until every input element has been processed exactly once.
+4. After the scan, the heap holds exactly the K best elements by whatever ordering key was chosen — but **not** in fully sorted order; a heap only guarantees the identity of its top element, not the relative order of everything beneath it.
+5. If the problem needs the final K elements in sorted order (e.g., "return the top K sorted descending"), pop everything off into a list and sort that small list — an extra O(k log k) step, negligible because k is small, and strictly cheaper than sorting the original n-element input.
 
 ## Architecture
 
@@ -115,55 +107,43 @@ Responsibilities in one line each:
 - **Eviction rule:** the single mechanical step that keeps the heap at exactly size K.
 - **Input source:** supplies candidates one at a time; the algorithm never needs to see more than one at once.
 
-## Execution Flow
+## Why Not Other Approaches?
 
-1. Decide the heap type based on what you are looking for: min-heap for "K largest," max-heap for "K smallest," min-heap-by-frequency for "K most frequent" (frequency needs a preliminary counting pass — see step 2 below for that variant).
-2. (Frequency variant only) Make one full pass over the input building a hash map from value to occurrence count. This is a separate O(n) step that happens *before* the heap pass begins.
-3. Initialize an empty heap of the chosen type.
-4. For each element (or each distinct value, in the frequency variant) in the input:
-   a. Push it onto the heap.
-   b. If the heap's size is now greater than K, pop once — evicting the current weakest member.
-5. Repeat step 4 until every input element has been processed exactly once.
-6. After the scan, the heap holds exactly the K best elements by whatever ordering key was chosen — but **not** in fully sorted order; a heap only guarantees the identity of its top element, not the relative order of everything beneath it.
-7. If the problem needs the final K elements in sorted order (e.g., "return the top K sorted descending"), pop everything off into a list and sort that small list — an extra O(k log k) step, negligible because k is small, and strictly cheaper than sorting the original n-element input.
+**"Sort the whole array, then take the first/last K elements."**
+Correct, and simple to write, but it costs **O(n log n)** time no matter how small K is. If `K` is 10 and `n` is a million, you did roughly 100,000x more ordering work than necessary — you fully resolved the relative order of every pair of elements, when the problem only ever asked "which K are the biggest," not "what is the exact rank of every single element." This is the single most common mistake engineers make on this problem shape: reaching for the tool they already know (`sort()`) instead of the tool sized to the actual question.
 
-## Recognition Diagram
+**"Scan the array K times, each time picking out the next-largest remaining element (selection sort style)."**
+This avoids a full sort's log factor per element but costs **O(n·K)** overall (K passes, each O(n)) — worse than O(n log k) whenever K is more than a handful and n is large, and it still touches every element K times instead of once.
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart deciding between Top K Elements, Two Heaps, and a full sort based on the signals in a problem statement.
+**"Use `std::nth_element` (quickselect) to partition around the K-th largest, then take everything past that partition."**
+This is a legitimate, genuinely competitive alternative — average-case **O(n)** time, better than a heap's O(n log k) in the average case. Its downsides: worst-case O(n²) without care (though `std::nth_element` guards against this in practice), it needs the entire input materialized in memory up front (no streaming), and it gives you the K elements in **no particular order** with no easy way to maintain that top-K incrementally as new elements arrive. The heap-of-size-K approach trades a log(k) factor for the ability to process data as a single streaming pass and maintain a "top K so far" answer at every point in the stream — a real advantage whenever data arrives over time rather than sitting in memory all at once (log ingestion, live leaderboards, trending-content feeds).
 
-## Flow Diagram
+**"Keep a plain sorted array/list of size K and insert new candidates with binary search + shift."**
+Finding the insertion point is O(log k) via binary search, but *inserting* into a sorted array requires shifting up to K elements over — O(k) per insertion, O(n·k) overall. A heap does the equivalent work in O(log k) per insertion because it only needs to preserve the much weaker "root is the min/max" invariant, not full sorted order at every position.
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the push-then-evict-if-oversized loop over the size-K heap.
+**Net:** every alternative either pays for full ordering you do not need (sort), pays a worse multiplicative factor (K-pass selection, sorted-array insertion), or gives up the ability to process a stream incrementally (quickselect). A size-K heap is the only approach that gets O(n log k) time, O(k) space, *and* works correctly one element at a time on a live stream — that combination is its entire value proposition.
 
-## Trace Diagram
+## Diagrams
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of the size-K min-heap's contents as elements are processed one at a time, for a concrete "3 largest of `[3,1,5,12,2,11,9,7]`" example.
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart deciding between Top K Elements, Two Heaps, and a full sort based on the signals in a problem statement.
+- [images/flow-diagram.md](images/flow-diagram.md) — control-flow diagram of the push-then-evict-if-oversized loop over the size-K heap.
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of the size-K min-heap's contents as elements are processed one at a time, for a concrete "3 largest of `[3,1,5,12,2,11,9,7]`" example.
 
-## Implementation
+## The Code
 
-[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/).
+[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/). Templates (rather than hard-coded `int`/`vector<int>` signatures) are used deliberately so the value-keyed functions work over `vector<int>`, `vector<double>`, or any other comparable element type without rewriting the heap logic — the eviction rule is what matters, not the element type.
 
-It provides three small function templates:
+- **`topKLargest`** — the min-heap-of-size-K template for "K largest." Builds a `std::priority_queue<T, std::vector<T>, std::greater<T>>` — the `std::greater<T>` comparator is what flips the default max-heap into a min-heap. Pushes every element; after each push, if `size() > k`, pops once. After the scan, drains the heap into a vector and sorts it descending (an explicit, clearly-commented extra O(k log k) step) purely for convenient, predictable output — the heap logic itself never depended on that final order. Direct ancestor of [problems/01-kth-largest-element-in-an-array.cpp](problems/01-kth-largest-element-in-an-array.cpp).
+- **`topKSmallest`** — the mirror-image max-heap-of-size-K template for "K smallest," with the default `std::priority_queue<T>` (already a max-heap, no comparator argument needed) and draining into an ascending-sorted vector. Exists purely to place the inversion side by side with `topKLargest` in one file, so the "opposite heap type for opposite question" rule is visible by direct comparison rather than only described in prose.
+- **`topKFrequent`** — the frequency-keyed variant: first builds an `unordered_map<int,int>` counting occurrences (one O(n) pass), then pushes `(count, value)` pairs onto a min-heap ordered by `std::pair`'s natural lexicographic comparison (compares `.first`, i.e. frequency, before `.second`), evicting the lowest-frequency pair whenever the heap exceeds size K. Demonstrates that the *identical* push-then-evict rule applies when the ordering key is a derived quantity rather than the raw value itself. Direct ancestor of [problems/02-top-k-frequent-elements.cpp](problems/02-top-k-frequent-elements.cpp) and, with a custom tie-breaking comparator, [problems/04-top-k-frequent-words.cpp](problems/04-top-k-frequent-words.cpp).
 
-- `topKLargest` — the min-heap-of-size-K template for "K largest," working over any type with a total order (`int`, `double`, etc. via templates).
-- `topKSmallest` — the mirror-image max-heap-of-size-K template for "K smallest," included specifically to make the inversion concrete side by side with `topKLargest`.
-- `topKFrequent` — the frequency-keyed variant: a hash-map counting pass followed by a min-heap of `(frequency, value)` pairs.
-
-Templates (rather than hard-coded `int`/`vector<int>` signatures) are used deliberately so `topKLargest`/`topKSmallest` work over `vector<int>`, `vector<double>`, or any other comparable element type without rewriting the heap logic — the eviction rule is what matters, not the element type.
-
-## Code Walkthrough
-
-**`topKLargest`** (in [code.cpp](code.cpp)). Takes a container and `k`. Builds a `std::priority_queue<T, std::vector<T>, std::greater<T>>` — the `std::greater<T>` comparator is what flips the default max-heap into a min-heap. Pushes every element; after each push, if `size() > k`, pops once. After the scan, drains the heap into a vector and sorts it descending (an explicit, clearly-commented extra O(k log k) step) purely for convenient, predictable output — the heap logic itself never depended on that final order. This function exists as the canonical, purest form of the whole pattern, and is the direct ancestor of [problems/01-kth-largest-element-in-an-array.cpp](problems/01-kth-largest-element-in-an-array.cpp).
-
-**`topKSmallest`** (in [code.cpp](code.cpp)). Same shape as `topKLargest`, but with the default `std::priority_queue<T>` (already a max-heap, no comparator argument needed) and drains into an ascending-sorted vector. This function exists purely to place the inversion side by side with `topKLargest` in one file, so the "opposite heap type for opposite question" rule is visible by direct comparison rather than only described in prose.
-
-**`topKFrequent`** (in [code.cpp](code.cpp)). First builds an `unordered_map<int,int>` counting occurrences (one O(n) pass). Then pushes `(count, value)` pairs onto a min-heap ordered by `std::pair`'s natural lexicographic comparison (compares `.first`, i.e. frequency, before `.second`), evicting the lowest-frequency pair whenever the heap exceeds size K. This function exists to demonstrate that the *identical* push-then-evict rule applies when the ordering key is a derived quantity (frequency) rather than the raw value itself, and is the direct ancestor of [problems/02-top-k-frequent-elements.cpp](problems/02-top-k-frequent-elements.cpp) and, with a custom tie-breaking comparator, [problems/04-top-k-frequent-words.cpp](problems/04-top-k-frequent-words.cpp).
-
-**`main()`** (in [code.cpp](code.cpp)). Exercises all three functions against small, hand-checkable inputs — including duplicate values, `k` larger than `n`, and a `double`-typed container to prove the templates are not hard-coded to `int` — and prints `[PASS]`/`[FAIL]` for each assertion, proving the templates compile and run correctly end to end.
+**`main()`** exercises all three functions against small, hand-checkable inputs — including duplicate values, `k` larger than `n`, and a `double`-typed container to prove the templates are not hard-coded to `int` — and prints `[PASS]`/`[FAIL]` for each assertion.
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem, implementing the same push-then-evict-if-oversized logic inline (not calling the generic templates directly, to keep each file dependency-free and independently readable), with problem-specific comments tying every decision back to the general principles established in this README. See [problems/README.md](problems/README.md) for the index and rationale.
 
-## Advantages
+## Tradeoffs
+
+**What the size-K heap buys you**
 
 - **Better time complexity than a full sort whenever K is meaningfully smaller than n.** O(n log k) versus O(n log n) — the gap grows as K shrinks relative to n, which is exactly the regime these problems live in (top 10 out of a million, not top 500,000 out of a million).
 - **O(k) space, independent of n.** The heap never holds more than K elements, regardless of how large the input is.
@@ -171,22 +151,13 @@ Templates (rather than hard-coded `int`/`vector<int>` signatures) are used delib
 - **Simple, uniform control flow.** "Push, then pop if oversized" is the entire loop body — no separate comparison-before-push logic to get subtly wrong.
 - **Generalizes cleanly to derived ordering keys.** The exact same push/evict rule works whether the heap orders by raw value, by computed frequency, or by a derived distance — only the comparator changes, not the algorithm's shape.
 
-## Disadvantages
+**What it costs you**
 
 - **Does not give you a fully sorted top-K for free.** A heap only guarantees the identity of its top element; the other K-1 elements are in heap-internal order, not sorted order. If the problem needs the answer sorted, that is an explicit extra O(k log k) step after the main scan.
 - **Does not help once K approaches n.** As K gets close to n, O(n log k) approaches O(n log n) — the same cost as just sorting the whole array — so the pattern's benefit shrinks to nothing exactly when K stops being "much smaller than n." At that point, sorting everything is simpler code for the same asymptotic cost.
 - **The min-heap-for-largest-K inversion is a real source of bugs**, not just an interview curiosity — see Common Mistakes below.
 - **Heap operations have real constant-factor overhead per element** (pointer-chasing through the underlying array-backed tree, comparator calls) compared to a simple linear scan tracking a single running max/min — irrelevant for K > 1, but worth remembering that for the degenerate case K = 1, a single running variable beats a heap of size 1 in constant factor, even though both are technically O(n).
-
-## Tradeoffs
-
-**What we gain versus a full sort:** O(n log k) instead of O(n log n) time, and O(k) instead of O(n) space if you also need the sorted copy — plus the ability to process streaming input incrementally, which a full sort fundamentally cannot do without buffering everything first.
-
-**What we lose versus a full sort:** the fully sorted order of every element beyond the top K — if you later discover you need the *full* ranking, not just the top K, a size-K heap has thrown away exactly the information you now need, and you would have to re-scan.
-
-**What we gain versus quickselect (`std::nth_element`):** incremental/streaming processing and simplicity of maintaining a "top-K so far" answer at any point in a data feed.
-
-**What we lose versus quickselect:** quickselect's average-case O(n) beats a heap's O(n log k) when the entire input is already materialized in memory and you need the answer only once, not incrementally.
+- **Versus quickselect (`std::nth_element`) specifically:** quickselect's average-case O(n) beats a heap's O(n log k) when the entire input is already materialized in memory and you need the answer only once, not incrementally — the price of a heap's incremental/streaming ability.
 
 ## Complexity
 
@@ -227,22 +198,16 @@ Templates (rather than hard-coded `int`/`vector<int>` signatures) are used delib
 - **The entire input already fits comfortably in memory and you need the answer exactly once (not incrementally).** Quickselect (`std::nth_element`) gets you the same K elements in average-case O(n), beating a heap's O(n log k), *if* you do not need streaming behavior.
 - **You need the running median or another single "middle" order statistic of a growing stream**, not a top/bottom K — that is Two Heaps' job (a max-heap for the lower half plus a min-heap for the upper half working together), not a single size-K heap.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
-- **Top-K trending items.** Social platforms and e-commerce sites maintaining a "trending now" or "best sellers this hour" list are running exactly this pattern over a stream of interaction events, with the heap continuously reflecting the current top N.
-- **Top-K search results.** A search engine or internal search service that scores many candidate documents but only needs to return the top 10-50 to the user uses a bounded heap rather than sorting every scored candidate, especially when the candidate set is generated on the fly (e.g., during an index scan) rather than pre-materialized.
-- **Leaderboard systems.** A gaming or fitness-app leaderboard showing "top 100 players this week" out of millions of active users is a direct, long-running application of a size-K heap (or a persisted equivalent, like a sorted set in Redis, which offers the same "bounded top-N with cheap eviction" guarantee at the data-store level).
-- This is also one of the most frequently asked coding-interview shapes at major tech companies (Amazon, Google, Meta, Microsoft) precisely because it tests whether a candidate reaches past "sort it" and can justify a bounded-heap alternative with the correct complexity argument — Kth Largest Element, Top K Frequent Elements, and K Closest Points to Origin are among the most commonly cited "everyone has seen this exact question" problems in interview-prep communities.
+This is one of the most frequently asked coding-interview shapes at major tech companies (Amazon, Google, Meta, Microsoft) precisely because it tests whether a candidate reaches past "sort it" and can justify a bounded-heap alternative with the correct complexity argument — Kth Largest Element, Top K Frequent Elements, and K Closest Points to Origin are among the most commonly cited "everyone has seen this exact question" problems in interview-prep communities.
 
-## Where I Can Use This
+In production and in your own systems:
 
-Five realistic ideas for your own backend/systems work:
-
-1. **A "top N slowest endpoints this hour" dashboard widget**, computed from a stream of request-latency events without buffering the full hour of raw events in memory — a size-K max-heap (by latency) gives you the answer incrementally.
-2. **A live "most-active users" panel** for an admin dashboard, maintained by a size-K min-heap keyed by request count, updated as an event stream (Kafka topic, log tail) flows through, rather than re-querying and re-sorting the whole users table on every refresh.
-3. **Deduplicated top-K product recommendations** computed from a scored candidate list generated by a recommendation model, where the model may score thousands of candidates but the API only needs to return the top 20 — bounding memory and avoiding a full sort of the candidate list.
-4. **A rate-limiter's "top offenders" report**, tracking the K IP addresses or API keys with the highest request counts in a rolling window, using a size-K heap keyed by count so the report stays cheap to maintain even under high request volume.
-5. **Nearest-neighbor prefiltering** (e.g., "show the 5 closest warehouses to this delivery address" before running a more expensive routing calculation) using a size-K max-heap keyed by distance, exactly as in K Closest Points to Origin, to avoid computing a full distance-sorted list over every warehouse for every request.
+- **Top-K trending items / leaderboards.** Social platforms and e-commerce sites maintaining a "trending now" or "best sellers this hour" list, or a gaming/fitness-app "top 100 players this week" leaderboard out of millions of active users, run exactly this pattern over a stream of interaction events — or a persisted equivalent, like a Redis sorted set (`ZSET`), which offers the same "bounded top-N with cheap eviction" guarantee at the data-store level. The same idea builds a "top N slowest endpoints this hour" dashboard widget or a "most-active users" admin panel from a raw event stream, without buffering the full window in memory.
+- **Top-K search and recommendation results.** A search engine or internal search service that scores many candidate documents but only needs to return the top 10-50 uses a bounded heap rather than sorting every scored candidate, especially when candidates are generated on the fly during an index scan. The same shape produces deduplicated top-K product recommendations from a model that scores thousands of candidates but only needs to return the top 20.
+- **A rate-limiter's "top offenders" report** — tracking the K IP addresses or API keys with the highest request counts in a rolling window, using a size-K heap keyed by count so the report stays cheap to maintain under high request volume.
+- **Nearest-neighbor prefiltering** — e.g. "show the 5 closest warehouses to this delivery address" before running a more expensive routing calculation, using a size-K max-heap keyed by distance, exactly as in K Closest Points to Origin.
 
 ## Similar Patterns
 
@@ -257,44 +222,30 @@ Five realistic ideas for your own backend/systems work:
 
 ## Interview Discussion
 
-Experienced engineers do not spend interview time on "how do you use a `priority_queue`" — that is mechanical. What they actually probe is whether you can justify the **heap-type inversion** precisely: can you explain, without hesitating, why "K largest" wants a min-heap? A candidate who says "because the min-heap's top is the weakest member of my current top-K, and that is exactly the element I need instant access to for eviction" is demonstrating real understanding, not memorized code. A candidate who says "I just remember largest uses min-heap" without being able to explain *why* has not actually internalized the pattern.
+Experienced engineers do not spend interview time on "how do you use a `priority_queue`" — that is mechanical. What they actually probe is whether you can justify the **heap-type inversion** precisely: can you explain, without hesitating, why "K largest" wants a min-heap? A candidate who says "because the min-heap's top is the weakest member of my current top-K, and that is exactly the element I need instant access to for eviction" is demonstrating real understanding, not memorized code.
 
 Common follow-up questions:
-- *"Why not just sort the whole array?"* — expects the O(n log n) vs. O(n log k) argument, and ideally the observation that the gap widens as k shrinks relative to n.
 - *"What if the data arrives as a stream, not all at once?"* — expects recognizing that a size-K heap handles this naturally (bounded memory, correct "top K so far" at every point) while a full sort would need to buffer the entire stream first.
 - *"Can you do better than O(n log k)?"* — expects mentioning quickselect's average-case O(n), along with the honest tradeoff: it needs the full input in memory and does not support incremental/streaming updates the way a heap does.
-- *"What if K is close to n?"* — expects recognizing the pattern's benefit evaporates and a plain sort becomes the simpler, equally-fast choice.
 - *"How would you find the K most frequent elements instead of the K largest?"* — expects recognizing the identical heap mechanism applies, just keyed by a precomputed frequency instead of the raw value, and that this requires a preliminary counting pass.
 
 Common misconceptions:
 - "A max-heap is the natural choice for 'top K largest' because 'max' sounds right." This is the single most common wrong instinct — the heap type is *inverted* relative to the question, because you need instant access to the *weakest* member of the current top-K for eviction, not the strongest.
-- "The heap ends up holding the elements in sorted order." It does not — a heap only guarantees the top element; an extra O(k log k) sort is needed if the final answer must be sorted.
 - "This is always strictly better than sorting." It is only better when K is meaningfully smaller than n; as K approaches n, the complexity advantage disappears.
 - "You need a separate check before pushing to decide if a candidate is worth considering." You do not — push unconditionally, then pop if oversized; the heap's own eviction handles the "was this worth it" decision for you.
 
-## Summary
-
-- Top K Elements maintains a heap of **exactly size K** to track the K largest/smallest/most-frequent elements in O(n log k) instead of sorting everything in O(n log n).
-- The heap type is **inverted** relative to the question: min-heap for "K largest" (so the weakest of the current top-K is instantly evictable), max-heap for "K smallest."
-- The core loop is one rule, applied once per input element: **push, then pop if the heap now exceeds size K.**
-- "K most frequent" uses the identical shape, keyed by a precomputed frequency (from a preliminary hash-map counting pass) instead of the raw value.
-- The heap does **not** give you sorted output for free — an explicit, cheap (O(k log k)) extra sort is needed if the final answer must be ordered.
-- The pattern's benefit shrinks to nothing as K approaches n; it is only a genuine win when K is meaningfully smaller than n.
-- Works naturally on streaming/unbounded input, unlike a full sort which needs the entire dataset materialized first.
-- Closely related but distinct: Two Heaps (median tracking, two balanced heaps) and K-way Merge (merging K sorted lists, one heap slot per source list).
-
 ## Key Takeaways
 
-1. Maintain a heap of exactly size K; push every element, pop whenever the heap exceeds size K — that single rule is the whole algorithm.
+1. Maintain a heap of exactly size K; push every element, pop whenever the heap exceeds size K — that single rule is the whole algorithm, in O(n log k) instead of a full O(n log n) sort.
 2. For "K largest," use a **min-heap** — the inversion that surprises almost everyone the first time, because the weakest-of-the-best (the smallest) is what you need instant access to for eviction.
 3. For "K smallest," use a **max-heap** — the mirror image of the rule above.
-4. For "K most frequent," use the same min-heap shape, keyed by a precomputed frequency from a preliminary hash-map counting pass.
-5. Complexity is O(n log k) time, O(k) space — strictly better than a full O(n log n) sort whenever K is meaningfully smaller than n.
-6. The heap does not produce sorted output on its own; sort the small final result separately if order matters (cheap, since k is small).
-7. This pattern's benefit disappears as K approaches n — sanity-check that K is actually small before reaching for a heap.
-8. Quickselect (`std::nth_element`) beats a heap's complexity on fully in-memory, one-shot inputs, but cannot process a stream incrementally the way a heap can.
-9. Works cleanly on streaming/live input because it only ever needs one new element plus the current size-K heap at any moment.
-10. Don't confuse this with Two Heaps (tracks a single middle order statistic, the median) or K-way Merge (merges K already-sorted lists) — related "heap-based" shapes, different problems entirely.
+4. For "K most frequent," use the same min-heap shape, keyed by a precomputed frequency from a preliminary hash-map counting pass — that separate counting pass is easy to forget.
+5. The heap does not produce sorted output on its own; sort the small final result separately if order matters (cheap, since k is small).
+6. This pattern's benefit disappears as K approaches n — sanity-check that K is actually small before reaching for a heap; at that point a plain sort is simpler for the same cost.
+7. Quickselect (`std::nth_element`) beats a heap's complexity on fully in-memory, one-shot inputs (average O(n) vs O(n log k)), but cannot process a stream incrementally the way a heap can.
+8. Works cleanly on streaming/live input because it only ever needs one new element plus the current size-K heap at any moment — a full sort would need to buffer everything first.
+9. Don't confuse this with Two Heaps (tracks a single middle order statistic, the median, via two balanced heaps) or K-way Merge (merges K already-sorted lists, one heap slot per source) — related "heap-based" shapes, different problems entirely.
+10. One of the most frequently asked interview shapes precisely because it tests whether a candidate reaches past "sort it" for the correctly-sized tool — Kth Largest Element, Top K Frequent Elements, K Closest Points to Origin.
 
 ---
 

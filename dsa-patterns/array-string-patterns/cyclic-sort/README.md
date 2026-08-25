@@ -39,161 +39,112 @@ Place every value that belongs to a known, bounded index range directly at its "
 
 ## Real Life Analogy
 
-Think of a small hotel's key rack with exactly `n` numbered pigeonholes, one per room, numbered 1 through `n`. A porter collects a pile of `n` room keys that fell off the rack and now sit in random order — in the simple case, exactly one key per room. Instead of sorting the whole pile like a librarian alphabetizing books, or writing down every key seen so far in a notebook (the mental model of a hash set), the porter works through the pile once, key by key: pick up the key currently in hand, look at its room number, and if it is not already in its own pigeonhole, swap it directly into that hole — not "note it and set it aside," an actual swap. Whatever key was resting in that target hole comes back into the porter's hand, and the porter repeats the exact same check on it immediately. Only when the key currently in hand is already sitting in its own hole does the porter move on to the next position in the pile. After one pass over the rack, every key that has a real home is in it — and if a hole ends up holding the wrong key, or two identical keys turn up for the same room, that is precisely the missing or duplicate key revealing itself, without the porter ever writing anything down.
+Think of a small hotel's key rack with exactly `n` numbered pigeonholes, numbered 1 through `n`. A porter collects a pile of `n` room keys that fell off the rack, in random order — in the simple case, exactly one key per room. Instead of sorting the whole pile like a librarian, or writing down every key seen in a notebook (the mental model of a hash set), the porter works through the pile once: pick up the key in hand, and if it is not already in its own pigeonhole, swap it directly into that hole. Whatever key was resting there comes back into the porter's hand, and gets the same check immediately. Only when the key in hand is already in its own hole does the porter move to the next position. After one pass, every key with a real home is in it — and a hole holding the wrong key, or two identical keys for one room, is precisely the missing or duplicate key revealing itself, with nothing ever written down.
 
-A second everyday version: a teacher hands back graded exams to `n` students seated at desks numbered 1 through `n`, but the stack got shuffled before handing out. Instead of calling names one at a time and waiting for a hand to go up (a linear search per exam), the teacher walks the room once: the exam currently in hand belongs to desk 7, so the teacher walks to desk 7. If the exam already sitting at desk 7 belongs to some *other* desk, the teacher swaps it out, takes that exam, and repeats — walking to whatever desk it belongs to — until an exam that is genuinely at its own desk ends the chain. Each swap in that chain permanently seats at least one exam at its correct desk, which is exactly why the chain cannot run forever.
+A second, equally common version: a teacher handing back graded exams to `n` students at shuffled desks numbered 1 through `n`. Instead of calling names one at a time, the teacher walks each exam directly to the desk it belongs to, swaps out whatever exam is already there, and repeats on that swapped-out exam until one is genuinely at its own desk. Each swap in the chain permanently seats at least one exam correctly, which is exactly why the chain cannot run forever.
 
-Cyclic Sort is that same porter/teacher move in code: one cursor walking the array, and every "this value is not home yet" observation triggers a swap that sends it there, instead of a broader sort or a side notebook (hash set) to keep track of what has been seen.
+Cyclic Sort is that porter/teacher move in code: one cursor walking the array, and every "this value is not home yet" observation triggers a swap that sends it there, instead of a broader sort or a side notebook (hash set).
 
 ## Problem
 
 ### What engineering problem exists?
 
-A recurring shape in array problems (and in real data-integrity checks) is: an array of size `n` holds integers drawn from a **bounded range tightly coupled to the indices themselves** — most commonly `[1..n]` or `[0..n-1]` — and the question is some variant of "what value is missing?", "what value appears twice?", or "what is the smallest positive integer that is missing?" This shape shows up whenever you are verifying that a supposedly complete, supposedly-unique sequence of IDs actually is complete and unique: a batch of ticket numbers that should span `1..n` exactly once, a shard-assignment array that should cover every shard ID exactly once, or a randomized bucket-assignment array used in an A/B test that is supposed to be a clean permutation of `0..n-1`.
+A recurring shape in array problems (and in real data-integrity checks) is: an array of size `n` holds integers drawn from a **bounded range tightly coupled to the indices themselves** — most commonly `[1..n]` or `[0..n-1]` — and the question is some variant of "what value is missing?", "what value appears twice?", or "what is the smallest positive integer that is missing?" This shows up whenever verifying that a supposedly complete, unique sequence of IDs actually is: a batch of ticket numbers that should span `1..n` exactly once, a shard-assignment array that should cover every shard ID exactly once, or a randomized bucket-assignment array in an A/B test that should be a clean permutation of `0..n-1`.
 
-The brute-force ways to answer "what's missing/duplicated" are:
-- **Sort the array, then scan for a gap or a repeat** — O(n log n) time, and it usually can be done in O(1) extra space (in-place sort), but it pays a full comparison-based sort for information you already have for free (see below).
-- **Use a hash set (or a frequency array) to record which values have been seen**, then scan for anything unseen or seen twice — O(n) time, but O(n) extra space for the hash structure.
+The brute-force answers are: **sort, then scan for a gap or repeat** — O(n log n) time, O(1) extra space with an in-place sort, but paying a full comparison-based sort for information already known for free; or **use a hash set (or frequency array)** to record seen values, then scan for anything unseen or seen twice — O(n) time, O(n) extra space.
 
-> **Term: Bounded range.** A constraint stating the array's values are guaranteed to fall within some fixed span directly tied to the array's own size — e.g. "every value is between 1 and `n`" where `n` is the array's length. This is what makes Cyclic Sort possible: without it, there is no deterministic "home index" for a value.
+> **Term: Bounded range.** A constraint stating the array's values are guaranteed to fall within some fixed span directly tied to the array's own size — e.g. "every value is between 1 and `n`." This is what makes Cyclic Sort possible: without it, there is no deterministic "home index" for a value.
 
 ### Why is this problem difficult?
 
-- **The first instinct throws away free information.** A hash set treats every value as an opaque thing to remember — but when the values are known to be (mostly) a permutation of the indices, the array itself already *is* a perfect hash table: value `v` has one and only one legitimate home, index `v - 1` (or `v`, for 0-indexed ranges). Recognizing that the array can double as its own lookup structure, instead of allocating a second one, is the non-obvious leap.
-- **Sorting rediscovers something you already know.** A comparison sort spends `O(log n)` work per element deciding where it belongs relative to its neighbors. But for a bounded-range array, you already know exactly which index a value belongs at *before* comparing it to anything — paying for comparisons to re-derive already-known information is wasted work.
-- **Getting the swap-and-recheck logic right, and stopping correctly on duplicates, is fiddly the first time.** After swapping a value into its home, the value that comes back needs to be re-examined *at the same cursor position*, not skipped — and if two identical values both want the same home, blindly repeating the swap forever produces an infinite loop. Handling that correctly is the crux of implementing this pattern without bugs.
+- **The first instinct throws away free information.** A hash set treats every value as opaque — but when values are known to be (mostly) a permutation of the indices, the array itself already *is* a perfect hash table: value `v`'s one legitimate home is index `v - 1` (or `v`, for 0-indexed ranges). Recognizing the array can double as its own lookup structure, instead of allocating a second one, is the non-obvious leap.
+- **Sorting rediscovers something you already know.** A comparison sort spends `O(log n)` work per element deciding where it belongs relative to its neighbors, but for a bounded-range array you already know exactly which index a value belongs at — paying for comparisons to re-derive known information is wasted work.
+- **Getting the swap-and-recheck logic right is fiddly the first time.** After swapping a value into its home, the value that comes back must be re-examined *at the same cursor position*, not skipped — and if two identical values both want the same home, blindly repeating the swap forever produces an infinite loop.
 
 ### What happens if we ignore it?
 
-- **Unnecessary O(n log n) time when O(n) is achievable.** On a batch validation job processing millions of IDs (an overnight reconciliation of ticket numbers, or a nightly integrity check over shard assignments), the gap between O(n) and O(n log n) is the difference between a job that finishes in seconds and one that takes noticeably longer for no algorithmic reason.
-- **Unnecessary O(n) extra memory.** A hash set sized to `n` costs real memory on every run; in a memory-constrained environment (a Lambda function with a tight memory ceiling, or a service validating very large batches concurrently), that avoidable allocation adds up, and can be the difference between fitting comfortably and hitting a memory limit under load.
-- **Missing the more general family of problems.** Once you only know "sort it" or "hash it," you will not spot problems like *First Missing Positive*, where the input isn't even guaranteed to be a clean permutation, as belonging to the same family — and you'll reach for a slower, more complex solution than the elegant in-place one that generalizes cleanly.
-
-## Why Not Other Approaches?
-
-**"Sort the array, then scan for the first gap or repeated value."**
-Correct, and O(1) extra space if done via an in-place sort — but O(n log n) time. The reason this is wasteful specifically here (not in general — see the Two Pointers module for when sorting is the *right* first step) is that a comparison sort spends effort discovering ordering relationships you already know deterministically: value `v` belongs at index `v - 1`, full stop, no comparisons needed. Paying a log factor to re-derive a fact you already have is the exact waste Cyclic Sort eliminates.
-
-**"Use a hash set (or a `bool`/count array sized `n`) to track which values have been seen."**
-O(n) time, matching Cyclic Sort's time bound — but O(n) *extra* space for the hash structure or frequency array. This is the classic "can you do it in O(1) extra space?" interview follow-up, and it exists for a real reason: the array itself can serve as its own O(1)-space hash table, because the bounded-range guarantee means every value already encodes exactly where it "should" be counted. Paying for a second structure to store information the first structure can already hold is strictly wasteful once that guarantee holds.
-
-**"Use the sum/XOR trick (e.g. `n*(n+1)/2 - sum(nums)` for a single missing number)."**
-This is a genuinely good O(n) time, O(1) space, **non-mutating** solution — but only for the single narrowest case: exactly one missing value in an otherwise-perfect `[1..n]` (or `[0..n-1]`) range, no duplicates, no out-of-range noise. It does not generalize: it silently gives a wrong (or meaningless) answer the moment duplicates are possible (*Find the Duplicate Number*), and it has no natural extension to "find the smallest missing positive" when the array can contain arbitrary negative numbers or values far outside `[1..n]` (*First Missing Positive*). Cyclic Sort is the general mechanism that all of those variants share; the sum/XOR trick is a narrow special case worth knowing but not worth generalizing from.
-
-**Tradeoff summary:** sorting pays an unneeded `log n` factor for information already implied by the bounded-range guarantee; hashing pays O(n) space for information the array can hold about itself; the sum/XOR trick achieves O(1) space but only for the single narrowest sub-problem and does not extend to duplicates or unbounded noise. Cyclic Sort is the one approach that gets O(n) time **and** O(1) extra space **and** generalizes across the whole missing/duplicate/first-missing-positive family — precisely because it is the only technique that treats the array's own indices as the hash table, rather than building a separate one.
+- **Unnecessary O(n log n) time when O(n) is achievable.** On a batch validation job processing millions of IDs (an overnight ticket-number reconciliation, or a nightly shard-assignment integrity check), the gap between O(n) and O(n log n) is seconds versus noticeably longer, for no algorithmic reason.
+- **Unnecessary O(n) extra memory.** A hash set sized to `n` costs real memory every run; in a memory-constrained environment (a Lambda function with a tight ceiling, or a service validating large batches concurrently), that avoidable allocation can be the difference between fitting comfortably and hitting a limit under load.
+- **Missing the more general family of problems.** Knowing only "sort it" or "hash it" means missing that problems like *First Missing Positive* — where the input isn't even guaranteed to be a clean permutation — belong to the same family, and reaching for something slower and more complex than the elegant in-place solution that generalizes cleanly.
 
 ## Solution
 
-The core idea: under a `[1..n]` range convention, every value `v` has exactly one legitimate home — index `v - 1`. (Under a `[0..n-1]` convention, value `v`'s home is simply index `v`.) The algorithm walks a single cursor `i` from `0` to `n - 1`. At each position, it asks one question: *does the value currently at `i` belong here?* — i.e., is `nums[i]` already equal to the value this index should hold?
+The core idea: under a `[1..n]` range convention, every value `v` has exactly one legitimate home — index `v - 1`. (Under `[0..n-1]`, value `v`'s home is index `v`.) The algorithm walks a single cursor `i` from `0` to `n - 1`, asking one question at each position: *does the value currently at `i` belong here?*
 
-- If yes, the cursor advances to `i + 1`. Nothing more to do at this position.
-- If no — and the value is within the valid range, and its home slot does not already hold an identical value — swap `nums[i]` with whatever sits at its home index. This sends the current value where it belongs, and brings back whatever value was previously occupying that home. Critically, the cursor **does not advance** after a swap: it re-examines the new value that just landed at `i`, because that value might *also* need to move.
-- The inner "keep swapping" step stops — and only then does the cursor advance — once the value at `i` is either correctly placed, out of the valid range entirely (it can never have a home in this array, so it is left where it is), or a duplicate of the value already sitting at its home (swapping would be pointless: the home slot already holds an identical value, so nothing changes and the loop must give up and move on instead of swapping forever).
+- If yes, the cursor advances. Nothing more to do at this position.
+- If no — and the value is in range, and its home slot does not already hold an identical value — swap `nums[i]` with whatever sits at its home. This sends the current value where it belongs and brings back whatever occupied that home. The cursor **does not advance** after a swap: it re-examines the new value that just landed at `i`, since it might also need to move.
+- The inner "keep swapping" step stops — and only then does the cursor advance — once the value at `i` is correctly placed, out of range entirely (it can never have a home here), or a duplicate of the value already at its home (swapping would be an infinite no-op).
 
-Why this terminates in O(n) total work: every swap either (a) places some value into its correct final home for good — and a value, once correctly placed, is never touched again — or (b) is refused because that would be an infinite no-op (a duplicate whose home is already taken by an identical value). Since there are only `n` slots and case (a) can happen at most `n` times across the entire run, the total number of swaps — not just cursor advances — is bounded by `n`.
+Why this terminates in O(n) total work: every swap either (a) places some value into its correct final home for good — and a placed value is never touched again — or (b) is refused as an infinite no-op. Since there are only `n` slots and case (a) can happen at most `n` times across the entire run, total swaps are bounded by `n`.
 
-Once the single pass finishes, a **second, separate O(n) scan** finds every index `i` where `nums[i] != i + 1` (or `!= i`, for 0-indexed ranges). Each such mismatch is exactly where a missing or duplicate value reveals itself: the value that *should* be there is missing from the whole array, and the value that *is* there instead is a duplicate occupying two slots.
+Once the pass finishes, a **second, separate O(n) scan** finds every index `i` where `nums[i] != i + 1` (or `!= i`, 0-indexed). Each mismatch is exactly where a missing or duplicate value reveals itself: the expected value is missing from the whole array, and whatever is there instead is a duplicate occupying two slots.
+
+In short: (1) start cursor `i = 0`; (2) while `i < n`, compute `correct_index` — if `nums[i]` is out of range or already matches `nums[correct_index]`, advance `i`; otherwise swap and re-check the same `i`; (3) run the separate verification scan over the settled array, reporting every mismatch as the answer the specific problem needs.
 
 ## Architecture
 
 The participants in a Cyclic Sort pass:
 
-1. **The cursor `i`.** A single index walking forward through the array. Its invariant: everything at index `< i` is either already in its correct home, or is confirmed to be a value (out-of-range or an unresolvable duplicate) that can never be placed — either way, positions before `i` are settled and will not be revisited.
+1. **The cursor `i`.** Walks forward through the array. Invariant: everything at index `< i` is either in its correct home or confirmed unplaceable (out-of-range or an unresolvable duplicate) — settled, and never revisited.
+2. **The candidate value `nums[i]`.** Whatever occupies the cursor's position; re-examined after every swap, since a swap can bring a *new* candidate into `i` that itself needs to move.
+3. **The home-index mapping.** The deterministic function from value to index (`v - 1` for `[1..n]`, `v` for `[0..n-1]`) that makes the whole technique possible — without a bounded, known range there is no such mapping.
+4. **The swap operation.** The only mechanism that moves data: each swap either makes final, irreversible progress or is deliberately skipped to avoid an infinite loop.
+5. **The termination condition (per position).** The inner loop stops precisely when `nums[i]` is correctly placed, out of range, or a duplicate of the value already at its home — getting this exactly right separates a correct implementation from an infinite loop.
+6. **The verification pass.** A separate, subsequent O(n) scan that reads off the answer: any index where the value doesn't match what it should hold identifies the missing/duplicate value.
 
-2. **The candidate value `nums[i]`.** Whatever value currently occupies the cursor's position. It is re-examined after every swap, because a swap can bring a *new* candidate into position `i` that itself needs to move.
+In one line each: the cursor advances only once settled; the candidate value is never assumed settled just because a swap happened; the home-index mapping is the fact that makes the array double as its own hash table; the swap is the sole progress-making move, refused exactly when it would loop forever; and the verification pass turns the sorted-as-far-as-possible array into the actual answer.
 
-3. **The home-index mapping.** The deterministic function from value to index (`v - 1` for `[1..n]`, `v` for `[0..n-1]`) that makes this whole technique possible. Without a bounded, known range, there is no such mapping and Cyclic Sort cannot be applied at all.
+## Why Not Other Approaches?
 
-4. **The swap operation.** The only mechanism that moves data. Each swap either makes final, irreversible progress (placing one value correctly) or is deliberately skipped to avoid an infinite loop (the duplicate/out-of-range case).
+**"Sort, then scan for the first gap or repeated value."** Correct, O(1) extra space via an in-place sort, but O(n log n) time — wasteful specifically here (not in general — see [../two-pointers/](../two-pointers/) for when sorting *is* the right first step) because a comparison sort spends effort discovering an ordering you already know deterministically: value `v` belongs at index `v - 1`, no comparisons needed.
 
-5. **The termination condition (per cursor position).** The inner loop at position `i` stops precisely when `nums[i]` is already correctly placed, is out of range, or is a duplicate of the value already occupying its home. Getting this condition exactly right is what separates a correct implementation from an infinite loop.
+**"Use a hash set (or a `bool`/count array sized `n`)."** O(n) time, matching Cyclic Sort — but O(n) *extra* space. The classic "can you do it in O(1) extra space?" follow-up: the array itself can serve as its own O(1)-space hash table once the bounded-range guarantee holds, so paying for a second structure is strictly wasteful.
 
-6. **The verification pass.** A separate, subsequent O(n) scan (not part of the sorting pass itself) that reads off the answer: any index where the value does not match what that index should hold identifies the missing/duplicate value for that problem.
+**"Use the sum/XOR trick (`n*(n+1)/2 - sum(nums)` for a single missing number)."** A genuinely good O(n)/O(1), **non-mutating** solution — but only for exactly one missing value, no duplicates, no out-of-range noise. It gives a wrong (or meaningless) answer the moment duplicates are possible (*Find the Duplicate Number*), and has no extension to "smallest missing positive" when the array can contain negatives or values far outside `[1..n]` (*First Missing Positive*). Cyclic Sort is the general mechanism the whole family shares; this trick is a narrow special case not worth generalizing from.
 
-Responsibilities in one line each:
-- **Cursor:** advances only once its current position is settled — placed correctly, or provably unplaceable.
-- **Candidate value:** re-checked after every swap, never assumed settled just because a swap happened.
-- **Home-index mapping:** the fact that makes the array double as its own hash table.
-- **Swap:** the sole progress-making move; refused exactly when it would loop forever.
-- **Verification pass:** turns the sorted-as-far-as-possible array into the actual answer.
+**Net:** sorting pays an unneeded `log n` factor for information the bounded-range guarantee already implies; hashing pays O(n) space for information the array can hold about itself; the sum/XOR trick gets O(1) space but only for the narrowest sub-problem. Cyclic Sort is the one approach that gets O(n) time **and** O(1) space **and** generalizes across the whole missing/duplicate/first-missing-positive family, because it alone treats the array's own indices as the hash table.
 
-## Execution Flow
+## Diagrams
 
-1. Initialize cursor `i = 0`.
-2. While `i < n`:
-   a. Compute `correct_index`, the home index for the value currently at `nums[i]` (`nums[i] - 1` for a `[1..n]` range).
-   b. If `nums[i]` is outside the valid range for this problem, leave it in place and advance `i` — it can never be at home in this array.
-   c. Otherwise, if `nums[i]` already equals `nums[correct_index]` (this includes the case where `i == correct_index`, i.e. the value is already home), the position is settled: advance `i`.
-   d. Otherwise, swap `nums[i]` and `nums[correct_index]`. Do **not** advance `i` — the value that just arrived at `i` from the swap must be checked from step (a) again.
-3. When the loop ends (`i == n`), every index either holds its correct value or holds a value that can never be placed (a duplicate or an out-of-range value) — the array is now "cyclically sorted" as far as it is possible to be.
-4. Run a second pass: for each index `j` from `0` to `n - 1`, check whether `nums[j]` equals the value that index should hold. Any mismatch identifies a missing value (the expected value for that slot, which is absent from the whole array) and/or a duplicate value (whatever wrong value is actually sitting there, which must be occupying some other index too).
-5. Report the answer required by the specific problem (the missing number, the list of missing numbers, the duplicate, or the first missing positive) using the mismatches found in step 4.
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart deciding between Cyclic Sort, hashing, and sorting based on the signals in a problem statement (bounded value range tied to array size? need the missing/duplicate value specifically? O(1) extra space required?).
+- [images/flow-diagram.md](images/flow-diagram.md) — control-flow diagram of the swap-until-in-place loop, including the two distinct exit conditions (correctly placed vs. unplaceable) that both advance the cursor.
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of a concrete small array being cyclically sorted, swap by swap, followed by the verification scan that reads off the answer.
 
-## Recognition Diagram
+## The Code
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the flowchart deciding between Cyclic Sort, hashing, and sorting based on the signals in a problem statement (bounded value range tied to array size? need the missing/duplicate value specifically? O(1) extra space required?).
+[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the pattern's shape before the worked solutions in [problems/](problems/). Plain `int`/`std::vector<int>` signatures are deliberate here (unlike the template-heavy style used for Two Pointers): Cyclic Sort's mechanism is inseparable from integer index arithmetic, so there is no meaningful generic version over arbitrary element types.
 
-## Flow Diagram
+**`cyclic_sort(nums)`.** Takes a mutable `std::vector<int>&` assumed to hold values that should be (mostly) a permutation of `1..n`. Maintains cursor `i`, computes `correct_index = nums[i] - 1`, and checks: is `nums[i]` within `[1, n]`, and does `nums[correct_index]` already equal it. If out of range or already matching (including already being home), the cursor advances without swapping; otherwise it swaps and does *not* advance `i`, letting the next iteration re-examine whatever just arrived.
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the swap-until-in-place loop, including the two distinct exit conditions (correctly placed vs. unplaceable) that both advance the cursor.
+**`find_first_misplaced(nums)`.** A linear scan over an already-cyclically-sorted array, returning the first index where `nums[i] != i + 1`, wrapped in `std::optional<size_t>`. It demonstrates the verification pass as a separate, reusable step — every problem in [problems/](problems/) builds its answer on this same "find where reality disagrees with expectation" scan, interpreting the mismatch differently per problem.
 
-## Trace Diagram
+**`main()`.** Exercises both functions against three hand-checkable cases — a complete permutation, an array with a duplicate (implying a missing value), and an array with out-of-range noise that must be left untouched — printing `[PASS]`/`[FAIL]`.
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of a concrete small array being cyclically sorted, swap by swap, followed by the verification scan that reads off the answer.
-
-## Implementation
-
-[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the shape of the pattern clearly before looking at the worked, problem-specific solutions in [problems/](problems/).
-
-It provides two small, reusable functions:
-
-- `cyclic_sort` — performs the in-place swap-until-settled pass over a `std::vector<int>` under the `[1..n]` convention, leaving out-of-range values untouched and giving up gracefully on duplicates rather than looping forever.
-- `find_first_misplaced` — the verification-pass helper: scans the (now cyclically-sorted) array and returns the first index `i` where `nums[i] != i + 1`, wrapped in `std::optional<size_t>` (empty if every slot is already correct).
-
-Plain `int`/`std::vector<int>` signatures are used deliberately here (unlike the template-heavy style used for Two Pointers) because Cyclic Sort's entire mechanism is inseparable from integer index arithmetic — there is no meaningful generic version over arbitrary element types, since the value-to-index mapping only makes sense for integers in a bounded range.
-
-## Code Walkthrough
-
-**`cyclic_sort`** (in [code.cpp](code.cpp)). Takes a mutable `std::vector<int>&` assumed to hold values that are *supposed* to be (mostly) a permutation of `1..n`, where `n` is the vector's size. Maintains cursor `i` starting at 0. On each iteration, computes `correct_index = nums[i] - 1` and checks three things in order: is `nums[i]` within `[1, n]` at all; if so, does `nums[correct_index]` already equal `nums[i]`. If the value is out of range, or already matches what its home slot holds (which includes the case where the value is already sitting at its own home), the cursor advances without swapping. Otherwise it swaps `nums[i]` and `nums[correct_index]` and deliberately does *not* advance `i`, letting the next loop iteration re-examine whatever just arrived. This function exists to isolate the sorting pass itself, independent of any specific problem's follow-up question.
-
-**`find_first_misplaced`** (in [code.cpp](code.cpp)). A plain linear scan over an already-cyclically-sorted array, returning the first index where `nums[i] != i + 1`. This function exists to demonstrate the verification pass as a separate, reusable step — every worked problem in [problems/](problems/) builds its specific answer (missing number, list of missing numbers, the duplicate, first missing positive) on top of this same "find where reality disagrees with the expected value" scan, just interpreting the mismatch differently per problem.
-
-**`main()`** (in [code.cpp](code.cpp)). Exercises `cyclic_sort` and `find_first_misplaced` against three hand-checkable cases — a complete permutation with no mismatches, an array containing a duplicate (which also implies a missing value), and an array containing out-of-range noise (values that must be left untouched) — printing `[PASS]`/`[FAIL]` for each assertion.
-
-**Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem, implemented inline (not calling into `code.cpp`) so every file stays dependency-free and independently readable, with comments tying every decision back to the general principles established above. See [problems/README.md](problems/README.md) for the index. Briefly: `01` is the pure "one missing value from a complete range" case (with a same-complexity XOR alternative mentioned in comments); `02` extends the same idea to *multiple* missing values; `03` is the case where Cyclic Sort finds a duplicate specifically via the in-place placement technique (contrasted explicitly with the Floyd's Cycle Detection approach used elsewhere in this repo for the exact same problem); `04` is the hardest variant, where the input is not even guaranteed to be a clean permutation and out-of-range noise must be handled explicitly.
-
-## Advantages
-
-- **O(n) time, O(1) extra space.** No hash set, no frequency array, no second buffer — just the array itself and a couple of index variables. This matters directly in memory-constrained batch jobs and high-throughput services processing large ID arrays.
-- **In-place mutation with no allocation.** Unlike hashing, there is no allocation proportional to `n`, so there is no GC/heap pressure from a temporary structure sized to the input.
-- **Generalizes across a whole problem family.** The exact same swap-until-settled mechanism, followed by a verification scan, answers "what's missing," "what's duplicated," "what are *all* the missing values," and (with a small extension) "what's the smallest missing positive" — one mental model, many problems.
-- **Provable termination, not a heuristic.** Every swap either places a value permanently or is refused because it would be a no-op; this gives a clean, provable O(n) total-swap bound rather than an empirical "seems fast" argument.
-- **Exposes data-integrity violations directly.** Because the verification pass reads off mismatches positionally, it naturally reports *which* values are missing/duplicated, not just *whether* a violation exists — useful for the real-world integrity-check use case, not just the interview version of the problem.
-
-## Disadvantages
-
-- **Mutates the input array.** The technique only works by rearranging elements in place; if the caller needs the original order preserved (e.g. the array represents an ordered log, or is shared/read elsewhere), you must work on a copy, which reintroduces O(n) space.
-- **Only applies when values map to a bounded, known index range.** If the values are not (mostly) confined to `[1..n]`/`[0..n-1]`, there is no home-index mapping and the whole technique is inapplicable — you fall back to hashing or sorting.
-- **Not thread-safe / not safe for concurrent reads during the pass.** Because the array is being actively rearranged element by element, any concurrent reader sees a partially-sorted, temporarily-inconsistent view — a non-issue for a single-threaded batch check, but a real constraint if the array is shared live state.
-- **The inner "keep swapping without advancing" step is easy to implement incorrectly.** Forgetting to skip advancing `i` after a swap, or getting the duplicate-detection check backward, produces either wrong answers or an infinite loop — a strictly less forgiving failure mode than a hash-based approach, which simply cannot loop forever by construction.
+**Files in [problems/](problems/).** Each is a complete, standalone solution to one named LeetCode problem, implemented inline (not calling into `code.cpp`) so every file stays dependency-free — see [problems/README.md](problems/README.md) for the index. Briefly: `01` is one missing value from a complete range (with a same-complexity XOR alternative in comments); `02` extends to *multiple* missing values; `03` finds a duplicate via in-place placement, contrasted explicitly with the Floyd's Cycle Detection approach used elsewhere in this repo for the same problem; `04` is the hardest variant, where the input isn't guaranteed to be a clean permutation and out-of-range noise must be handled explicitly.
 
 ## Tradeoffs
 
-**What we gain versus sorting:** the same O(n) *(vs O(n log n))* — an asymptotic win — by using the bounded-range guarantee to know each value's destination index for free, with no comparisons needed.
+**What Cyclic Sort buys you**
 
-**What we gain versus hashing:** the same O(n) time, but O(1) extra space instead of O(n), because the array becomes its own hash table once the bounded-range guarantee holds.
+- **O(n) time, O(1) extra space.** No hash set, no frequency array, no second buffer — just the array and a couple of index variables. Matters directly in memory-constrained batch jobs and high-throughput services, with no GC/heap pressure from an allocation proportional to `n`.
+- **Generalizes across a whole problem family.** The same swap-until-settled mechanism, followed by a verification scan, answers "what's missing," "what's duplicated," "what are *all* the missing values," and (with a small extension) "what's the smallest missing positive."
+- **Provable termination, not a heuristic.** Every swap either places a value permanently or is refused as a no-op — a clean, provable O(n) total-swap bound rather than an empirical "seems fast" argument.
+- **Exposes data-integrity violations directly.** The verification pass reads off mismatches positionally, so it reports *which* values are missing/duplicated, not just whether a violation exists.
 
-**What we lose versus hashing:** hashing works on **any** values, any range, with **no mutation** of the input — Cyclic Sort requires both a bounded, known range *and* that mutating the array in place is acceptable.
+**What it costs you**
 
-**What we lose versus the sum/XOR trick (for the single-missing-number sub-case):** the sum/XOR trick achieves the same O(n)/O(1) bound *without* mutating the array at all — but only for that one narrow sub-case. Cyclic Sort trades away that narrow non-mutating advantage for a mechanism that generalizes to duplicates and to the first-missing-positive family.
+- **Mutates the input array.** If the caller needs the original order preserved, you must work on a copy, reintroducing O(n) space.
+- **Only applies when values map to a bounded, known index range.** Outside `[1..n]`/`[0..n-1]`, there is no home-index mapping and the technique is inapplicable.
+- **Not safe for concurrent reads during the pass.** A concurrent reader sees a partially-sorted, temporarily-inconsistent view — fine for a single-threaded batch check, a real constraint for shared live state.
+- **The "keep swapping without advancing" step is easy to get wrong.** Forgetting to skip advancing `i` after a swap, or inverting the duplicate check, produces wrong answers or an infinite loop — less forgiving than hashing, which cannot loop forever by construction.
+- **Against hashing:** same O(n) time, but hashing works on any values/range with no mutation — Cyclic Sort trades that generality for O(1) space.
+- **Against the sum/XOR trick (single-missing-number case only):** that trick matches O(n)/O(1) *without* mutating — but only for that one narrow sub-case; Cyclic Sort trades the non-mutating advantage for generalizing to duplicates and first-missing-positive.
 
 ## Complexity
 
-**Time:** **O(n)** for the sorting pass itself, plus **O(n)** for the verification scan — **O(n)** total. The sorting pass's bound rests on the fact that each swap either places a value in its final home for good (at most `n` such swaps total, across the entire run, not per cursor position) or is refused outright as a no-op; the cursor itself also advances at most `n` times. This holds in the best, worst, and average case alike, because the bound is structural (total swaps + total advances), not data-dependent.
+**Time:** **O(n)** for the sorting pass plus **O(n)** for the verification scan — **O(n)** total. Each swap either places a value in its final home for good (at most `n` such swaps) or is refused as a no-op; the cursor also advances at most `n` times. This holds in the best, worst, and average case alike, since the bound is structural, not data-dependent.
 
-**Space:** **O(1)** extra — the array is sorted in place using a small, fixed number of index/temporary variables, independent of `n`.
-
-**Comparison to the brute force each replaces:**
+**Space:** **O(1)** extra — a small, fixed number of index/temporary variables, independent of `n`.
 
 | Approach | Time | Extra Space | Mutates input? |
 |---|---|---|---|
@@ -225,32 +176,22 @@ Plain `int`/`std::vector<int>` signatures are used deliberately here (unlike the
 - **You only need to detect "is there a duplicate/gap at all," not identify which value.** A simpler check (e.g. comparing `sum` or `count` against an expected closed-form value) can sometimes answer a yes/no question more simply than a full sort-and-scan, though it is far less general.
 - **You need the actual sorted order of arbitrary (non-bounded-range) data.** That is a general-purpose sorting problem — reach for `std::sort` or a comparison-based algorithm, not Cyclic Sort.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
-Cyclic Sort variants (Missing Number, Find All Numbers Disappeared in an Array, Find the Duplicate Number, First Missing Positive) are frequently asked across major tech company interview loops precisely because they test whether a candidate notices the bounded-range signal and reaches for an O(1)-space in-place technique instead of defaulting to a hash set — *First Missing Positive* in particular is one of the most commonly cited "hard" array problems for exactly this reason (LeetCode explicitly tags it as a problem most engineers first solve with O(n) space, then are asked to redo in O(1)).
+Cyclic Sort variants (Missing Number, Find All Numbers Disappeared in an Array, Find the Duplicate Number, First Missing Positive) are frequently asked across major tech company interview loops precisely because they test whether a candidate notices the bounded-range signal and reaches for an O(1)-space in-place technique instead of defaulting to a hash set — *First Missing Positive* is one of the most commonly cited "hard" array problems for exactly this reason (LeetCode tags it as one most engineers first solve with O(n) space, then are asked to redo in O(1)).
 
-Beyond interviews, the same "use the array as its own lookup structure" idea shows up in real systems:
+Beyond interviews, the same "use the array as its own lookup structure" idea shows up directly in real systems, and translates into concrete backend/systems ideas of your own:
 
-- **Validating a batch of assigned IDs or shard numbers** — confirming a nightly-generated array of shard assignments (which should be a permutation of `0..n-1` across `n` shards) has no gaps or collisions before it is used to route traffic, without allocating an auxiliary set proportional to shard count.
-- **In-place bucket/permutation verification for A/B testing infrastructure** — confirming a randomized bucket-assignment array genuinely covers every bucket exactly once before it is used to split live traffic, catching a bug in the randomization step before it causes uneven traffic splits.
-- **Compacting/repairing sparse ID arrays during data migration** — when migrating records that are supposed to have contiguous IDs from `1..n`, a cyclic-sort-style pass can identify exactly which IDs are missing (indicating deleted/corrupted rows) without a second data structure.
-- **Counting/frequency-array-free duplicate detection in constrained environments** — embedded systems or very tight-memory serverless functions validating a bounded-range array without room to spare for a hash set.
-
-## Where I Can Use This
-
-Five realistic ideas for your own backend/systems work:
-
-1. **A startup-time sanity check for a sharding table.** Before a service starts routing requests, verify its shard-assignment array is a genuine permutation of `0..n-1` using an in-place cyclic-sort pass, failing fast with the exact missing/duplicate shard ID if it is not.
-2. **Validating uploaded CSV/batch files of sequential IDs.** When ingesting a nightly batch file that claims to contain ticket/order numbers `1..n` exactly once, run a cyclic-sort-style check in O(1) extra memory instead of loading a hash set sized to a potentially very large `n`.
-3. **Auditing a randomized experiment's bucket assignment.** Confirm an A/B test's user-to-bucket array is a clean permutation before it goes live, catching randomization bugs (a bucket appearing twice, or one never appearing) with no auxiliary memory.
-4. **Detecting corrupted/duplicated primary keys after a data migration.** After migrating rows that should have contiguous integer IDs, run the verification-scan half of this pattern over the extracted ID array to report exactly which IDs are missing or duplicated.
-5. **A memory-constrained microservice endpoint that validates array completeness.** In a low-memory serverless function processing a bounded-range array (e.g. verifying all page numbers of a paginated export were received), use Cyclic Sort to avoid allocating a frequency array proportional to the (potentially large) page count.
+- **Validating a batch of assigned IDs or shard numbers** — a startup-time sanity check confirming a shard-assignment array (a permutation of `0..n-1` across `n` shards) has no gaps or collisions before routing traffic, failing fast with the exact missing/duplicate shard ID, without an auxiliary set proportional to shard count.
+- **In-place bucket/permutation verification for A/B testing infrastructure** — auditing a randomized bucket-assignment array before it goes live, catching a randomization bug before it causes uneven traffic splits.
+- **Compacting/repairing sparse ID arrays during data migration** — when records should have contiguous IDs from `1..n`, a cyclic-sort-style pass (or just its verification-scan half) identifies exactly which IDs are missing/duplicated, indicating deleted or corrupted rows, without a second data structure.
+- **Counting/frequency-array-free duplicate detection in constrained environments** — embedded systems, tight-memory serverless functions validating a bounded-range array (e.g. confirming all page numbers of a paginated export arrived) without room to spare for a hash set, and validating uploaded CSV/batch files of sequential IDs in O(1) extra memory instead of loading a hash set sized to a potentially very large `n`.
 
 ## Similar Patterns
 
-- **Fast & Slow Pointers** ([../../linked-list-patterns/fast-slow-pointers/](../../linked-list-patterns/fast-slow-pointers/)): also finds a duplicate value in an array in `[1..n]` context (*Find the Duplicate Number* is solvable both ways), but by a completely different mechanism — it treats the array as an implicit linked list (`nums[i]` is a "pointer" to the next index) and uses Floyd's Cycle Detection (slow/fast pointers at different speeds) to find the cycle's entry point, which is provably the duplicate value. That approach is **non-mutating** (a genuine advantage over Cyclic Sort for this specific problem) but is a distinct algorithm — cycle detection on an implicit graph, not in-place value placement — and does not generalize to "find all missing values" or "first missing positive" the way Cyclic Sort does. See [problems/03-find-the-duplicate-number.cpp](problems/03-find-the-duplicate-number.cpp) for the Cyclic Sort solution to this exact problem, contrasted explicitly against the fast/slow-pointer approach.
-- **Plain hashing (hash set / frequency array):** answers the exact same family of questions (missing/duplicate/first-missing-positive) in the same O(n) time, but O(n) extra space, and — unlike Cyclic Sort — works on **any** values in **any** range and never mutates the input. Hashing is strictly more general; Cyclic Sort is strictly more space-efficient when its narrower bounded-range precondition holds.
-- **Two Pointers** ([../two-pointers/](../two-pointers/)): shares the "single pass, O(1) extra space, in-place" flavor, but solves a different question shape (pairs/triplets summing to a target, or in-place compaction under a keep/discard predicate) and requires *sorted* input rather than a bounded value-to-index range. The two patterns are siblings in spirit (both replace hashing with a structural trick) but recognize different signals.
+- **Fast & Slow Pointers** ([../../linked-list-patterns/fast-slow-pointers/](../../linked-list-patterns/fast-slow-pointers/)): also finds a duplicate value in `[1..n]` context (*Find the Duplicate Number* is solvable both ways), but treats the array as an implicit linked list (`nums[i]` points to the next index) and uses Floyd's Cycle Detection to find the cycle's entry point — provably the duplicate. **Non-mutating**, a real advantage for this one problem, but it does not generalize to "all missing values" or "first missing positive." See [problems/03-find-the-duplicate-number.cpp](problems/03-find-the-duplicate-number.cpp) for both approaches contrasted directly.
+- **Plain hashing:** same family, same O(n) time, O(n) extra space — but unlike Cyclic Sort, works on any values in any range and never mutates. Hashing is strictly more general; Cyclic Sort is strictly more space-efficient once its bounded-range precondition holds.
+- **Two Pointers** ([../two-pointers/](../two-pointers/)): shares the "single pass, O(1) space, in-place" flavor but answers pairs/triplets-summing-to-target or compaction questions, and needs *sorted* input rather than a bounded value-to-index range.
 
 | Pattern | Precondition | Mechanism | Mutates input? | Extra space | Generalizes to |
 |---|---|---|---|---|---|
@@ -261,31 +202,14 @@ Five realistic ideas for your own backend/systems work:
 
 ## Interview Discussion
 
-Experienced engineers do not spend interview time on "how do you write the swap" — that is mechanical once you have seen it once. What they actually probe is whether you **recognize the bounded-range signal** as soon as you see it (values confined to `[1..n]`/`[0..n-1]`), and whether you can articulate *why* that specific fact lets you avoid the extra O(n) space a hash set would cost — i.e., that the array can serve as its own hash table because every value already encodes its own destination index.
+Experienced engineers do not spend interview time on "how do you write the swap" — that is mechanical. What they probe is whether you **recognize the bounded-range signal** immediately, and can articulate *why* that fact avoids the extra O(n) space a hash set would cost.
 
 Common follow-up questions:
-- *"Can you do this without extra space?"* — the canonical invitation to move from a hash-set solution to Cyclic Sort; expects you to name the bounded-range precondition explicitly, not just "swap things around."
-- *"What if there could be more than one missing number?"* — expects recognizing that the same swap-then-verify mechanism generalizes directly: the verification pass simply reports *every* mismatched index instead of stopping at the first one (see [problems/02-find-all-numbers-disappeared-in-an-array.cpp](problems/02-find-all-numbers-disappeared-in-an-array.cpp)).
-- *"Can you solve Find the Duplicate Number without modifying the array?"* — expects naming Floyd's Cycle Detection (Fast & Slow Pointers) as the non-mutating alternative, and being able to explain *why* it works (treating `nums[i]` as a pointer to index `nums[i]`, which forms a cycle whose entry is the duplicate) — a strong signal of genuinely understanding both techniques rather than having memorized one.
-- *"What breaks if the array can contain zero or negative numbers?"* — the *First Missing Positive* twist; expects explicit bounds-checking before computing a home index, and correctly leaving out-of-range values untouched rather than crashing or corrupting other slots.
-- *"What is the time complexity, and can you prove the O(n) bound given the nested while loop?"* — expects the "total swaps across the *entire* run, not per cursor position, is bounded by n because each swap permanently places a value" argument — not a hand-wave like "it looks linear."
+- *"Can you do this without extra space?"* — the canonical invitation to move from a hash-set solution to Cyclic Sort; expects naming the bounded-range precondition explicitly.
+- *"What if there could be more than one missing number?"* — expects recognizing the swap-then-verify mechanism generalizes directly: the verification pass reports *every* mismatched index instead of stopping at the first (see [problems/02-find-all-numbers-disappeared-in-an-array.cpp](problems/02-find-all-numbers-disappeared-in-an-array.cpp)).
+- *"Can you solve Find the Duplicate Number without modifying the array?"* — expects naming Floyd's Cycle Detection (Similar Patterns above) as the non-mutating alternative.
 
-Common misconceptions:
-- "The nested `while` loop inside the `for`/cursor loop makes this O(n²)." It does not — the inner loop's total iterations across the *whole* run are bounded by `n` (each swap is final), so the amortized bound is O(n), not per-position O(n) work repeated `n` times.
-- "Cyclic Sort actually produces a fully sorted array." It produces an array that is *as sorted as possible given duplicates/out-of-range values* — positions holding unplaceable values are left as-is, which is fine because the technique only cares about the verification pass afterward, not about producing a textbook-sorted array.
-- "This is the same as counting sort." They are related in spirit (both exploit a bounded value range) but counting sort builds a separate count array indexed by value (O(n) or O(k) extra space); Cyclic Sort rearranges the *original* array in place with no auxiliary structure at all.
-- "You need to fully sort the array before you can find the answer." The swap pass and the verification scan are conceptually two separate O(n) steps; forgetting the second step and trying to read the answer off mid-sort is a common source of confusion when first learning this pattern.
-
-## Summary
-
-- Cyclic Sort places each value at its home index (`value - 1` for `[1..n]`, `value` for `[0..n-1]`) via in-place swaps, using the array itself as an implicit hash table.
-- It requires — and only applies when — array values are known to be bounded to a range tied to the array's own size.
-- The algorithm is two conceptually separate passes: the swap-until-settled sorting pass, then a verification scan that reads off mismatches as the actual answer.
-- Correctness rests on refusing to swap when the home slot already holds an identical value (the duplicate case) — this is what prevents an infinite loop.
-- Complexity: O(n) time (total swaps across the whole run are bounded by `n`, not per cursor position), O(1) extra space — beating sorting's O(n log n) and hashing's O(n) space.
-- It generalizes across a family of LeetCode problems: Missing Number, Find All Numbers Disappeared, Find the Duplicate Number, and First Missing Positive — one mechanism, several verification interpretations.
-- Its closest relative for duplicate-finding specifically is Fast & Slow Pointers (Floyd's Cycle Detection), which is non-mutating but does not generalize to the missing-value variants.
-- The technique mutates its input, which is its central limitation; a copy is needed if the original order/content must be preserved elsewhere.
+Common misconceptions: the nested `while` inside the cursor loop making this O(n²) (it does not — see Complexity for the amortized bound); that Cyclic Sort produces a fully sorted array (it produces one that is only *as sorted as possible*, since unplaceable values are left in place); that this is the same as counting sort (related in spirit, but counting sort builds a separate count array while Cyclic Sort rearranges the original in place with no auxiliary structure); and that you must fully sort before finding the answer (the swap pass and verification scan are two separate steps — a common point of confusion when first learning this pattern).
 
 ## Key Takeaways
 

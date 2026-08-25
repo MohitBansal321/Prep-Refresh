@@ -68,26 +68,24 @@ Once your data stops being a tree — no single root, and edges can form cycles 
 - **Wrong "shortest path" answers.** Using DFS (or an unmarked traversal that revisits nodes) where BFS's ring-by-ring guarantee is required silently returns a path that exists but is not the shortest one — a subtly wrong answer that passes casual testing but fails whenever a genuinely shorter alternate route exists.
 - **Undercounted reachability/components.** Forgetting to loop over every node as a potential unvisited start point undercounts connected components or misses that half your graph is unreachable — the kind of bug that only shows up once real data includes a disconnected fragment, which test fixtures built by hand often do not.
 
-## Why Not Other Approaches?
-
-**"Just reuse the tree BFS/DFS code unchanged — a graph traversal is basically the same thing."**
-This is the single most common mistake going into this pattern, and it is worth naming directly: tree BFS/DFS never needed a `visited` set because a tree's structure makes revisiting a node impossible by construction (exactly one path from the root to any node, no cycles). The moment you traverse a structure where a node can be reached via more than one path, or where following edges can lead back to a node already on the current path, that same code either **hangs** (BFS's queue never empties, because a cyclic path keeps re-adding the same nodes) or **crashes with a stack overflow** (DFS's recursion never bottoms out, because a cyclic path never runs out of "next" nodes to descend into). The fix is not a new algorithm — it is the same two traversals, plus one added piece of state: an explicit `visited` marker.
-
-**"Use DFS to find the shortest path, since DFS is simpler / more familiar / recursion is elegant."**
-DFS finds *a* path, not the *shortest* path, unless you additionally track and compare every path's length — which throws away DFS's main appeal (simplicity) and still costs more work than BFS, which gets the shortest-path guarantee **for free** from its traversal order alone. If the question is explicitly about minimum hops, reaching for DFS is reaching for the wrong tool, not a stylistic choice.
-
-**"Skip the outer loop over all nodes — just start the traversal at node 0 (or whatever the 'obvious' start is)."**
-This silently assumes the graph is fully connected. The moment the graph has an isolated node, or a disconnected second cluster, a single traversal from one start point never even looks at it. Any function that claims to answer a graph-wide question ("how many components," "is there a cycle anywhere") must loop over every node as a potential start point and only skip nodes that a previous traversal has already marked visited.
-
-**Tradeoff summary:** none of these are complexity tradeoffs in the way Two Pointers vs. hashing is — they are **correctness** failures. Skipping the `visited` set does not make the algorithm faster or use less memory; it makes it wrong (hang, crash, or silently incomplete). The `visited` set is not an optimization layered on top of tree BFS/DFS — it is the missing piece that makes the traversal *well-defined* on a structure with cycles at all.
-
 ## Solution
 
 The mechanism is deliberately unglamorous: it is the exact same two traversals you already know from tree BFS and tree DFS, with one addition — an explicit `visited` set (or boolean array) that every node is checked against before being explored, and marked in the instant it is discovered.
 
-**BFS, guarded.** Start a queue with the source node, mark it visited immediately, and process the queue: pop a node, look at its neighbors, and for each neighbor that is **not yet visited**, mark it visited and push it. Because BFS processes the queue in the order nodes were discovered, it explores the graph in strict "rings" outward from the source — everything at distance 1 is fully processed before anything at distance 2 is even looked at. That ordering is exactly what guarantees the first time you reach any node, you have reached it via a shortest possible path, in an unweighted graph where every edge counts as one hop. (No code yet — this is the shape; the implementation is in [code.cpp](code.cpp).)
+**BFS, guarded.** Start a queue with the source node, mark it visited immediately, and process the queue: pop a node, look at its neighbors, and for each neighbor that is **not yet visited**, mark it visited and push it. Because BFS processes the queue in the order nodes were discovered, it explores the graph in strict "rings" outward from the source — everything at distance 1 is fully processed before anything at distance 2 is even looked at. That ordering is exactly what guarantees the first time you reach any node, you have reached it via a shortest possible path, in an unweighted graph where every edge counts as one hop.
 
-**DFS, guarded.** Recurse (or use an explicit stack) into a node's neighbors, marking each node visited the instant you enter it, and skipping any neighbor already marked. This gives you reachability (can this node reach that node — walk the whole subgraph and check), connected-component counting (loop over every node; each unvisited node found starting a fresh traversal is a new component), and — with one extra piece of state, a marker for "on the current path" — cycle detection in a directed graph.
+1. Initialize a `dist` array of size `V` (number of nodes), every entry set to a sentinel meaning "unreached" (e.g. `-1`).
+2. Set `dist[source] = 0` and push `source` into an empty queue — the mark-on-discovery step; `source` is now considered visited.
+3. While the queue is not empty: pop the front node `current`, and for each neighbor still at the sentinel value, set `dist[neighbor] = dist[current] + 1` and push it. A neighbor already assigned a distance is skipped — it was already reached via an equal-or-shorter path, because BFS processes nodes in non-decreasing distance order.
+4. When the queue empties, `dist[v]` holds the minimum hop count from `source` to every reachable `v`; unreached nodes keep the sentinel value.
+
+(No code yet — this is the shape; the implementation is in [code.cpp](code.cpp).)
+
+**DFS, guarded.** Recurse (or use an explicit stack) into a node's neighbors, marking each node visited the instant you enter it, and skipping any neighbor already marked. This gives you reachability (can this node reach that node), connected-component counting, and — with one extra piece of state, a marker for "on the current path" — cycle detection in a directed graph.
+
+1. To check reachability (can `source` reach `target`): DFS from `source`, marking each node visited on entry and recursing into every not-yet-visited neighbor. If the recursion ever visits `target`, reachability is confirmed; if it fully unwinds without visiting `target`, it is unreachable.
+2. To count connected components: loop over every node `i` from `0` to `V-1`. Each time `i` is not yet visited, increment a component counter and run a full DFS from `i`, marking every node it reaches. Nodes already marked by a previous component's DFS are skipped.
+3. After the loop finishes, the counter holds the total number of connected components, and every node has been visited exactly once regardless of which component it belonged to.
 
 The thinking behind it: **the `visited` set is not a performance optimization — it is a correctness requirement.** Every node must be explored *at most once* for two reasons: first, so the traversal actually terminates on a graph with cycles; second, so the O(V+E) complexity bound holds (each node processed once, each edge examined at most once or twice depending on direction). Skip it, and you do not get a slower correct algorithm — you get an algorithm that does not terminate at all.
 
@@ -109,86 +107,57 @@ Responsibilities in one line each:
 - **Queue (BFS):** enforces strict ring-by-ring order, which is what makes "first reached = shortest path" true.
 - **Recursion/stack (DFS):** remembers how to backtrack, and — for directed cycle detection — remembers what is still "in progress."
 
-## Execution Flow
+## Why Not Other Approaches?
 
-**BFS shortest-path / level count**, step by step:
+**"Just reuse the tree BFS/DFS code unchanged — a graph traversal is basically the same thing."**
+This is the single most common mistake going into this pattern, and it is worth naming directly: tree BFS/DFS never needed a `visited` set because a tree's structure makes revisiting a node impossible by construction (exactly one path from the root to any node, no cycles). The moment you traverse a structure where a node can be reached via more than one path, or where following edges can lead back to a node already on the current path, that same code either **hangs** (BFS's queue never empties, because a cyclic path keeps re-adding the same nodes) or **crashes with a stack overflow** (DFS's recursion never bottoms out, because a cyclic path never runs out of "next" nodes to descend into). The fix is not a new algorithm — it is the same two traversals, plus one added piece of state: an explicit `visited` marker.
 
-1. Initialize a `dist` array of size `V` (number of nodes), every entry set to a sentinel meaning "unreached" (e.g. `-1`).
-2. Set `dist[source] = 0` and push `source` into an empty queue. This is the mark-on-discovery step — `source` is now considered visited.
-3. While the queue is not empty:
-   a. Pop the front node, call it `current`.
-   b. For each neighbor of `current`:
-      - If `dist[neighbor]` is still the "unreached" sentinel, set `dist[neighbor] = dist[current] + 1` and push `neighbor` onto the queue.
-      - If `dist[neighbor]` is already set, skip it — it was already reached via an equal-or-shorter path, because BFS processes nodes in non-decreasing distance order.
-4. When the queue empties, `dist[v]` holds the minimum hop count from `source` to every reachable `v`; unreached nodes keep the sentinel value.
+**"Use DFS to find the shortest path, since DFS is simpler / more familiar / recursion is elegant."**
+DFS finds *a* path, not the *shortest* path, unless you additionally track and compare every path's length — which throws away DFS's main appeal (simplicity) and still costs more work than BFS, which gets the shortest-path guarantee **for free** from its traversal order alone. If the question is explicitly about minimum hops, reaching for DFS is reaching for the wrong tool, not a stylistic choice.
 
-**DFS reachability and connected components**, step by step:
+**"Skip the outer loop over all nodes — just start the traversal at node 0 (or whatever the 'obvious' start is)."**
+This silently assumes the graph is fully connected. The moment the graph has an isolated node, or a disconnected second cluster, a single traversal from one start point never even looks at it. Any function that claims to answer a graph-wide question ("how many components," "is there a cycle anywhere") must loop over every node as a potential start point and only skip nodes that a previous traversal has already marked visited.
 
-1. Initialize a `visited` array of size `V`, all `false`.
-2. To check reachability (can `source` reach `target`): start a recursive DFS at `source`. On entering any node, mark it visited, then recurse into every neighbor that is not yet visited. If the recursion ever visits `target`, reachability is confirmed; if the DFS fully unwinds without visiting `target`, it is unreachable.
-3. To count connected components: initialize a component counter to 0. Loop over every node `i` from `0` to `V-1`. If `i` is not yet visited, increment the counter (a new component has been found) and run a full DFS starting at `i`, marking every node it reaches. Continue the loop; nodes already marked visited by a previous component's DFS are skipped.
-4. After the loop finishes, the counter holds the total number of connected components, and every node has been visited exactly once regardless of which component it belonged to.
+**Net:** none of these are complexity tradeoffs in the way Two Pointers vs. hashing is — they are **correctness** failures. Skipping the `visited` set does not make the algorithm faster or use less memory; it makes it wrong (hang, crash, or silently incomplete). The `visited` set is not an optimization layered on top of tree BFS/DFS — it is the missing piece that makes the traversal *well-defined* on a structure with cycles at all.
 
-## Recognition Diagram
+## Diagrams
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart deciding between Graph BFS/DFS, Topological Sort, and Union Find based on the signals in a problem statement.
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart deciding between Graph BFS/DFS, Topological Sort, and Union Find based on the signals in a problem statement.
+- [images/flow-diagram.md](images/flow-diagram.md) — control-flow diagram of the visited-set-guarded BFS queue loop (with DFS's equivalent recursion flow described alongside it).
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of BFS expanding ring-by-ring from a source node on a small concrete graph with a cycle.
 
-## Flow Diagram
+## The Code
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the visited-set-guarded BFS queue loop (with DFS's equivalent recursion flow described alongside it).
+[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/). It provides three small, reusable functions, all operating on a graph represented as `std::vector<std::vector<int>> adj` (an adjacency list). No templates over element type here (unlike Two Pointers' container-generic functions) — a graph node is always represented as a small integer index into `adj`, so the functions are already maximally reusable across any problem that can be reduced to that representation.
 
-## Trace Diagram
+**`bfsShortestPath(adj, src)`** returns a `std::vector<int>` of minimum hop-distances from `src` to every node, with `-1` for unreachable nodes. It initializes every distance to `-1`, sets `dist[src] = 0`, and pushes `src` onto a `std::queue<int>`. The main loop pops a node and, for every neighbor still at `-1`, sets its distance to one more than the current node's distance and pushes it. The critical detail is `dist[neighbor] = dist[node] + 1` happening **before** the push, and the `-1` check happening **before** that — this is "mark on discovery," which is what prevents the same neighbor from being pushed twice by two different in-progress nodes that both point to it. It is the direct ancestor of the multi-source BFS shape (seeding the queue with *every* source at distance 0 at once — the classic example is LeetCode 994, Rotting Oranges) and [problems/04-word-ladder.cpp](problems/04-word-ladder.cpp) (which generalizes "neighbor" to "differs by one letter").
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of BFS expanding ring-by-ring from a source node on a small concrete graph with a cycle.
+**`dfsConnectedComponents(adj)`** returns the number of connected components, treating the graph as undirected — it first builds a symmetric adjacency list (adding both `u -> v` and `v -> u` for every edge in the input) so the result is correct regardless of how the caller built the original adjacency list. It then runs a straightforward recursive DFS (marking each node visited the instant it is entered) inside an outer `for` loop over every node from `0` to `V-1` — that outer loop is what correctly handles disconnected pieces: any node not yet visited by a previous component's DFS starts a brand-new component and increments the counter. It is the direct ancestor of [problems/01-number-of-islands.cpp](problems/01-number-of-islands.cpp) (where each "island" is a connected component in a grid-as-implicit-graph).
 
-## Implementation
+**`hasCycleDirected(adj)`** returns whether a **directed** graph contains a cycle, using DFS with a three-state (`unvisited` / `in-progress` / `done`) marker instead of a plain boolean, because in a directed graph revisiting an already-fully-explored node is normal and does not by itself indicate a cycle. The recursive `dfs` lambda sets `state[node] = 1` on entry; for each neighbor, a state of `1` is a **back edge** to a node still on the current path — a cycle, returned immediately — a state of `0` recurses, and a state of `2` is safely skipped (already fully explored, not part of any cycle involving the current path). After all neighbors are processed, `state[node]` is set to `2`.
 
-[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/).
-
-It provides three small, reusable functions, all operating on a graph represented as `std::vector<std::vector<int>> adj` (an adjacency list):
-
-- `bfsShortestPath(adj, src)` — returns a `std::vector<int>` of minimum hop-distances from `src` to every node, with `-1` for unreachable nodes.
-- `dfsConnectedComponents(adj)` — returns the number of connected components, treating the graph as undirected (it symmetrizes the adjacency internally, so it is correct even if the caller only supplied one-directional edges).
-- `hasCycleDirected(adj)` — returns whether a **directed** graph contains a cycle, using DFS with a three-state (`unvisited` / `in-progress` / `done`) marker instead of a plain boolean, because in a directed graph revisiting an already-fully-explored node is normal and does not by itself indicate a cycle.
-
-No templates over element type here (unlike Two Pointers' container-generic functions) — a graph node is always represented as a small integer index into `adj`, so the functions are already maximally reusable across any problem that can be reduced to that representation.
-
-## Code Walkthrough
-
-**`bfsShortestPath`** (in [code.cpp](code.cpp)). Takes the adjacency list and a source index. Initializes every distance to `-1` ("unreached"), sets `dist[src] = 0`, and pushes `src` onto a `std::queue<int>`. The main loop pops a node and, for every neighbor still at `-1`, sets its distance to one more than the current node's distance and pushes it. The critical line is `dist[neighbor] = dist[node] + 1` happening **before** the push, and the `-1` check happening **before** that — this is "mark on discovery," which is what prevents the same neighbor from being pushed twice by two different in-progress nodes that both point to it. This function exists to demonstrate the exact-shortest-hops BFS in its purest form, and is the direct ancestor of the multi-source BFS shape (seeding the queue with *every* source at distance 0 at once — the classic example is LeetCode 994, Rotting Oranges) and [problems/04-word-ladder.cpp](problems/04-word-ladder.cpp) (which generalizes the "neighbor" relationship to "differs by one letter").
-
-**`dfsConnectedComponents`** (in [code.cpp](code.cpp)). First builds a symmetric adjacency list (`undirected`) by adding both `u -> v` and `v -> u` for every edge found in the input `adj`, so the function gives a correct undirected-component count regardless of how the caller built the original adjacency list. Then it runs a straightforward recursive DFS (marking each node visited the instant it is entered) inside an outer `for` loop over every node from `0` to `V-1` — the outer loop is what correctly handles disconnected pieces: any node not yet visited by a previous component's DFS starts a brand-new component and increments the counter. This function exists to demonstrate both the plain "mark-visited" DFS shape and the "loop over all nodes as potential starts" discipline that connected-component and cycle-detection problems both require, and is the direct ancestor of [problems/01-number-of-islands.cpp](problems/01-number-of-islands.cpp) (where each "island" is a connected component in a grid-as-implicit-graph).
-
-**`hasCycleDirected`** (in [code.cpp](code.cpp)). Uses a `state` array with three values instead of a boolean: `0` (unvisited), `1` (in progress — on the current DFS path), `2` (done — fully explored, and *not* on the current path anymore). The recursive `dfs` lambda sets `state[node] = 1` on entry, and for each neighbor: if the neighbor's state is `1`, that is a **back edge** to a node still on the current path — a cycle, so it returns `true` immediately. If the neighbor's state is `0`, it recurses. If the neighbor's state is `2`, it is safely skipped (already fully explored via a different path, and not part of any cycle involving the current path). After all neighbors are processed, `state[node]` is set to `2`. This function exists to demonstrate why directed-graph cycle detection needs a third state beyond plain `visited`/`unvisited` — the same outer "loop over every unvisited node" discipline as `dfsConnectedComponents` ensures a cycle hidden in a disconnected second component is still found.
-
-**`main()`** (in [code.cpp](code.cpp)). Exercises all three functions against small, hand-checkable graphs — including a 4-cycle for BFS (proving it does not loop forever and still returns correct hop counts), a disconnected 3-component graph for `dfsConnectedComponents` (built with one-directional edges, proving the internal symmetrization works), and both a cyclic and an acyclic (diamond-shaped) directed graph for `hasCycleDirected`, plus a case where the cycle is hidden in a second, otherwise-unreached component — and prints `[PASS]`/`[FAIL]` for each assertion.
+**`main()`** exercises all three functions against small, hand-checkable graphs — a 4-cycle for BFS (proving it does not loop forever and still returns correct hop counts), a disconnected 3-component graph for `dfsConnectedComponents` (built with one-directional edges, proving the internal symmetrization works), and both a cyclic and an acyclic (diamond-shaped) directed graph for `hasCycleDirected`, plus a case where the cycle is hidden in a second, otherwise-unreached component — printing `[PASS]`/`[FAIL]` for each assertion.
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem, implementing the same visited-set-guarded traversal logic inline (not calling the generic functions above directly, so each file stays dependency-free and independently readable). See [problems/README.md](problems/README.md) for the index. Briefly: `01` treats a grid as an implicit graph (each cell's up/down/left/right neighbors) and counts connected components via DFS flood-fill; `02` clones a graph via BFS while using a hash map to avoid infinite recursion on cycles and to avoid cloning the same node twice; `03` is multi-source BFS, where every initially-rotten orange starts the queue simultaneously, and the number of BFS "rings" processed is the answer; `04` is BFS shortest-path where the "neighbor" relationship is generated on the fly (every one-letter mutation of the current word) rather than read from a pre-built adjacency list.
 
-## Advantages
+## Tradeoffs
+
+**What guarding a traversal buys you**
 
 - **Same mental model as tree BFS/DFS.** If you already understand level-order and depth-first traversal on trees, this pattern is "that, plus one guard" — not a new algorithm to learn from scratch.
 - **BFS gives an exact, provable shortest-path guarantee for free** in any unweighted graph, with no extra bookkeeping beyond the distance array itself.
 - **DFS is naturally suited to structural questions** — reachability, connected components, cycle detection — because "fully explore one branch before trying the next" maps directly onto "has everything reachable from here been accounted for?"
-- **O(V + E) time and space**, for both traversals — linear in the size of the graph, which is close to the theoretical minimum for any algorithm that must look at every node and edge at least once.
+- **O(V + E) time and space**, for both traversals — linear in the size of the graph, close to the theoretical minimum for any algorithm that must look at every node and edge at least once.
 - **Composable.** Connected-component counting and cycle detection are both "DFS plus a small piece of extra state" (a counter, or a three-state marker) layered on the exact same traversal skeleton — you are not learning three unrelated algorithms.
+- **Correctness versus the naive, unguarded traversal.** Termination is no longer an accident of the input happening to be tree-shaped.
 
-## Disadvantages
+**What it costs you**
 
-- **BFS needs O(V) space for the queue and the visited set**, in the worst case (a "star" graph where the source connects directly to almost every other node puts almost all of them in the queue at once). This is unavoidable — it is not a tuning problem, it is the cost of remembering an entire ring of nodes before moving to the next ring.
-- **DFS's recursion depth can reach V in a long, thin path** (a graph that is basically a long chain), risking a **stack overflow** on graphs with tens of thousands of nodes or more — a real production failure mode, not a theoretical one, especially on default thread stack sizes. An iterative DFS with an explicit `std::stack` avoids this at the cost of slightly more code.
-- **Neither traversal alone handles weighted edges correctly.** BFS's "first reached = shortest" guarantee is only true when every edge counts as exactly one hop; the moment edges have different costs, BFS's ring-by-ring order no longer corresponds to "closest in total cost" (see Complexity, below).
+- **BFS needs O(V) space for the queue and the visited set**, in the worst case (a "star" graph where the source connects directly to almost every other node puts almost all of them in the queue at once). This is not a tuning problem — it is the cost of remembering an entire ring of nodes before moving to the next ring.
+- **DFS's recursion depth can reach V in a long, thin path** (a graph that is basically a long chain), risking a **stack overflow** on graphs with tens of thousands of nodes or more — a real production failure mode, especially on default thread stack sizes. An iterative DFS with an explicit `std::stack` avoids this at the cost of slightly more code.
+- **Neither traversal alone handles weighted edges correctly.** BFS's "first reached = shortest" guarantee is only true when every edge counts as exactly one hop; the moment edges have different costs, BFS's ring-by-ring order no longer corresponds to "closest in total cost" (see Complexity, below, for the Dijkstra escalation).
 - **Disconnected graphs require remembering the outer loop.** Every function that claims a graph-wide answer (all components, any cycle anywhere) must loop over every node as a potential unvisited start point — easy to forget, and the resulting bug (under-counting) does not crash or throw, it just quietly returns a wrong number.
-
-## Tradeoffs
-
-**What we gain over the naive (unguarded) traversal:** correctness on any graph, cyclic or not — termination is no longer an accident of the input happening to be tree-shaped.
-
-**What we gain from choosing BFS over DFS (when shortest hops matter):** an exact, provable minimum-hop-count guarantee, at the cost of needing an explicit queue and a full distance array rather than DFS's simpler "just recurse" structure.
-
-**What we gain from choosing DFS over BFS (when structure/reachability matters):** simpler code (often just a recursive function plus a `visited` array), and a natural fit for "fully explore this branch, then backtrack" questions — at the cost of no shortest-path guarantee at all.
-
-**What we lose versus a tree traversal:** the ability to skip the `visited` set entirely. Every graph traversal pays a small, constant bookkeeping cost (one array, one queue or one recursion-stack marker) that a tree traversal never needed — a fixed tax for giving up the "no revisits possible" guarantee.
+- **One fixed bookkeeping tax versus a tree traversal.** Every graph traversal pays a small, constant cost (one array, one queue or one recursion-stack marker) that a tree traversal never needed — the price of giving up the "no revisits possible" guarantee.
 
 ## Complexity
 
@@ -222,23 +191,16 @@ No templates over element type here (unlike Two Pointers' container-generic func
 - **Edges arrive incrementally and you repeatedly need "are these two nodes connected?" or "would adding this edge create a cycle?"** without wanting to re-run a full traversal every time — that is Union Find's job, which answers connectivity queries without traversing edges at all.
 - **The graph is so large that even O(V + E) is too slow for the required latency** (e.g. a real-time query over a graph with billions of edges) — that typically calls for precomputed indexes, bidirectional search, or specialized graph databases, not a from-scratch BFS/DFS per query.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
-- **Social network "degrees of connection"** — LinkedIn's "2nd/3rd degree connection" labels and "how are you connected to this person" features are BFS shortest-path queries over the friendship/follow graph, where each ring outward from you is one additional degree.
-- **Network routing and broadcast storms.** Network topology discovery and basic routing protocols reason about a graph of routers/switches; BFS-style flooding is literally how a **broadcast storm** happens on a network with a physical cycle and no loop-prevention protocol (which is exactly why Ethernet networks run the **Spanning Tree Protocol** — to detect and break cycles in the physical topology before a broadcast packet can circulate forever, the network-hardware analogue of forgetting a `visited` set).
-- **Dependency / service-mesh reachability analysis.** In a microservice architecture, "if service A goes down, which services become unreachable from the public API gateway" is a reachability question answered by DFS/BFS over the service-call graph; "is there a circular dependency between these services that could deadlock a startup sequence" is directed-cycle detection over the same graph.
-- **Build systems and package managers.** Determining "does installing/building this set of packages have a circular dependency" is exactly `hasCycleDirected` run over the package dependency graph — the same check that underlies why `npm install` or a Makefile can report a dependency cycle error instead of hanging forever.
-- **Maze/pathfinding in games and robotics.** Finding the shortest route through a grid-based maze (a game level, a warehouse robot's floor plan) is BFS over the grid-as-implicit-graph, identical in shape to [problems/01-number-of-islands.cpp](problems/01-number-of-islands.cpp)'s traversal but answering "shortest route" instead of "how many separate blobs."
+Graph BFS/DFS problems recur constantly in interviews and in production infrastructure:
 
-## Where I Can Use This
-
-Five realistic ideas for your own backend/systems work:
-
-1. **"Degrees of separation" between two entities** in any graph-shaped domain model you own (users and their connections, organizations and their reporting chains) — a straightforward BFS shortest-path query over an adjacency list built from a relational "edges" table.
-2. **Circular-dependency detection in a service registry or config graph** — run `hasCycleDirected` over a "service X depends on service Y" graph before allowing a new dependency to be registered, catching a deploy-time deadlock before it happens instead of after.
-3. **Reachability impact analysis for an incident**: given "node X is down," BFS/DFS outward over the dependency graph to compute the full set of downstream services that are now unreachable, to page the right on-call owners immediately.
-4. **Flood-fill style batch jobs over a grid or spatial index** — e.g. computing contiguous regions in a geospatial dataset, or connected "blobs" of flagged records in a 2D sensor grid, using the same island-counting DFS as [problems/01](problems/01-number-of-islands.cpp).
-5. **Multi-source BFS for "time until every node is affected"** style batch jobs — e.g. simulating how many processing cycles it takes for a status (a cache invalidation, a config rollout) to propagate outward from several seed nodes simultaneously through a dependency graph, directly analogous to the multi-source BFS shape (LeetCode 994, Rotting Oranges).
+- **Social network "degrees of connection."** LinkedIn's "2nd/3rd degree connection" labels are BFS shortest-path queries over the friendship/follow graph, where each ring outward from you is one additional degree — the same shape as a "degrees of separation" query over any graph-shaped domain model you own (users and their connections, orgs and their reporting chains), built from an adjacency list assembled from a relational "edges" table.
+- **Network routing and broadcast storms.** BFS-style flooding is literally how a **broadcast storm** happens on a network with a physical cycle and no loop-prevention protocol — exactly why Ethernet networks run the **Spanning Tree Protocol**, to detect and break cycles in the physical topology before a broadcast packet can circulate forever, the network-hardware analogue of forgetting a `visited` set.
+- **Dependency / service-mesh reachability analysis.** "If service A goes down, which services become unreachable from the public API gateway" is a reachability question answered by DFS/BFS over the service-call graph; "is there a circular dependency between these services that could deadlock a startup sequence" is directed-cycle detection over the same graph — the same check a **circular-dependency detector in a service registry or config graph** would run (`hasCycleDirected`) before allowing a new dependency to be registered, catching a deploy-time deadlock before it happens.
+- **Build systems and package managers.** "Does installing/building this set of packages have a circular dependency" is exactly `hasCycleDirected` run over the package dependency graph — the same check that underlies why `npm install` or a Makefile can report a dependency cycle error instead of hanging forever.
+- **Maze/pathfinding and flood-fill batch jobs.** Finding the shortest route through a grid-based maze (a game level, a warehouse robot's floor plan) is BFS over the grid-as-implicit-graph, identical in shape to [problems/01-number-of-islands.cpp](problems/01-number-of-islands.cpp)'s traversal but answering "shortest route" instead of "how many separate blobs" — the same island-counting DFS generalizes directly to computing contiguous regions in a geospatial dataset, or connected "blobs" of flagged records in a 2D sensor grid.
+- **Incident impact analysis and multi-source propagation.** Given "node X is down," BFS/DFS outward over the dependency graph computes the full set of downstream services now unreachable, to page the right on-call owners immediately; seeding the queue with several nodes at once (multi-source BFS, the same shape as LeetCode 994's Rotting Oranges) simulates how many processing cycles it takes for a status — a cache invalidation, a config rollout — to propagate outward from several seed nodes simultaneously through a dependency graph.
 
 ## Similar Patterns
 
@@ -257,29 +219,14 @@ Five realistic ideas for your own backend/systems work:
 
 Experienced engineers do not spend interview time on "how do you write a BFS loop" — that is mechanical. What they actually probe is whether you can correctly identify **which** traversal the question needs, and whether you remember the guard that a tree traversal never needed. A candidate who says "I'll DFS to find the shortest path" without justifying why that gives the minimum is signaling they have memorized code shapes rather than understood what each traversal order guarantees.
 
-Common follow-up questions:
-- *"Why BFS and not DFS for shortest path?"* — expects the ring-by-ring argument: BFS exhausts every node at distance `d` before looking at distance `d+1`, so the first time a node is reached is provably via a shortest path; DFS has no such ordering guarantee.
-- *"What if the graph has a cycle — walk me through what would go wrong without a `visited` set."* — expects a concrete failure mode: BFS's queue keeps re-adding nodes already on the cycle and never empties; DFS's recursion keeps re-entering nodes already on the cycle and eventually overflows the stack.
-- *"How would you detect a cycle in a directed graph, and why can't you just use a boolean `visited` array like you did for the undirected case?"* — expects the three-state (`unvisited`/`in-progress`/`done`) explanation and a concrete example of a DAG where a node is legitimately revisited via two parents without any cycle existing.
-- *"The graph is disconnected — does your solution still work?"* — expects recognition that any graph-wide question requires looping over every node as a potential unvisited start point, not assuming one traversal from an arbitrary start covers everything.
-- *"What changes if the edges have weights?"* — expects naming Dijkstra's algorithm (and the priority-queue-driven O((V+E) log V) bound) as the correct escalation, and recognizing that BFS is really just Dijkstra specialized to all-edge-weights-equal-1.
+Follow-ups worth rehearsing:
+- *"Why BFS and not DFS for shortest path?"* — the ring-by-ring argument: BFS exhausts every node at distance `d` before looking at distance `d+1`, so the first time a node is reached is provably via a shortest path; DFS has no such ordering guarantee.
+- *"Walk me through exactly what goes wrong on a cycle without a `visited` set."* — a concrete failure mode, not just "it breaks": BFS's queue keeps re-adding nodes already on the cycle and never empties; DFS's recursion keeps re-entering nodes already on the cycle and eventually overflows the stack.
+- *"What changes if the edges have weights?"* — naming Dijkstra's algorithm (and the priority-queue-driven O((V+E) log V) bound) as the correct escalation, and recognizing that BFS is really just Dijkstra specialized to all-edge-weights-equal-1.
 
-Common misconceptions:
-- "BFS and DFS always give the same answer, just in different order." False for shortest-path questions — DFS gives no shortest-path guarantee at all, only *a* path.
-- "A `visited` array is an optimization to avoid extra work." It is a **correctness** requirement on any graph that might contain a cycle — without it, the algorithm may never terminate, not just run slower.
-- "If I've visited a node once in a directed graph, seeing it again always means a cycle." False — it only means a cycle if that node is still on the *current* DFS path (state "in progress"), not merely visited at some point in the past (state "done").
-- "Graph traversal complexity is the same as tree traversal complexity, O(N)." It is O(V + E) — on a dense graph, `E` can be far larger than `V` (up to O(V²)), so the edge term is not always negligible the way it is in a tree (where E = V - 1 always).
-
-## Summary
-
-- Graph BFS/DFS is the same two traversal shapes as tree BFS/DFS, plus an explicit `visited` set/array that a tree never needed because it cannot have cycles.
-- BFS explores in strict rings outward from a source; the first time any node is reached is guaranteed to be via a shortest path, in an unweighted graph.
-- DFS explores one branch fully before backtracking; it is the natural fit for reachability, connected-component counting, and (with a three-state marker) directed-cycle detection.
-- Both run in **O(V + E)** time and O(V) space — linear in the size of the graph.
-- The moment edges carry different weights, BFS's shortest-hop guarantee stops meaning "shortest distance" — that escalation is **Dijkstra's algorithm**, at O((V + E) log V).
-- The single most common bug: marking a node visited on dequeue/pop instead of on enqueue/push, which allows duplicate enqueues of the same node.
-- The single most common omission: forgetting to loop over every node as a potential start point, which silently under-counts on a disconnected graph.
-- Directed-cycle detection needs a three-state marker (`unvisited`/`in-progress`/`done`), not a plain boolean, because revisiting an already-fully-explored node in a directed graph is normal and not itself proof of a cycle.
+Misconceptions worth killing early:
+- **"BFS and DFS always give the same answer, just in different order."** False for shortest-path questions — DFS gives no shortest-path guarantee at all, only *a* path.
+- **"Graph traversal complexity is the same as tree traversal complexity, O(N)."** It is O(V + E) — on a dense graph, `E` can be far larger than `V` (up to O(V²)), so the edge term is not always negligible the way it is in a tree (where E = V - 1 always).
 
 ## Key Takeaways
 

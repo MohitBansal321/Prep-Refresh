@@ -67,6 +67,36 @@ All three of these share a structural need: the answer for a given node depends 
 - **Re-deriving the same subtree answer multiple times.** If you do not recognize that a problem wants postorder aggregation, you might try to compute "the max path sum through this node" by re-walking each subtree fresh every time it is queried from an ancestor — turning an O(n) tree walk into something closer to O(n²) on an unbalanced tree.
 - **Silently wrong answers at the leaf/internal-node boundary.** Treating "a node with one null child" as a leaf (or forgetting to check for a leaf at all) produces paths that end too early or too late — a specific, easy-to-miss correctness bug covered in Common Mistakes.
 
+## Solution
+
+The core idea is: **write a function that takes a node, and recurses into `node->left` and `node->right`.** Everything else is a decision about *what you carry into the recursive call* and *what you do with what comes back out of it*. There are three framings, distinguished by when you "visit" (process) the current node relative to recursing into its children:
+
+**Preorder framing — process the node, then recurse.** You look at the current node's value first, incorporate it into whatever running state you are carrying (append it to a path, add it to a running sum), and only then recurse into left and then right, passing that updated state down as a parameter. This is the natural shape for **root-to-leaf path collection**: you build the path as you go down, and the moment you reach a leaf, the path parameter already contains the complete root-to-leaf sequence — you just record it (or check its sum) right there. Concretely, for path collection: if `node` is `nullptr`, return (nothing to add, nothing to recurse into); otherwise append `node->val` to `path_so_far` (or push it, if using a shared mutable structure — remember to pop it later, see Common Mistakes); if `node` is a **leaf** (`left == nullptr && right == nullptr`), `path_so_far` now holds a complete root-to-leaf path and gets recorded; otherwise recurse into `left`, then `right`, passing the updated `path_so_far` down; then, once both recursive calls return (or immediately, if sharing one mutable path vector instead of copying), remove `node->val` from `path_so_far` — the "backtrack" step, so a fully-explored branch's value does not leak into the next sibling.
+
+**Inorder framing — recurse left, process the node, recurse right.** Less central to this module (inorder's headline use is "visit nodes of a binary *search* tree in sorted order"), but it is worth naming because it is the third leg of the preorder/inorder/postorder trio and interviewers expect you to know all three exist and differ only in *when* the current node is processed relative to its children.
+
+**Postorder framing — recurse into both children fully, then combine their results with the current node.** You call yourself on `node->left`, call yourself on `node->right`, and only after **both** calls have returned do you compute something using the current node's value plus whatever each recursive call handed back. This is the natural shape for **aggregation problems**: max path sum, tree height/balance checks, tree diameter — anything where the correct answer for a node genuinely cannot be computed until you know the fully-resolved answer for both of its subtrees. Concretely, for an aggregation like maximum path sum: `nullptr` returns `0` (a path through a missing child contributes nothing); recurse fully into both children first (`leftBest = bestDownward(left)`, `rightBest = bestDownward(right)`) — both must complete before the next step, which is what makes it postorder; clamp negative contributions to zero, since a negative-sum subtree should simply not be included; update a running "best answer seen anywhere" using `node->val + leftBest + rightBest` — the one place the path is allowed to "bend" through `node` using *both* children, because at this exact node it is being considered as the path's highest point; then return `node->val + max(leftBest, rightBest)` to the caller — the value the *parent* may extend through, which can only use **one** child (a real path cannot branch), so it is deliberately not the same value as the running best.
+
+The unifying thought, in one sentence: **recursion into `left`/`right` handles "go deeper"; a parameter carried down handles "what do I know so far, on the way in"; a return value handles "what did my subtree decide, on the way back out."** Every Tree DFS problem is some combination of those three ingredients — no explicit stack, no queue, just the shape of the recursive call.
+
+## Architecture
+
+Tree DFS has one real "participant" beyond the tree itself:
+
+1. **The recursive function.** Takes a `TreeNode*` (possibly `nullptr`) and whatever accumulated state the problem needs (a running sum, a path vector, a target). Its job, every single call, is the same three-part shape: (a) handle the base case (`nullptr`, or a leaf, depending on the problem), (b) recurse into `left` and/or `right`, (c) combine what it knows with what came back from the recursive calls (postorder) or with what it is passing down (preorder), and return or record the result.
+
+2. **The call stack (implicit).** Every active (not-yet-returned) call to the recursive function is one frame on the language's call stack. The *sequence* of frames currently active, from the outermost call down to the current one, **is** the root-to-leaf path you are standing on right now — that is why no explicit path-tracking data structure is needed for many problems. This is the single most important architectural fact about Tree DFS: **the mechanism (the call stack) and the data you need (the path/ancestry) are the same thing.**
+
+3. **Accumulated state, carried as a parameter (preorder) or built from return values (postorder).** For path problems, this is typically a `std::vector<int>` (or a running sum) passed by value or reference into each recursive call, representing "everything on the path from the root to (and including) the current node." For aggregation problems, this is typically the recursive function's **return value** — e.g. "the height of this subtree," which the parent then uses to compute its own height, and so on up to the root.
+
+4. **The explicit `std::stack`, only if converting to an iterative version.** If recursion depth is a genuine concern (see Tradeoffs), the same algorithm can be rewritten to manage its own stack of `(TreeNode*, state)` pairs on the heap instead of the language call stack. This is a mechanical transformation of the same logic, not a different algorithm — every problem below is described first as recursive, because that is the natural, default shape.
+
+Responsibilities in one line each:
+- **Recursive function:** handles one node, recurses into children, combines results.
+- **Call stack:** *is* the path/ancestry information, for free, with no bookkeeping.
+- **Accumulated state:** the running sum/path (preorder) or the subtree's resolved answer (postorder) — the actual payload being threaded through the recursion.
+- **Explicit stack (optional):** a heap-allocated stand-in for the call stack, used only when recursion depth itself is the risk being managed.
+
 ## Why Not Other Approaches?
 
 **"Use BFS with manual path-tracking attached to every queue entry."**
@@ -79,124 +109,46 @@ This works and uses O(n) space for the parent map, but it is two full passes ove
 A tree has no cycles and exactly one path from the root to any node, so a `visited` set (needed in general graph DFS to avoid infinite loops on cycles) is pure overhead here — you would be paying for a guarantee (cycle safety) the input already gives you for free. It also throws away the natural `left`/`right` child structure that makes tree recursion so direct to write.
 
 **"Iterative preorder/postorder with an explicit `std::stack<TreeNode*>`, from the start."**
-This is a legitimate alternative and is exactly what you reach for when recursion depth is a real concern (see Disadvantages) — but for learning the pattern and for the overwhelming majority of interview-sized trees, it adds stack-management bookkeeping (manually pushing/popping, and for postorder, tracking whether a node's children have already been processed) that recursion gets for free from the language runtime. Reach for the explicit-stack version once you have a concrete reason (extremely deep/unbalanced trees, or a language/runtime with a small default stack), not as the default.
+This is a legitimate alternative and is exactly what you reach for when recursion depth is a real concern (see Tradeoffs) — but for learning the pattern and for the overwhelming majority of interview-sized trees, it adds stack-management bookkeeping (manually pushing/popping, and for postorder, tracking whether a node's children have already been processed) that recursion gets for free from the language runtime. Reach for the explicit-stack version once you have a concrete reason (extremely deep/unbalanced trees, or a language/runtime with a small default stack), not as the default.
 
-**Tradeoff summary:** every alternative either duplicates the path at every branch point (BFS with manual tracking), does the walk twice with an auxiliary structure (BFS + parent map), pays for a safety guarantee the tree does not need (generic graph DFS with `visited`), or manually re-implements what the call stack already gives for free (naive iterative version, absent a real depth concern). Tree DFS wins specifically because the recursive call stack **is** the "path so far" and the "state to combine on the way back up," with zero extra bookkeeping — that is its entire value proposition, and it costs nothing extra until the tree gets deep enough that stack depth itself becomes the risk (again, see Disadvantages).
+**Net:** every alternative either duplicates the path at every branch point (BFS with manual tracking), does the walk twice with an auxiliary structure (BFS + parent map), pays for a safety guarantee the tree does not need (generic graph DFS with `visited`), or manually re-implements what the call stack already gives for free (naive iterative version, absent a real depth concern). Tree DFS wins specifically because the recursive call stack **is** the "path so far" and the "state to combine on the way back up," with zero extra bookkeeping — that is its entire value proposition, and it costs nothing extra until the tree gets deep enough that stack depth itself becomes the risk (see Tradeoffs).
 
-## Solution
+## Diagrams
 
-The core idea is: **write a function that takes a node, and recurses into `node->left` and `node->right`.** Everything else is a decision about *what you carry into the recursive call* and *what you do with what comes back out of it*. There are three framings, distinguished by when you "visit" (process) the current node relative to recursing into its children:
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart distinguishing Tree DFS from Tree BFS and from Backtracking based on the signals in a problem statement.
+- [images/flow-diagram.md](images/flow-diagram.md) — control-flow diagram of the general recurse-down-then-combine-on-the-way-back-up shape shared by preorder path collection and postorder aggregation.
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of the recursive call stack descending and returning on a small concrete tree, using Path Sum (LeetCode 112) as the worked example.
 
-**Preorder framing — process the node, then recurse.** You look at the current node's value first, incorporate it into whatever running state you are carrying (append it to a path, add it to a running sum), and only then recurse into left and then right, passing that updated state down as a parameter. This is the natural shape for **root-to-leaf path collection**: you build the path as you go down, and the moment you reach a leaf, the path parameter already contains the complete root-to-leaf sequence — you just record it (or check its sum) right there.
+## The Code
 
-**Inorder framing — recurse left, process the node, recurse right.** Less central to this module (inorder's headline use is "visit nodes of a binary *search* tree in sorted order"), but it is worth naming because it is the third leg of the preorder/inorder/postorder trio and interviewers expect you to know all three exist and differ only in *when* the current node is processed relative to its children.
+[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern (preorder path-building, postorder aggregation) clearly, before looking at the worked, problem-specific solutions in [problems/](problems/). It provides three small, reusable functions, all operating on a plain `TreeNode` — the standard binary tree node (`int val` plus `left`/`right` pointers, defaulted to `nullptr`), the exact shape LeetCode uses for every binary tree problem, which is why every file in this module (including all four `problems/*.cpp`) redefines this same struct rather than sharing a header, so each stays copy-pasteable and standalone.
 
-**Postorder framing — recurse into both children fully, then combine their results with the current node.** You call yourself on `node->left`, call yourself on `node->right`, and only after **both** calls have returned do you compute something using the current node's value plus whatever each recursive call handed back. This is the natural shape for **aggregation problems**: max path sum, tree height/balance checks, tree diameter — anything where the correct answer for a node genuinely cannot be computed until you know the fully-resolved answer for both of its subtrees.
+- **`binaryTreePaths`** — the preorder, path-building flavor: walks every root-to-leaf path and returns all of them formatted as `"root->child->leaf"`-style strings. An inner recursive helper takes the current node and a `std::string` path built so far, passed *by value*, so each recursive call automatically gets its own independent copy — no explicit backtracking/un-append step is needed here, unlike the shared-mutable-vector version used in `problems/03-path-sum-ii.cpp`, which exists specifically to demonstrate that alternative, more memory-efficient style. At a leaf, the completed path string is pushed onto the results vector.
+- **`hasPathSum`** — a second preorder flavor, carrying a running `int` sum instead of a string, to check whether *any* root-to-leaf path sums to a target. At each call the current node's value is added to the running sum; at a leaf, the function checks whether the accumulated sum equals `targetSum` and returns that boolean up through the recursion, short-circuiting via `||` so a `true` from the left subtree skips evaluating the right subtree at all.
+- **`maxDepth`** — the simplest possible postorder aggregation: each call returns "the height of this subtree," computed from the (already-resolved) heights of its two children. `nullptr` returns `0` (base case); otherwise the function calls itself on `left` and `right`, and only after **both** have returned does it compute `1 + max(leftDepth, rightDepth)`. This is deliberately the smallest example of "you cannot answer for this node until both children have fully answered for themselves," making the postorder shape as clear as possible before `problems/04-binary-tree-maximum-path-sum.cpp` builds a much more involved postorder aggregation on the same shape.
 
-The unifying thought, in one sentence: **recursion into `left`/`right` handles "go deeper"; a parameter carried down handles "what do I know so far, on the way in"; a return value handles "what did my subtree decide, on the way back out."** Every Tree DFS problem is some combination of those three ingredients — no explicit stack, no queue, no code yet, just the shape of the recursive call.
-
-## Architecture
-
-Tree DFS has one real "participant" beyond the tree itself:
-
-1. **The recursive function.** Takes a `TreeNode*` (possibly `nullptr`) and whatever accumulated state the problem needs (a running sum, a path vector, a target). Its job, every single call, is the same three-part shape: (a) handle the base case (`nullptr`, or a leaf, depending on the problem), (b) recurse into `left` and/or `right`, (c) combine what it knows with what came back from the recursive calls (postorder) or with what it is passing down (preorder), and return or record the result.
-
-2. **The call stack (implicit).** Every active (not-yet-returned) call to the recursive function is one frame on the language's call stack. The *sequence* of frames currently active, from the outermost call down to the current one, **is** the root-to-leaf path you are standing on right now — that is why no explicit path-tracking data structure is needed for many problems. This is the single most important architectural fact about Tree DFS: **the mechanism (the call stack) and the data you need (the path/ancestry) are the same thing.**
-
-3. **Accumulated state, carried as a parameter (preorder) or built from return values (postorder).** For path problems, this is typically a `std::vector<int>` (or a running sum) passed by value or reference into each recursive call, representing "everything on the path from the root to (and including) the current node." For aggregation problems, this is typically the recursive function's **return value** — e.g. "the height of this subtree," which the parent then uses to compute its own height, and so on up to the root.
-
-4. **The explicit `std::stack`, only if converting to an iterative version.** If recursion depth is a genuine concern (see Disadvantages), the same algorithm can be rewritten to manage its own stack of `(TreeNode*, state)` pairs on the heap instead of the language call stack. This is a mechanical transformation of the same logic, not a different algorithm — every problem below is described first as recursive, because that is the natural, default shape.
-
-Responsibilities in one line each:
-- **Recursive function:** handles one node, recurses into children, combines results.
-- **Call stack:** *is* the path/ancestry information, for free, with no bookkeeping.
-- **Accumulated state:** the running sum/path (preorder) or the subtree's resolved answer (postorder) — the actual payload being threaded through the recursion.
-- **Explicit stack (optional):** a heap-allocated stand-in for the call stack, used only when recursion depth itself is the risk being managed.
-
-## Execution Flow
-
-**Preorder — root-to-leaf path collection**, step by step:
-
-1. Define a recursive function `collect(node, path_so_far)`.
-2. If `node` is `nullptr`, return immediately — there is nothing to add and nothing to recurse into (the base case).
-3. Append `node->val` to `path_so_far` (or, in a language without free copying, push it and remember to pop it later — see Common Mistakes for what goes wrong if you forget).
-4. Check whether `node` is a **leaf** (`node->left == nullptr && node->right == nullptr`). If it is, `path_so_far` now holds a complete root-to-leaf path — record it (append it to the results list, check its sum against a target, etc.).
-5. If `node` is not a leaf, recurse: call `collect(node->left, path_so_far)`, then call `collect(node->right, path_so_far)`.
-6. After both recursive calls return (or immediately, if using a shared mutable path vector instead of passing a new copy each time), remove `node->val` from `path_so_far` — this is the "backtrack" step, undoing step 3 so that when control returns to this node's *parent*, the path no longer includes a value from a branch that has been fully explored and left behind.
-7. The top-level call is `collect(root, {})` (an empty path). When it returns, every root-to-leaf path has been recorded.
-
-**Postorder — aggregation, e.g. maximum path sum**, step by step:
-
-1. Define a recursive function `bestDownward(node)` that returns "the best sum achievable on a path that starts at `node` and goes downward into at most one child" — and, along the way, updates a running "best path sum seen anywhere so far" (often a variable captured by reference or a class member, since the true best path can bend through a node using *both* children, which is not a valid "downward" value to return to a parent).
-2. If `node` is `nullptr`, return `0` (a path that does not extend through a missing child contributes nothing) — the base case.
-3. Recurse: `leftBest = bestDownward(node->left)`; `rightBest = bestDownward(node->right)`. Both calls must fully complete (all the way down to their leaves and back) before step 4 can happen — this is what makes it postorder.
-4. Clamp negative contributions to zero (`leftBest = max(leftBest, 0)`, same for `rightBest`) — a negative-sum subtree should simply not be included, since including it can only hurt the total.
-5. Update the global/running best: `bestSoFar = max(bestSoFar, node->val + leftBest + rightBest)` — this is the one place where the path is allowed to "bend" through `node` using both children at once, because at this exact node we are allowed to consider it as the path's highest point.
-6. Return `node->val + max(leftBest, rightBest)` to the caller — the value the *parent* is allowed to use, which may only extend through **one** child (a real path cannot branch), so the parent gets the better of the two downward options, not both.
-7. The top-level call is `bestDownward(root)`; the answer to the problem is whatever `bestSoFar` ended up holding after that call returns, not `bestDownward(root)`'s own return value.
-
-## Recognition Diagram
-
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart distinguishing Tree DFS from Tree BFS and from Backtracking based on the signals in a problem statement.
-
-## Flow Diagram
-
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the general recurse-down-then-combine-on-the-way-back-up shape shared by preorder path collection and postorder aggregation.
-
-## Trace Diagram
-
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of the recursive call stack descending and returning on a small concrete tree, using Path Sum (LeetCode 112) as the worked example.
-
-## Implementation
-
-[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern (preorder path-building, postorder aggregation) clearly, before looking at the worked, problem-specific solutions in [problems/](problems/).
-
-It provides three small, reusable functions, all operating on a plain `TreeNode`:
-
-- `binaryTreePaths` — the preorder, path-building flavor: walks every root-to-leaf path and returns all of them formatted as `"root->child->leaf"`-style strings.
-- `hasPathSum` — a second preorder flavor, carrying a running sum instead of a path, to check whether *any* root-to-leaf path sums to a target.
-- `maxDepth` — the simplest possible postorder aggregation: each call returns "the height of this subtree," computed from the (already-resolved) heights of its two children.
-
-## Code Walkthrough
-
-**`TreeNode`** (in [code.cpp](code.cpp)). The standard binary tree node: an `int val` and two raw pointers, `left` and `right`, defaulted to `nullptr` in the constructor. This is the exact shape LeetCode uses for every binary tree problem, which is why every file in this module (including all four `problems/*.cpp`) redefines this same struct rather than sharing a header — each file is meant to be copy-pasteable and standalone.
-
-**`buildSampleTree()`** (in [code.cpp](code.cpp)). A small helper that heap-allocates a fixed, hand-checkable tree (the same shape used in the Trace Diagram) so `main()` has something concrete to run the three functions against without repeating tree-construction boilerplate at every call site.
-
-**`binaryTreePaths`** (in [code.cpp](code.cpp)). Preorder path-building. An inner recursive helper takes the current node and a `std::string` representing the path built so far (passed *by value*, so each recursive call automatically gets its own independent copy — no explicit backtracking/un-append step is needed here, unlike the shared-mutable-vector version used in `problems/03-path-sum-ii.cpp`, which exists specifically to show that alternative, more memory-efficient style). At a leaf, the completed path string is pushed onto the results vector; otherwise the function recurses into whichever children exist, extending the path string with `"->"` plus the child's value before each call.
-
-**`hasPathSum`** (in [code.cpp](code.cpp)). Preorder, but carrying a running `int` sum instead of a string. At each call, the current node's value is added to the running sum ("carried in as a parameter" is the preorder discipline described in Solution above); at a leaf, the function checks whether the accumulated sum equals `targetSum` and returns that boolean up through the recursion (short-circuiting via `||` so a `true` from the left subtree skips evaluating the right subtree at all, exactly like ordinary boolean short-circuit evaluation).
-
-**`maxDepth`** (in [code.cpp](code.cpp)). Pure postorder aggregation, and the simplest possible one: `nullptr` returns `0` (base case), otherwise the function calls itself on `left` and `right`, and only after **both** have returned does it compute `1 + max(leftDepth, rightDepth)` — one more than the taller of its two subtrees. This is deliberately the smallest example of "you cannot answer for this node until both children have fully answered for themselves," to make the postorder shape as clear as possible before `problems/04-binary-tree-maximum-path-sum.cpp` builds a much more involved postorder aggregation on top of the same shape.
-
-**`main()`** (in [code.cpp](code.cpp)). Builds the sample tree once, runs all three functions against it, prints `[PASS]`/`[FAIL]` for each assertion against a hand-computed expected answer, and frees every heap-allocated `TreeNode` before exiting (via a small recursive `deleteTree` helper) — there is no garbage collector in C++, so every `new TreeNode(...)` in `buildSampleTree()` must be matched by a `delete` somewhere, and a postorder traversal (delete children before the node itself) is the only safe order to do it in.
+**`buildSampleTree()`** heap-allocates a fixed, hand-checkable tree (the same shape used in the Trace Diagram) so `main()` has something concrete to run the three functions against without repeating tree-construction boilerplate at every call site. **`main()`** builds it once, runs all three functions, prints `[PASS]`/`[FAIL]` for each assertion against a hand-computed expected answer, and frees every heap-allocated `TreeNode` via a small recursive `deleteTree` helper — there is no garbage collector in C++, so every `new TreeNode(...)` in `buildSampleTree()` must be matched by a `delete` somewhere, and a postorder traversal (delete children before the node itself) is the only safe order to do it in.
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem, defining its own `TreeNode` and helpers rather than including `code.cpp` (so every file stays independently readable and copy-pasteable), but implementing the *same* recursive shape established above. See [problems/README.md](problems/README.md) for the index. Briefly: `01` is the pure preorder-with-running-sum check (does *any* path match); `02` is the pure preorder path-building-and-collecting flavor; `03` extends `01`/`02` with explicit backtracking on a **shared, mutable** path vector, showing the un-append discipline that `binaryTreePaths` in `code.cpp` avoids by copying instead; `04` is the hardest postorder aggregation in the set, where the path is allowed to "bend" through any node, not just run root-to-leaf.
 
-## Advantages
+## Tradeoffs
+
+**What Tree DFS buys you**
 
 - **No auxiliary data structure needed for the common case.** The path/ancestry information you need is already sitting in the call stack's local variables and parameters — you do not allocate or manage a queue, a stack, or a parent-pointer map yourself.
 - **Direct, close match between code shape and problem shape.** "Find all root-to-leaf paths" reads almost like the problem statement once written as `if (isLeaf) record(path); else { recurse(left); recurse(right); }` — the code is a near-literal transcription of the recursive definition of "root-to-leaf path."
 - **Naturally handles both "carry state down" and "combine on the way up" problems** with the same basic recursive skeleton, just changing whether the important work happens before or after the two recursive calls (preorder vs. postorder).
 - **Composability.** Postorder aggregation composes cleanly: `maxDepth` on a node is `1 + max(maxDepth(left), maxDepth(right))`, and this exact "combine children's answers" shape reappears, with small variations, in balanced-tree checking, diameter, and max path sum — learn the shape once, reuse it repeatedly.
 - **Low constant-factor overhead versus an explicit stack.** Recursive calls compiled by any mainstream C++ compiler are cheap; there is no heap allocation for a manual stack structure and no manual push/pop bookkeeping to get wrong.
+- **A single pass with no auxiliary structure**, versus a two-pass BFS-plus-parent-map approach that needs an extra hash map and reconstructs paths afterward rather than having them available directly as you go.
 
-## Disadvantages
+**What it costs you**
 
 - **Recursion depth equals tree height, which risks stack overflow on very unbalanced or very deep trees.** A perfectly balanced tree of `n` nodes has height `O(log n)`, which is nothing to worry about even for millions of nodes. But a **degenerate** tree — one that is really a linked list in disguise, e.g. built by inserting already-sorted data into an unbalanced BST — has height `O(n)`, meaning `n` nested recursive calls. For `n` in the hundreds of thousands, that can exceed a thread's default stack size (commonly a few MB) and crash the program with a stack overflow, not a clean exception.
 - **Converting to an iterative version with an explicit `std::stack` adds real complexity.** Preorder is fairly mechanical to make iterative (push right child, then left child, so left is popped first). Postorder is the hardest of the three to do iteratively without recursion, because you need to know, for a node already on the stack, whether both of its children have already been fully processed before you are allowed to "visit" it — this typically needs either a second stack, a "last visited node" marker, or reversing a modified preorder traversal, none of which is as immediately readable as the recursive version.
 - **Passing large state by value down every recursive call can waste memory/time if done carelessly.** Copying an entire path vector at every single node (rather than passing by reference and explicitly backtracking, or building strings incrementally) turns what should be O(h) auxiliary space per active path into something closer to O(h²) total space/time across the whole traversal, because each of the `h` levels re-copies an ever-growing vector.
 - **Harder to parallelize than level-order traversal.** Because each recursive call depends on its parent's call frame and, in postorder, must wait for children to fully finish, naive DFS does not parallelize across "the same level" the way BFS's queue-per-level structure more naturally invites (though DFS subtrees *can* be parallelized independently — it is just less of a free/obvious win than BFS's level-by-level shape).
-
-## Tradeoffs
-
-**What we gain versus BFS with manual path-tracking:** the same asymptotic correctness, but O(h) space for the "current path" state (living in the call stack) instead of O(n·h) worst case for duplicating a growing path into every queue entry, plus no need to hand-roll path-copying logic into a queue-based traversal.
-
-**What we gain versus a two-pass BFS-plus-parent-map approach:** a single pass, no auxiliary hash map, and the path is available directly as you go, rather than reconstructed afterward by walking parent pointers back to the root.
-
-**What we lose versus BFS:** BFS gives you level-order output and shortest-path-in-edges (unweighted) guarantees directly; Tree DFS does not naturally answer "what is at depth 3" without extra bookkeeping, and does not naturally give you "shortest path to the nearest matching node" the way BFS's level-by-level expansion does.
-
-**What we lose versus an explicit-stack iterative version:** the explicit-stack version trades away recursion's simplicity for a hard ceiling on stack usage (you control the heap-allocated stack's growth, or at least it is not bound by the *thread's* stack size), which matters once tree height is a genuine risk.
+- **No natural level-order or shortest-hop answer.** BFS gives you level-order output and shortest-path-in-edges (unweighted) guarantees directly; Tree DFS does not naturally answer "what is at depth 3" without extra bookkeeping, and its O(h) space advantage flips into a liability the moment the tree is narrow and deep rather than wide and balanced (see Complexity).
 
 ## Complexity
 
@@ -204,7 +156,7 @@ It provides three small, reusable functions, all operating on a plain `TreeNode`
 
 **Space:** **O(h)** where `h` is the tree's height, for the recursion's call stack — this is the *auxiliary* space cost of the traversal mechanism itself, separate from whatever output you are building (a list of paths, which is itself O(n · h) in the worst case just to *store* every path, not because of the traversal). For a balanced tree, `h = O(log n)`; for a completely degenerate (linked-list-shaped) tree, `h = O(n)`.
 
-**Contrast with Tree BFS:** BFS's queue can hold up to the widest level of the tree at once, which for a **complete/balanced** tree is `O(n)` (the last level alone can hold roughly half the nodes) — so BFS's worst-case space is O(n) even though its time complexity is also O(n). DFS's worst-case *space* (O(h)) is actually **better** than BFS's worst-case space (O(n)) on a wide, shallow, balanced tree; the situation flips on a narrow, deep, degenerate tree, where DFS's O(h) becomes O(n) too (and risks stack overflow, per Disadvantages) while BFS's queue stays small (O(1)-ish, since each level has only one node).
+**Contrast with Tree BFS:** BFS's queue can hold up to the widest level of the tree at once, which for a **complete/balanced** tree is `O(n)` (the last level alone can hold roughly half the nodes) — so BFS's worst-case space is O(n) even though its time complexity is also O(n). DFS's worst-case *space* (O(h)) is actually **better** than BFS's worst-case space (O(n)) on a wide, shallow, balanced tree; the situation flips on a narrow, deep, degenerate tree, where DFS's O(h) becomes O(n) too (and risks stack overflow, per Tradeoffs) while BFS's queue stays small (O(1)-ish, since each level has only one node).
 
 | Shape of tree | Tree DFS space (call stack) | Tree BFS space (queue) |
 |---|---|---|
@@ -234,26 +186,17 @@ It provides three small, reusable functions, all operating on a plain `TreeNode`
 - **The tree is extremely deep/unbalanced and stack overflow is a real operational risk** (e.g. processing untrusted, adversarially-shaped input trees in a production service) — either convert to the iterative explicit-stack form, or reject/rebalance pathologically deep inputs before traversing.
 - **You need to explore many candidate *sequences of choices* and prune invalid branches early, generating combinatorially many results (permutations, subsets, combinations, N-Queens-style placements)** — that is **Backtracking**'s territory (see [../../recursion-backtracking-patterns/backtracking/](../../recursion-backtracking-patterns/backtracking/)), a close cousin that shares the "recurse, then undo on the way back" shape but is typically applied to a decision tree you build yourself (choices at each step), not a tree that already exists as input data.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
-Tree DFS (root-to-leaf paths, path sums, max depth, diameter, validate-BST) is one of the most frequently asked tree-traversal families across essentially every major tech company's interview loop, precisely because it tests whether a candidate can correctly distinguish "carry state down" from "combine on the way back up" — Path Sum, Binary Tree Paths, Maximum Depth of Binary Tree, and Binary Tree Maximum Path Sum (this module's four worked problems) are among the most commonly cited tree-DFS questions in interview-prep material.
+Tree DFS (root-to-leaf paths, path sums, max depth, diameter, validate-BST) is one of the most frequently asked tree-traversal families across essentially every major tech company's interview loop — Path Sum, Binary Tree Paths, Maximum Depth of Binary Tree, and Binary Tree Maximum Path Sum (this module's four worked problems) are among the most commonly cited tree-DFS questions in interview-prep material, precisely because they test whether a candidate can correctly distinguish "carry state down" from "combine on the way back up."
 
-Beyond interviews, the same recursive shape shows up directly in real systems:
+Beyond interviews, the same recursive shape shows up directly in real systems and in your own backend/systems work:
 
 - **Compiler / interpreter Abstract Syntax Tree (AST) traversal.** An AST — the tree representation of parsed source code — is walked with exactly this recursion to type-check expressions, generate bytecode, or evaluate an interpreter's expression nodes: you cannot know an expression node's type or value until you know its children's types/values first (a postorder aggregation), and reporting "which function called which" for a stack trace is fundamentally a root-to-leaf-path problem over the call tree.
-- **Filesystem directory tree walks.** Computing a directory's total size (`du -sh`-style), or finding every file matching a pattern by full path, is Tree DFS: total size is postorder aggregation (a directory's size is the sum of its children's, computed bottom-up), and "list every file's full path" is preorder path-building (the path so far is literally the directory path being extended into each subdirectory).
-- **Expression tree evaluation.** A tree representing an arithmetic expression (operators as internal nodes, operands as leaves) is evaluated with postorder aggregation: you cannot compute an operator node's value until both of its operand subtrees have been fully evaluated — precisely the max-depth/max-path-sum shape applied to a different value being aggregated.
-- **JSON/XML/HTML DOM tree processing.** Rendering, validating, or computing derived properties (total text length, whether all required fields are present) over a nested document tree uses the identical recursive walk, often needing both "path so far" (for error messages: "error at root.users[2].address") and "aggregate children's results" (for validation: "this node is valid only if all its children are").
-
-## Where I Can Use This
-
-Five realistic ideas for your own backend/systems work:
-
-1. **Computing storage usage per directory in a file-management or backup service**, recursively summing each subdirectory's size (postorder aggregation) to produce a `du`-style report without shelling out to an external tool.
-2. **Validating a deeply nested configuration or permissions tree** (e.g. an organization's team/sub-team hierarchy with inherited permissions), where a leaf team's effective permissions depend on every ancestor's settings — a preorder "carry the accumulated permission set down" traversal.
-3. **Generating full breadcrumb paths for a nested category tree in an e-commerce or CMS backend** (`Electronics -> Computers -> Laptops -> Gaming Laptops`), by building up the path string as you recurse toward each leaf category, directly mirroring `binaryTreePaths`.
-4. **Detecting the "riskiest" cost path through a nested decision/approval workflow tree** (e.g. total approval cost or risk score along any path from an initiating request down to a terminal approval/rejection), the same shape as Path Sum or Maximum Path Sum applied to a domain-specific tree instead of integers.
-5. **Type-checking or evaluating a small expression language or rule engine** you have embedded in your service (e.g. a JSON-based "if this condition tree evaluates to true, apply this discount"), using postorder evaluation exactly as a compiler evaluates an AST.
+- **Filesystem directory tree walks and storage reporting.** Computing a directory's total size (`du -sh`-style), or finding every file matching a pattern by full path, is Tree DFS: total size is postorder aggregation (a directory's size is the sum of its children's, computed bottom-up), and "list every file's full path" is preorder path-building (the path so far is literally the directory path being extended into each subdirectory) — the same shape behind a file-management or backup service **recursively summing subdirectory sizes** to produce a `du`-style report without shelling out to an external tool, and behind **generating breadcrumb paths for a nested category tree** in an e-commerce/CMS backend (`Electronics -> Computers -> Laptops -> Gaming Laptops`).
+- **Expression tree and embedded rule-engine evaluation.** A tree representing an arithmetic expression (operators as internal nodes, operands as leaves) is evaluated with postorder aggregation: an operator node's value cannot be computed until both of its operand subtrees have been fully evaluated — the same shape used to type-check or evaluate a small embedded rule engine (e.g. a JSON-based "if this condition tree evaluates to true, apply this discount").
+- **JSON/XML/HTML DOM tree processing and nested permission checks.** Rendering, validating, or computing derived properties (total text length, whether all required fields are present) over a nested document tree uses the identical recursive walk, often needing both "path so far" (error messages: "error at root.users[2].address") and "aggregate children's results" (validation: "this node is valid only if all its children are") — the same shape as validating a deeply nested configuration or permissions tree, where a leaf team's effective permissions depend on every ancestor's settings.
+- **Cost/risk path analysis over decision trees.** Detecting the "riskiest" cost path through a nested decision/approval workflow tree (total approval cost or risk score along any path from an initiating request down to a terminal approval/rejection) is the same shape as Path Sum or Maximum Path Sum, applied to a domain-specific tree instead of integers.
 
 ## Similar Patterns
 
@@ -268,31 +211,17 @@ Five realistic ideas for your own backend/systems work:
 
 ## Interview Discussion
 
-Experienced engineers rarely spend interview time on "how do you write a recursive tree function" — the skeleton (`if (!node) return base; recurse(left); recurse(right);`) is mechanical. What they actually probe is whether you can **correctly identify which of the two main shapes (preorder carry-down vs. postorder combine-up) a given problem needs**, and whether you can precisely state what your recursive function's return value *means* — is it "the answer for this whole subtree," or "the best downward-only extension a parent is allowed to use"? Confusing those two in a max-path-sum-style problem is the single most common real mistake candidates make live.
+Experienced engineers rarely spend interview time on "how do you write a recursive tree function" — the skeleton (`if (!node) return base; recurse(left); recurse(right);`) is mechanical. What they actually probe is whether you can **correctly identify which of the two main shapes (preorder carry-down vs. postorder combine-up) a given problem needs**, and whether you can precisely state what your recursive function's return value *means*.
 
-Common follow-up questions:
-- *"Can you do this iteratively instead of recursively?"* — expects you to name the explicit-`std::stack` transformation, and to acknowledge that postorder is the hardest of the three to do iteratively (needing a second stack or a "last visited" marker), not just say "sure, use a stack" without engaging with why postorder is different.
-- *"What happens on a very deep, skewed tree?"* — expects recognition that recursion depth equals tree height, that a degenerate (linked-list-shaped) tree has height O(n), and that this risks a stack overflow — a real production concern, not just a theoretical one, when input trees are not guaranteed to be balanced (e.g. built from untrusted or adversarial input).
-- *"In Binary Tree Maximum Path Sum, why do you return one value up to the parent but track a different value as the answer?"* — expects the precise distinction: a real path cannot branch, so what a parent may extend through is at most one child's contribution, while the globally best path is allowed to bend through both children at exactly one node (see Execution Flow above).
-- *"Why not just use BFS for everything, since it also visits every node?"* — expects recognition that BFS does not naturally carry "the path so far" without duplicating it per queue entry, and that some problems (subtree aggregation, where a parent needs both children's *fully resolved* answers) have no natural level-order analogue at all.
+Follow-up questions worth rehearsing:
+- *"Can you do this iteratively instead of recursively?"* — expects naming the explicit-`std::stack` transformation, and acknowledging that postorder is the hardest of the three to do iteratively (needing a second stack or a "last visited" marker), not just "sure, use a stack" without engaging with why postorder is different.
+- *"Why not just use BFS for everything, since it also visits every node?"* — expects recognizing that BFS does not naturally carry "the path so far" without duplicating it per queue entry, and that subtree-aggregation problems (where a parent needs both children's *fully resolved* answers) have no natural level-order analogue at all.
 - *"How would you validate that a binary tree is a valid BST?"* — expects a preorder-with-range-carried-down solution (each recursive call is handed a valid `(min, max)` range from its parent, and must both satisfy it and narrow it for its own children) — a slightly different but very common preorder variant worth being able to produce on the spot.
 
-Common misconceptions:
-- "DFS and recursion are the same thing." Recursion is the *usual implementation vehicle* for DFS on a tree, but DFS is the traversal *strategy* (go deep before wide); it can equally be implemented iteratively with an explicit stack, and recursion is also used for plenty of non-DFS things (divide and conquer, dynamic programming with memoization).
-- "Preorder/inorder/postorder are only relevant for printing/serializing a tree." They describe a fundamental choice about *when* a node's own value is used relative to its children's — which directly determines whether you can solve a "carry state down" problem or a "combine children's answers" problem with a given traversal order.
-- "You always need to pass the whole path as a vector." Many problems only need a running scalar (a sum, a count, a boolean) carried down, not the literal sequence of values — reach for the full path vector only when the problem asks for the path itself (as in Binary Tree Paths / Path Sum II), not for path-derived aggregates (as in Path Sum, which only needs a running sum).
-- "The return value of a postorder function is always 'the final answer.'" Frequently it is an intermediate value the *parent* needs (a subtree height, a best downward-only extension), while the actual problem answer is tracked separately, as in Maximum Path Sum.
-
-## Summary
-
-- Tree DFS recurses into a node's children, going as deep as possible down one branch before backtracking — the recursive call stack itself carries the "path so far."
-- Two main framings: **preorder** (process the node, then recurse — carry state *down* as a parameter) for path-collection/path-sum problems; **postorder** (recurse into both children fully, then combine their results with the current node) for aggregation problems (max depth, balance, diameter, max path sum).
-- The call stack **is** the mechanism *and* the data — no explicit path-tracking structure is needed for the common case, unlike BFS with manually-attached per-node paths.
-- Time is O(n) for a single full traversal; space is O(h) for the call stack, where `h` is tree height — O(log n) for balanced trees, O(n) worst case for degenerate ones.
-- The single biggest correctness risk is confusing a node's **return value up to its parent** with the problem's actual answer, especially in "the path can bend through this node" aggregation problems.
-- A shared mutable path vector needs strict push-then-pop (append/un-append) discipline bracketing the two recursive calls; forgetting the pop leaks state into sibling branches.
-- Reach for Tree BFS instead the moment the problem says "level"; reach for Backtracking instead when you are building your own decision tree of choices rather than traversing a tree handed to you as input.
-- Converting to an explicit `std::stack` iterative version is a real option once recursion depth is a genuine risk, but postorder is meaningfully harder to make iterative than preorder.
+Misconceptions worth killing early:
+- **"DFS and recursion are the same thing."** Recursion is the *usual implementation vehicle* for DFS on a tree, but DFS is the traversal *strategy* (go deep before wide); it can equally be implemented iteratively with an explicit stack, and recursion is also used for plenty of non-DFS things (divide and conquer, dynamic programming with memoization).
+- **"Preorder/inorder/postorder are only relevant for printing/serializing a tree."** They describe a fundamental choice about *when* a node's own value is used relative to its children's — which directly determines whether you can solve a "carry state down" problem or a "combine children's answers" problem with a given traversal order.
+- **"You always need to pass the whole path as a vector."** Many problems only need a running scalar (a sum, a count, a boolean) carried down, not the literal sequence of values — reach for the full path vector only when the problem asks for the path itself (as in Binary Tree Paths / Path Sum II), not for path-derived aggregates (as in Path Sum, which only needs a running sum).
 
 ## Key Takeaways
 
@@ -327,7 +256,7 @@ Common misconceptions:
 - LeetCode — Binary Tree Paths (problem 257).
 - LeetCode — Path Sum II (problem 113).
 - LeetCode — Binary Tree Maximum Path Sum (problem 124).
-- cppreference.com — recursion and the call stack; `std::stack` (for the iterative/explicit-stack variant discussed in Disadvantages).
+- cppreference.com — recursion and the call stack; `std::stack` (for the iterative/explicit-stack variant discussed in Tradeoffs).
 
 **Blog Articles**
 - GeeksforGeeks — "Tree Traversals (Inorder, Preorder and Postorder)" — a widely used explainer covering all three traversal orders with diagrams.

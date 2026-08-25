@@ -73,21 +73,8 @@ The brute-force instinct is: **concatenate every list into one big array, then s
 ### What happens if we ignore it?
 
 - **Wasted CPU on data that was already sorted.** Concatenating K lists of `n/K` elements each and running `std::sort` costs O(n log n). For K = 100 sorted server log files with a million lines total, that is roughly `10^6 * 20 ≈ 2×10^7` comparisons versus `10^6 * log2(100) ≈ 6.6×10^6` comparisons for K-way merge — over 3x more work for no benefit, and the gap widens as K grows relative to n.
-- **Memory pressure from materializing everything at once.** "Concatenate then sort" typically requires holding all n elements in one contiguous structure before you can even begin sorting. K-way merge only ever needs O(K) elements resident in the heap at any moment, streaming the rest — critical when n is too large to fit in memory (see External Sorting under Real Interview/Production Examples).
+- **Memory pressure from materializing everything at once.** "Concatenate then sort" typically requires holding all n elements in one contiguous structure before you can even begin sorting. K-way merge only ever needs O(K) elements resident in the heap at any moment, streaming the rest — critical when n is too large to fit in memory (see External Sorting under Where This Shows Up).
 - **Silent correctness bugs from ad-hoc merging.** Without the discipline of "one heap slot per source, always replenished from the same source," engineers often write nested loops that either drop elements (forgetting to re-check an exhausted list) or duplicate them (advancing the wrong list's pointer). The heap-based approach removes this class of bug by construction — there is exactly one place a new candidate can come from.
-
-## Why Not Other Approaches?
-
-**"Concatenate everything into one array, then sort it."**
-Correct, but O(n log n) time and, depending on the sort implementation, O(n) extra space for the concatenated buffer. It is *strictly dominated* by K-way merge whenever K < n (which is essentially always true — you rarely have as many source lists as you have total elements). The entire value the sortedness of each individual list offered you is discarded and paid for again from scratch.
-
-**"Merge two lists at a time, repeated K-1 times" (pairwise/sequential merging).**
-This is the natural first instinct once you remember merge sort's two-list merge step: merge list 1 and list 2 into a combined result, then merge that combined result with list 3, then with list 4, and so on, K-1 times total. Each individual merge is linear in the size of its two inputs, so this looks like "just do the merge-sort merge step K-1 times" — but the accumulated result keeps growing. If the K lists are each roughly `n/K` elements, the first merge costs O(2n/K), the second costs O(3n/K) (merging the growing accumulator against the next list), and so on up to the final merge costing close to O(n). Summed across all K-1 merges, the total work is **O(n·K)** in the worst arrangement — for K = 1000 lists, that is a thousand-fold worse constant than the O(n log k) ≈ O(n · 10) that a heap-based merge achieves for the same K. The mechanical idea (advance whichever side is smaller) is exactly right; the mistake is applying it sequentially over K-1 rounds instead of holding all K candidates in one structure simultaneously.
-
-**"Round-robin scan: check all K lists' current fronts every step, in a simple loop (no heap)."**
-This is a valid *correctness* strategy — it produces the right merged output — but each step does a full O(K) linear scan over the K current candidates to find the minimum, and there are n steps total (one per output element), giving **O(n·K)** overall, same complexity class as pairwise merging and for the same reason: you are re-discovering "which of these K values is smallest" from scratch every single time instead of maintaining that answer incrementally. A min-heap is precisely the structure that maintains "what's currently smallest" across insertions/removals in O(log K) instead of O(K).
-
-**Tradeoff summary:** every alternative either discards the fact that each list is pre-sorted (concatenate + sort), or re-derives "which of K candidates is smallest" the hard way on every step (pairwise merging, round-robin scan) — both land at a worse complexity than necessary once K is nontrivially large. K-way merge wins specifically because a min-heap turns "find the smallest of K current candidates" into an O(log K) operation instead of an O(K) one, and that is the *entire* asymptotic gain: O(n·K) → O(n log k).
 
 ## Solution
 
@@ -96,6 +83,14 @@ The core idea: maintain a **min-heap that always holds exactly one "current cand
 Think of the heap as a small tournament bracket with at most K competitors at any time — one representative per source. Every time a representative "wins" (is the current smallest) and steps out to be recorded in the output, their team sends in their next player to take their place in the bracket. The bracket never needs to hold more than K competitors, no matter how large n is, because a team only ever has one player in the bracket at a time.
 
 The key realization that makes this correct: because each individual list is already sorted, the *only* candidate from list `i` that could possibly be the next-smallest element overall is the one currently sitting at the front of list `i` — every element behind it in that same list is guaranteed to be `>=` the front element, so it can never be smaller than something else currently in the heap. That means you never need to look further than "the current front of each list" to be certain you're not missing a smaller candidate anywhere.
+
+Step by step:
+
+1. Given K sorted lists, create an empty min-heap of `(value, list_index, element_index)` tuples.
+2. For each list `i` from `0` to `K-1`: if list `i` is non-empty, push `(list[i][0], i, 0)` onto the heap — its first element, tagged with its own index and position 0. (Skip empty lists entirely; they contribute nothing.)
+3. While the heap is not empty: pop the smallest tuple `(value, list_index, element_index)`; append `value` to the output sequence (or, for the k-th-smallest variant, increment a pop counter and return immediately if this is the k-th pop); then check whether `element_index + 1 < length(list[list_index])` — if so, push `(list[list_index][element_index + 1], list_index, element_index + 1)` onto the heap, replacing the just-popped entry with the next candidate from the *same* source; if not, that list is now exhausted and the heap simply carries one fewer active candidate going forward.
+4. When the heap becomes empty, every element from every list has been popped exactly once, in fully sorted order — the output sequence is the complete merged result.
+5. (K-th-smallest variant only) If the loop reaches the k-th pop before the heap empties, stop immediately and return that value — there is no need to keep merging past the point you already have the answer.
 
 ## Architecture
 
@@ -114,20 +109,22 @@ Responsibilities in one line each:
 - **`list_index` / `element_index`:** bookkeeping that lets a popped value be traced back to its exact source and position, so the correct replacement can be pushed.
 - **Advance step:** the mechanism that keeps the heap "topped up" with exactly one fresh candidate per still-active list after every pop.
 
-## Execution Flow
+## Why Not Other Approaches?
 
-1. Given K sorted lists, create an empty min-heap of `(value, list_index, element_index)` tuples.
-2. For each list `i` from `0` to `K-1`: if list `i` is non-empty, push `(list[i][0], i, 0)` onto the heap — its first element, tagged with its own index and position 0. (Skip empty lists entirely; they contribute nothing.)
-3. While the heap is not empty:
-   a. Pop the smallest tuple `(value, list_index, element_index)` from the heap.
-   b. Append `value` to the output sequence (or, for the k-th-smallest variant, increment a pop counter and return immediately if this is the k-th pop).
-   c. Check whether `list_index` has a next element, i.e. whether `element_index + 1 < length(list[list_index])`.
-   d. If it does, push `(list[list_index][element_index + 1], list_index, element_index + 1)` onto the heap — this replaces the just-popped entry with the next candidate from the *same* source.
-   e. If it does not (that list is now exhausted), push nothing for that list; the heap simply carries one fewer active candidate going forward.
-4. When the heap becomes empty, every element from every list has been popped exactly once, in fully sorted order — the output sequence is the complete merged result.
-5. (K-th-smallest variant only) If the loop reaches the k-th pop before the heap empties, stop immediately and return that value — there is no need to keep merging past the point you already have the answer.
+**"Concatenate everything into one array, then sort it."**
+Correct, but O(n log n) time and, depending on the sort implementation, O(n) extra space for the concatenated buffer. It is *strictly dominated* by K-way merge whenever K < n (which is essentially always true — you rarely have as many source lists as you have total elements). The entire value the sortedness of each individual list offered you is discarded and paid for again from scratch.
 
-## Recognition Diagram
+**"Merge two lists at a time, repeated K-1 times" (pairwise/sequential merging).**
+This is the natural first instinct once you remember merge sort's two-list merge step: merge list 1 and list 2 into a combined result, then merge that combined result with list 3, then with list 4, and so on, K-1 times total. Each individual merge is linear in the size of its two inputs, so this looks like "just do the merge-sort merge step K-1 times" — but the accumulated result keeps growing. If the K lists are each roughly `n/K` elements, the first merge costs O(2n/K), the second costs O(3n/K) (merging the growing accumulator against the next list), and so on up to the final merge costing close to O(n). Summed across all K-1 merges, the total work is **O(n·K)** in the worst arrangement — for K = 1000 lists, that is a thousand-fold worse constant than the O(n log k) ≈ O(n · 10) that a heap-based merge achieves for the same K. The mechanical idea (advance whichever side is smaller) is exactly right; the mistake is applying it sequentially over K-1 rounds instead of holding all K candidates in one structure simultaneously.
+
+**"Round-robin scan: check all K lists' current fronts every step, in a simple loop (no heap)."**
+This is a valid *correctness* strategy — it produces the right merged output — but each step does a full O(K) linear scan over the K current candidates to find the minimum, and there are n steps total (one per output element), giving **O(n·K)** overall, same complexity class as pairwise merging and for the same reason: you are re-discovering "which of these K values is smallest" from scratch every single time instead of maintaining that answer incrementally. A min-heap is precisely the structure that maintains "what's currently smallest" across insertions/removals in O(log K) instead of O(K).
+
+**Net:** every alternative either discards the fact that each list is pre-sorted (concatenate + sort), or re-derives "which of K candidates is smallest" the hard way on every step (pairwise merging, round-robin scan) — both land at a worse complexity than necessary once K is nontrivially large. K-way merge wins specifically because a min-heap turns "find the smallest of K current candidates" into an O(log K) operation instead of an O(K) one, and that is the *entire* asymptotic gain: O(n·K) → O(n log k).
+
+## Diagrams
+
+### Recognition Diagram
 
 The first diamond is the whole pattern, and it is phrased to catch the *disguised* cases — a row-sorted matrix, or the implicit ascending sequence `nums1[i] + nums2[j]` for a fixed `i` — because that is where recognition actually fails. See [images/recognition-diagram.md](images/recognition-diagram.md) for the full "how to read it" walkthrough of every fork.
 
@@ -161,7 +158,7 @@ flowchart TD
     External --> Done
 ```
 
-## Flow Diagram
+### Flow Diagram
 
 The seed loop runs exactly K times and must finish before the first pop; the main loop then runs `n` times, and `Pop` plus `Advance` are one indivisible unit. See [images/flow-diagram.md](images/flow-diagram.md) for the full "how to read it" walkthrough, including why the bounds check is `element_index + 1 < len(list)` and not `element_index < len(list)`.
 
@@ -200,7 +197,7 @@ flowchart TD
     NoPush --> HeapCheck
 ```
 
-## Trace Diagram
+### Trace Diagram
 
 `mergeKSortedLists` merging `L0 = [1,4,7]`, `L1 = [2,5]`, `L2 = [3,6,8]` — K = 3, n = 8, with deliberately uneven lengths so you can watch `L1` exhaust mid-merge with no special-case code running. Heap entries are written `{value, list_index, element_index}`. See [images/trace-diagram.md](images/trace-diagram.md) for the full "how to read it" walkthrough.
 
@@ -249,47 +246,34 @@ sequenceDiagram
     Note over Out: out = [1,2,3,4,5,6,7,8] -- fully sorted,<br/>and never sorted: built in order by construction
 ```
 
-## Implementation
+## The Code
 
-[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/).
+[code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/). It provides two function templates over `std::vector<std::vector<int>>`, deliberately using plain `int` values and `std::vector<std::vector<int>>` (rather than a fully generic template) to keep the heap tuple's meaning ("value, which list, which position") immediately readable — the four worked problems in `problems/` show the same idea adapted to linked lists, a matrix, and pair-sums:
 
-It provides two function templates over `std::vector<std::vector<int>>`, deliberately using plain `int` values and `std::vector<std::vector<int>>` (rather than a fully generic template) to keep the heap tuple's meaning ("value, which list, which position") immediately readable — the four worked problems in `problems/` show the same idea adapted to linked lists, a matrix, and pair-sums:
+- **`mergeKSortedLists`** — seeds a min-heap of `{value, listIdx, elemIdx}` tuples with the first element of every non-empty input list, then repeatedly pops the smallest, appends it to the result, and pushes the next element from the same source list if one exists. Returns the fully merged, sorted vector. Builds a `std::priority_queue<std::tuple<int,int,int>, std::vector<std::tuple<int,int,int>>, std::greater<>>` — the `std::greater<>` comparator is what turns `std::priority_queue` (a *max*-heap by default) into a *min*-heap. Because `std::tuple`'s comparison operators compare element-by-element in declaration order, ordering by `{value, listIdx, elemIdx}` means the heap orders primarily by `value` — exactly what merging needs — and only falls back to `listIdx`/`elemIdx` to break ties between equal values, which never changes correctness. This is the direct ancestor of [problems/01-merge-k-sorted-lists.cpp](problems/01-merge-k-sorted-lists.cpp) and [problems/02-kth-smallest-element-in-a-sorted-matrix.cpp](problems/02-kth-smallest-element-in-a-sorted-matrix.cpp).
+- **`kthSmallestInKSortedLists`** — identical seeding and replenishment logic, but stops as soon as the k-th value has been popped, returning it directly instead of building the whole merged output (the early-exit variant from Solution's step 5). It returns a small `MaybeInt` wrapper rather than a bare `int`, because "there is no k-th element" (k exceeded the total element count) is a genuinely different outcome from "the k-th element happens to be `-1`" — a sentinel value cannot distinguish the two when the data may legitimately contain negatives. Demonstrates that when you only need the k-th smallest, you can stop as soon as you have it, without paying for merging the remaining `n - k` elements you were never going to look at.
 
-- `mergeKSortedLists` — seeds a min-heap of `{value, listIdx, elemIdx}` tuples with the first element of every non-empty input list, then repeatedly pops the smallest, appends it to the result, and pushes the next element from the same source list if one exists. Returns the fully merged, sorted vector.
-- `kthSmallestInKSortedLists` — identical seeding and replenishment logic, but stops as soon as the k-th value has been popped, returning it directly instead of building the whole merged output — the early-exit variant described in Execution Flow step 5.
-
-## Code Walkthrough
-
-**`mergeKSortedLists`** (in [code.cpp](code.cpp)). Takes `std::vector<std::vector<int>>& lists` (each inner vector already sorted ascending). Builds a `std::priority_queue<std::tuple<int,int,int>, std::vector<std::tuple<int,int,int>>, std::greater<>>` — the `std::greater<>` comparator is what turns `std::priority_queue` (a *max*-heap by default) into a *min*-heap, so the top of the queue is always the smallest tuple. Because `std::tuple`'s comparison operators compare element-by-element in declaration order, ordering by `{value, listIdx, elemIdx}` means the heap orders primarily by `value` — exactly what merging needs — and only falls back to `listIdx`/`elemIdx` to break ties between equal values, which never changes correctness (any tie-break order among equal values is a valid sorted output). The seeding loop pushes `(lists[i][0], i, 0)` for every non-empty list. The main loop pops the top tuple, appends its value to `result`, and pushes `(lists[listIdx][elemIdx + 1], listIdx, elemIdx + 1)` whenever `elemIdx + 1` is still in bounds for that list. This function exists to show the "merge everything" variant in its purest, most generic form — the direct ancestor of [problems/01-merge-k-sorted-lists.cpp](problems/01-merge-k-sorted-lists.cpp) and [problems/02-kth-smallest-element-in-a-sorted-matrix.cpp](problems/02-kth-smallest-element-in-a-sorted-matrix.cpp).
-
-**`kthSmallestInKSortedLists`** (in [code.cpp](code.cpp)). Identical heap setup and replenishment logic to `mergeKSortedLists`, but instead of accumulating a result vector, it keeps a `popped_count` and returns the value of the tuple popped when `popped_count == k`. It returns a small `MaybeInt` wrapper rather than a bare `int`, because "there is no k-th element" (k exceeded the total element count) is a genuinely different outcome from "the k-th element happens to be `-1`" — a sentinel value cannot distinguish the two when the data may legitimately contain negatives. This function exists to demonstrate the early-exit optimization: when you only need the k-th smallest (not the full merge), you can stop as soon as you have it, which matters when `k` is much smaller than the total element count `n` — you do not pay for merging the remaining `n - k` elements you were never going to look at.
-
-**`main()`** (in [code.cpp](code.cpp)). Exercises both functions against small, hand-checkable inputs — including lists of uneven length and a list that runs out early — and prints `[PASS]`/`[FAIL]` for each assertion, proving the template compiles and runs correctly end to end.
+**`main()`** exercises both functions against small, hand-checkable inputs — including lists of uneven length and a list that runs out early — and prints `[PASS]`/`[FAIL]` for each assertion.
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem — not using the generic templates above directly (to keep each file dependency-free and independently readable), but implementing the *same* heap-based logic inline, with problem-specific comments tying every decision back to the general principles established in this README. See [problems/README.md](problems/README.md) for the index. Briefly: `01` is the pure "merge everything" variant applied to linked lists instead of vectors; `02` recognizes that a row-sorted (and column-sorted) matrix is K sorted rows in disguise; `03` treats each element of one array, paired against the other's ascending elements, as its own implicit sorted "list"; `04` is the hardest variant, tracking a running maximum across the heap's current candidates to find the smallest range that touches every list.
 
-## Advantages
+## Tradeoffs
+
+**What the K-way heap merge buys you**
 
 - **Exploits information you already have.** Each list's existing sort order is used directly instead of being thrown away and re-derived by a general-purpose sort.
 - **O(n log k) instead of O(n log n) or O(n·k).** Strictly better than concatenate-and-sort whenever K < n (virtually always), and strictly better than pairwise/round-robin merging whenever K is more than a small constant.
-- **Bounded auxiliary memory.** The heap never holds more than K elements at once, regardless of how large `n` is — critical for merging data too large to fit entirely in memory (see External Sorting below).
+- **Bounded auxiliary memory.** The heap never holds more than K elements at once, regardless of how large `n` is — critical for merging data too large to fit entirely in memory (see External Sorting under Where This Shows Up).
 - **Naturally supports early exit.** Finding just the k-th smallest element does not require materializing the full merged sequence — stop as soon as you have popped k values.
 - **Generalizes cleanly past two lists.** Unlike a hand-written two-pointer merge (which only knows how to compare exactly two candidates), the heap-based approach scales to any K with the same code shape, just a bigger heap.
 
-## Disadvantages
+**What it costs you**
 
 - **Heap overhead is not worth it for very small K.** For K = 2 or K = 3, a plain multi-pointer merge (compare 2 or 3 values directly, no heap) is simpler to write, has less constant-factor overhead (no heap push/pop bookkeeping), and is just as fast in practice — the log K heap advantage is meaningless when K itself is tiny.
 - **Requires careful, explicit bookkeeping of source and position.** Every heap entry must carry enough information (`list_index`, `element_index`) to know where its replacement comes from; losing or mis-tracking this is the most common source of bugs in this pattern (see Common Mistakes).
 - **Not a plain array-of-values heap — it needs tuples or custom comparators.** This adds a small amount of ceremony compared to a simple `std::priority_queue<int>`, and gets worse for problems where you need to compare by something other than raw value (e.g. LeetCode 632's running max, which needs auxiliary tracked state alongside the heap).
 - **Heap operations are O(log K) each, not O(1).** For extremely performance-sensitive code merging a small, fixed number of sources repeatedly (e.g. a hot loop merging exactly 2 buffers millions of times), a specialized non-heap merge can outperform the general heap-based approach.
-
-## Tradeoffs
-
-**What we gain versus concatenate-and-sort:** the same correct, fully sorted output, but in O(n log k) instead of O(n log n) — a real asymptotic win whenever K is meaningfully smaller than n (the near-universal case), plus bounded O(K) auxiliary memory instead of needing all n elements materialized together before sorting can even begin.
-
-**What we gain versus pairwise/round-robin merging:** the same O(n log k) time instead of O(n·k), because the heap answers "which candidate is smallest right now" in O(log K) instead of re-scanning all K candidates from scratch on every output element.
-
-**What we lose:** implementation simplicity for the small-K case (a hand-written 2- or 3-way pointer merge is easier to read and just as fast when K is tiny), and a small constant-factor cost for maintaining the heap's tuples versus a flatter structure. There is no complexity regression versus any alternative — K-way merge is never asymptotically worse than the approaches it replaces, only occasionally not worth the extra bookkeeping when K is small.
+- **No complexity regression versus the alternatives it replaces** — K-way merge is never asymptotically worse than concatenate-and-sort or pairwise/round-robin merging, only occasionally not worth the extra bookkeeping when K is small.
 
 ## Complexity
 
@@ -334,23 +318,13 @@ It provides two function templates over `std::vector<std::vector<int>>`, deliber
 - **You need something other than a total order merge** — e.g. deduplicating while merging, or merging with a custom conflict-resolution rule for equal keys from different sources — the base pattern still applies but needs explicit extension; don't reach for it unmodified and assume ties are handled the way you want.
 - **You actually need the full sorted K largest/smallest of one array (Top K Elements' job), not to merge several pre-sorted sequences.** These are easy to conflate because both use a heap — see Similar Patterns below for the precise distinction.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
-- **Merging sorted log files from multiple servers.** Each server writes its own log file with monotonically increasing timestamps (already sorted by nature of how logs are appended). Reconstructing a single, globally time-ordered view across many servers for a postmortem or an audit is exactly a K-way merge, where K is the number of log sources and n is the total number of log lines.
-- **External sorting** (sorting data too large to fit in memory). The classic approach: split the data into chunks small enough to fit in memory, sort each chunk in place, write each sorted chunk to disk, then K-way merge all the sorted chunks by streaming just their current fronts into a heap — never needing more than O(K) elements resident in memory regardless of the total data size. This is the textbook explanation of how database engines and big-data tools sort datasets that dwarf available RAM.
+- **Merging sorted log files from multiple servers.** Each server writes its own log file with monotonically increasing timestamps (already sorted by nature of how logs are appended). Reconstructing a single, globally time-ordered view across many servers for a postmortem or an audit is exactly a K-way merge, where K is the number of log sources and n is the total number of log lines — a log-aggregation utility merging each microservice's locally sorted log file into one chronologically ordered timeline, without loading every file fully into memory at once, is the same idea.
+- **External sorting** (sorting data too large to fit in memory). The classic approach: split the data into chunks small enough to fit in memory, sort each chunk in place, write each sorted chunk to disk, then K-way merge all the sorted chunks by streaming just their current fronts into a heap — never needing more than O(K) elements resident in memory regardless of the total data size. This is the textbook explanation of how database engines and big-data tools sort datasets that dwarf available RAM; a batch ETL job merging sorted Parquet/CSV shards produced by parallel workers into one final sorted output file is a direct application.
 - **The merge/shuffle step of a distributed sort or MapReduce job.** After a distributed sort's "map" phase produces many sorted partitions (one per worker/reducer-input), the final "reduce" phase must combine those sorted partitions into an overall ordered result — a direct application of K-way merge where K is the number of partitions and each partition is one already-sorted "list."
-- **Merging paginated results from multiple sharded databases**, where each shard returns its own page of results already sorted by the query's `ORDER BY` clause, and the application layer must produce one globally sorted page — a common pattern in horizontally-sharded backend systems.
-- **Database merge joins across more than two sorted inputs** and multi-way `ORDER BY`/`UNION ALL ... ORDER BY` execution plans, where a query engine merges several already-sorted index scans into one ordered stream instead of buffering everything and re-sorting.
-
-## Where I Can Use This
-
-Five realistic ideas for your own backend/systems work:
-
-1. **A log-aggregation utility** that merges each microservice's locally sorted (by timestamp) log file into one chronologically ordered timeline for debugging a distributed incident, without loading every file fully into memory at once.
-2. **A batch ETL job merging sorted Parquet/CSV shards** produced by parallel workers (each worker sorts its own shard independently) into one final sorted output file, streaming rather than buffering the whole dataset.
-3. **A search/ranking service combining pre-sorted result lists from several backend shards** (each shard already returns its results sorted by relevance score) into one final top-N ranked list for the client, using the k-th-smallest/largest variant to stop as soon as you have the top N.
-4. **A price-comparison or inventory-aggregation feature** that merges several suppliers' already price-sorted product feeds into one combined, sorted catalog view.
-5. **A time-series metrics dashboard** merging multiple sorted per-host or per-region metric streams into a single chronological feed for alert correlation, using the streaming (external-sort-style) version so memory stays bounded regardless of how much history is being merged.
+- **Merging paginated or sharded query results.** Merging paginated results from multiple sharded databases, where each shard returns its own page of results already sorted by the query's `ORDER BY` clause, and the application layer must produce one globally sorted page — a common pattern in horizontally-sharded backend systems. Database merge joins across more than two sorted inputs, and multi-way `ORDER BY`/`UNION ALL ... ORDER BY` execution plans, apply the same idea inside a query engine.
+- **Ranked results and price/metrics aggregation.** A search/ranking service combining pre-sorted result lists from several backend shards (each already sorted by relevance score) into one final top-N ranked list, using the k-th-smallest/largest variant to stop as soon as you have the top N; a price-comparison feature merging several suppliers' already price-sorted product feeds into one combined catalog view; a time-series metrics dashboard merging multiple sorted per-host or per-region metric streams into a single chronological feed, using the streaming (external-sort-style) version so memory stays bounded regardless of how much history is being merged.
 
 ## Similar Patterns
 
@@ -371,10 +345,8 @@ Five realistic ideas for your own backend/systems work:
 Experienced engineers rarely spend interview time on "how do you write the heap push/pop" — that is mechanical. What they actually probe is whether you can **explain why a heap beats the alternatives**, and whether you correctly track the bookkeeping (source list + position) that makes replenishment correct.
 
 Common follow-up questions:
-- *"Why not just concatenate everything and sort?"* — expects you to name the complexity gap (O(n log n) vs. O(n log k)) and explain precisely *why* it exists: each list's existing order is being discarded and paid for again.
 - *"What if K is very large — does the heap approach still win?"* — expects recognizing that O(n log k) grows slowly with K (logarithmically), so it remains efficient even for large K, unlike pairwise/round-robin merging whose O(n·k) cost scales linearly with K.
 - *"How would you merge these if they didn't all fit in memory?"* — expects connecting this pattern to external sorting: stream each source, keep only O(K) elements resident at once, and this is precisely why the heap-based approach (not concatenate-and-sort) is the production answer for very large datasets.
-- *"Can you find just the k-th smallest without merging everything?"* — expects the early-exit variant: stop after the k-th pop, do not build the full output, saving O((n-k) log k) of unnecessary work.
 - *"What's the difference between this and the Top K Elements pattern? Both use heaps of size K."* — expects the precise distinction: here K is the *number of input lists*, and the heap holds one representative per list; in Top K Elements, K is a *chosen cutoff size* for the answer, over a single dataset with no separate "sources."
 
 Common misconceptions:
@@ -383,29 +355,18 @@ Common misconceptions:
 - "The heap needs to store whole lists." It stores exactly one tuple per active source (`value`, `list_index`, `element_index`) — never the list itself.
 - "This pattern is only for the 'merge two sorted lists' LeetCode problem." That is the K=2 base case; the pattern's real value shows up once K exceeds a small constant, and in production contexts like external sorting and log merging where K can be dozens or thousands.
 
-## Summary
-
-- K-way Merge combines K already-sorted sequences into one sorted output (or finds the k-th smallest across them) using a min-heap that always holds one "current candidate" per still-active source.
-- The heap is seeded with the first element of every non-empty list, tagged with `(list_index, element_index)` so a popped value's replacement can always be found.
-- Every pop is immediately followed by pushing the next element from the *same* source list, if one remains — the single most important, and most often forgotten, step.
-- Complexity: **O(n log k)** where n is the total element count across all lists and k is the number of lists — beating both concatenate-then-sort (O(n log n)) and pairwise/round-robin merging (O(n·k)) whenever K is meaningfully smaller than n.
-- Auxiliary space is bounded by **O(K)** for the heap itself, independent of n — the key property that makes this pattern suitable for external sorting and merging data too large to fit in memory.
-- Not worth the overhead for K = 1 or 2 lists — a direct comparison or simple two-pointer merge is simpler and just as fast there.
-- Real production uses: merging sorted log files, external sorting, the merge/shuffle step of distributed sort and MapReduce, merging sharded/paginated sorted query results.
-- Closely related but distinct: Top K Elements (heap sized to a result cutoff over one dataset, not K input sources) and Merge Intervals (sort-and-sweep over one list of ranges, no heap and no multiple sources at all).
-
 ## Key Takeaways
 
-1. K-way Merge combines K already-sorted sequences using a min-heap holding one current candidate per source list, achieving O(n log k) instead of O(n log n) or O(n·k).
+1. K-way Merge combines K already-sorted sequences using a min-heap holding one current candidate per source list, achieving O(n log k) instead of O(n log n) (concatenate + sort) or O(n·k) (pairwise/round-robin merging).
 2. `n` = total elements across all lists; `k` (lowercase) = number of source lists — keep these straight, they are the two different variables in the complexity bound.
 3. Heap entries must carry `(value, list_index, element_index)` — value drives the ordering, the other two fields tell you where the next candidate for that source comes from.
-4. After every pop, immediately push the next element from the *same* source list (if one remains) — forgetting this silently drops elements.
+4. After every pop, immediately push the next element from the *same* source list (if one remains) — forgetting this silently drops elements, the single most common bug in this pattern.
 5. The k-th-smallest variant can stop after the k-th pop — you never need to merge the remaining elements you were never going to look at.
 6. `std::priority_queue` is a max-heap by default; you must explicitly supply `std::greater<>` (or an equivalent comparator) to get min-heap behavior.
 7. Auxiliary space is O(K) for the heap itself — bounded and independent of total data size, which is why this pattern underlies external sorting.
-8. Not worth the machinery for K = 1 or 2 — use direct comparison or a simple two-pointer merge instead.
-9. Don't confuse this with Top K Elements — here K counts input *sources*; there, K is a chosen result-size cutoff over a single dataset.
-10. Real systems use this directly: log merging across servers, external sorting of oversized datasets, and the merge/shuffle phase of distributed sort and MapReduce.
+8. Not worth the machinery for K = 1 or 2 — use direct comparison or a simple two-pointer merge instead; the log K advantage is meaningless when K itself is tiny.
+9. Don't confuse this with Top K Elements — here K counts input *sources*, and the heap holds one slot per source; there, K is a chosen result-size cutoff over a single dataset with no separate sources.
+10. Real systems use this directly: log merging across servers, external sorting of oversized datasets, the merge/shuffle phase of distributed sort and MapReduce, and merging sharded or paginated query results.
 
 ---
 

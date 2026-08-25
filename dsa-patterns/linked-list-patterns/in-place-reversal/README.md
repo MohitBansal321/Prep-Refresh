@@ -57,46 +57,47 @@ All three share the same underlying constraint: because there is no backward poi
 
 > **Term: Singly linked list.** A chain of nodes where each node stores a value and a single pointer, `next`, to the following node (or `nullptr` if it is the last node). There is no way to reach a node's predecessor except by having remembered it during an earlier forward traversal.
 
-### Why is this problem difficult?
+### Why is this problem difficult, and what happens if you get it wrong?
 
-- **Reversing a pointer destroys your only way to reach what came after it.** The instant you set `curr->next = prev`, the original forward link — the only route from `curr` to the rest of the unprocessed list — is gone. If you did not save it first, that part of the list is permanently unreachable (a memory leak at best; silently wrong output at worst).
-- **Sub-ranges and groups need correct "seam" reconnection.** Reversing everything is comparatively easy — the seam at the very front and back of the list barely needs attention (the new head just becomes whatever the reversal produces, and the new tail's `next` is simply `nullptr`). A sub-range reversal has **two internal seams** that must be reconnected exactly right: the node just *before* the range must now point at the range's *new* head, and the range's *new* tail must point at whatever came *after* the range — and if the range happens to start at the list's true head, there is no "node before it" to update, which is its own special case unless you plan for it.
+- **Reversing a pointer destroys your only way to reach what came after it.** The instant you set `curr->next = prev`, the original forward link is gone. Forgetting to save it first (see Common Mistakes) turns most of the list into unreachable memory — no crash, just a badly truncated result that might not even be noticed until much later.
+- **Sub-ranges and groups need correct "seam" reconnection, and getting it wrong doesn't just look wrong — it can crash or hang.** Reversing everything is comparatively easy: the seams at the very front and back barely need attention (the new head is just whatever the reversal produces, and the new tail's `next` is simply `nullptr`). A sub-range reversal has **two internal seams** that must be reconnected exactly right — the node just *before* the range must point at the range's *new* head, and the range's *new* tail must point at whatever came *after* the range — and if the range happens to start at the list's true head, there is no "node before it" to update, which is its own special case unless you plan for it. Get either seam wrong and you can create a cycle or a dangling pointer, turning a normal, terminating list into one that hangs or crashes any code that walks it afterward.
 - **k-group reversal must know, in advance, whether a full group even exists.** You cannot reverse a partial trailing group (LeetCode's convention is to leave it untouched) without first confirming, by walking ahead, that at least `k` nodes remain — which means every group requires a lookahead pass before its own reversal pass.
-
-### What happens if we ignore it?
-
-- **Losing the rest of the list.** Forgetting to save `curr->next` before overwriting it turns most of the list into unreachable memory — no crash, just a badly truncated result that might not even be noticed until much later (see Common Mistakes).
-- **A crash or infinite loop from broken seams.** Get the sub-range or k-group reconnection wrong, and you can create a cycle (node A points to node B which, through the broken rewiring, eventually points back to node A), or a dangling pointer into memory that has already been overwritten — either one turns a normal, terminating list into a structure that hangs or crashes any code that walks it afterward.
-- **Wasted memory if you reach for the "obvious" fix.** The natural first instinct — copy every value into a `std::vector<int>`, reverse the vector, then build a brand-new linked list (or new sub-list) from the reversed values — works correctly, but costs **O(n) extra space** for the copy, on top of the memory the original list already occupies. For a sub-range or k-group problem, you would need to be careful to only copy the affected slice, but the fundamental waste remains: you are paying for a second data structure to solve a problem that can be solved by rearranging the first one.
-
-## Why Not Other Approaches
-
-**"Copy every value into an array or `std::vector`, reverse that, and either overwrite the original nodes' values or build an entirely new list from it."**
-This is correct and easy to reason about, which is exactly why it is most people's first instinct. But it costs **O(n) extra space** — one array slot per node in the affected range — in addition to the list's own memory. It also, in the "overwrite values" variant, technically violates the spirit of most linked-list reversal problems: interviewers (and, more importantly, real production code moving actual objects rather than copyable primitives) usually mean "rearrange the *nodes themselves*," not "keep the same nodes but shuffle which value each one happens to hold." If a node carries a large payload (a struct with several fields, or a pointer to an even larger object), copying *values* between nodes is far more expensive than just relinking pointers. In-place Reversal answers the exact same question with **three pointer variables** — O(1) space — regardless of how large the list or its payload is.
-
-**"Reverse it recursively: `reverse(head) = reverse(head->next)` then fix up the last link."**
-This is a genuinely elegant way to *write* whole-list reversal, and it reads beautifully in languages that make recursion cheap. But every recursive call adds a stack frame, and the recursion depth here is exactly the list's length — so a recursive reversal of a list with a few hundred thousand nodes can blow the call stack in a way an iterative loop never would. This is the same "hidden O(n) space" trap that shows up whenever recursion is used to process a linear structure: the space complexity analysis is not actually O(1) just because there is no explicit `std::vector` in the code — the call stack **is** the hidden data structure, and it is proportional to `n`. This module's `code.cpp` and all worked problems intentionally use the **iterative** three-pointer version for every variant, precisely to keep the O(1) space claim honest, including for k-group reversal, where a recursive formulation is common in textbooks but pays this same hidden cost.
-
-**"Just build a doubly linked list to begin with, so you always have a `prev` pointer."**
-This sidesteps the specific problem of reversing a *singly* linked list, but it does not actually solve anything — it changes the data structure's shape rather than the algorithm, permanently pays extra memory (one more pointer per node, forever, not just during a reversal), and most problems (and most real systems that hand you a singly linked list from elsewhere) do not give you the option to redesign the input structure just because reversing it would be more convenient with a different one.
-
-**Tradeoff summary:** every alternative either costs O(n) extra space (array copy, new list) or hides an O(n) space cost inside the call stack (recursion) or solves a different problem than the one actually posed (redesigning the data structure). In-place Reversal is the one approach that is simultaneously O(1) space, single-pass, and works directly on the singly linked list you were actually given — which is exactly why it is the expected answer whenever a linked-list problem says "reverse" and "O(1) space" in the same sentence.
+- **The "obvious" fix — copy every value into an array, reverse the array, rebuild — works, but wastes memory.** It costs O(n) extra space on top of the list's own memory, and in the "overwrite values in place" variant, it moves *values* between nodes rather than the nodes themselves, which is far more expensive if a node carries a large or non-copyable payload. See Why Not Other Approaches, right after the mechanism below, for exactly what this and every other alternative costs.
 
 ## Solution
 
-The core mechanism has one moving part, repeated once per node:
+The core mechanism has one moving part, repeated once per node. Walk the list with a pointer, `curr`, starting at the first node to be reversed. At each node, before doing anything else, **save `curr->next`** — call it `next` — because that is your only remaining route to the rest of the unprocessed list. Then **rewire** `curr->next` to point at `prev`, a pointer trailing one step behind `curr` that holds the already-reversed portion's new head (it starts at `nullptr`, since the very first node processed will become the new tail, and a tail's `next` must be `nullptr`). Finally **advance** both pointers: `prev` becomes `curr` (the node just rewired), and `curr` becomes `next` (the node you saved before rewiring). Repeat until there is nothing left to process; `prev` is left standing on the new head of the reversed portion.
 
-Walk the list with a pointer, `curr`, starting at the first node to be reversed. At each node, before doing anything else, **save `curr->next`** — call it `next` — because that is your only remaining route to the rest of the unprocessed list. Then **rewire** `curr->next` to point at `prev`, a pointer trailing one step behind `curr` that holds the already-reversed portion's new head (it starts at `nullptr`, since the very first node processed will become the new tail, and a tail's `next` must be `nullptr`). Finally, **advance** both pointers: `prev` becomes `curr` (the node just rewired), and `curr` becomes `next` (the node you saved before rewiring). Repeat until there is nothing left to process; `prev` is left standing on the new head of the reversed portion.
+Three things must be true simultaneously for this to work, which is why the mechanism needs exactly three pointer variables and not fewer: you need to know **where you came from** (`prev`), to rewire the current node toward it; **where you are** (`curr`), to actually perform the rewrite; and **where you were going** (`next`) — because the instant you perform the rewrite, `curr`'s own record of "where I was going" is destroyed, so that information must be captured in a fourth place *before* the rewrite happens, or it is gone forever.
 
-Three things must be true simultaneously for this to work, which is why the mechanism needs exactly three pointer variables and not fewer:
+**Whole-list reversal (`reverseList`):**
 
-- You need to know **where you came from** (`prev`), to rewire the current node toward it.
-- You need to know **where you are** (`curr`), to actually perform the rewrite.
-- You need to know **where you were going** (`next`), because the instant you perform the rewrite, `curr`'s own record of "where I was going" is destroyed — so that information must be captured in a fourth place *before* the rewrite happens, or it is gone forever.
+1. Set `prev = nullptr` and `curr = head`.
+2. While `curr != nullptr`: save `next = curr->next`.
+3. Rewire: `curr->next = prev`.
+4. Advance: `prev = curr`, then `curr = next`. Repeat from step 2.
+5. Return `prev` — it is now the head of the fully reversed list.
 
-Reversing a **sub-range** `[left, right]` is the same three-pointer loop, run only across that slice, with two additional pieces of bookkeeping: you must remember the node **just before** the range (so it can be redirected to the range's new head once the loop finishes), and you must remember the range's **original first node** (which becomes its new tail, and must be redirected to whatever followed the range). Because the range might start at the list's true head — in which case there is no "node before it" — a **dummy head node**, wired to point at the real head before anything else happens, gives you a stand-in "node before position 1" so this case needs no special branch.
+**Sub-range reversal `[left, right]` (`reverseBetween`)**, 1-indexed and inclusive, is the same three-pointer loop, run only across that slice, with two additional pieces of bookkeeping: remember the node **just before** the range (so it can be redirected to the range's new head once the loop finishes), and remember the range's **original first node** (which becomes its new tail, and must be redirected to whatever followed the range):
 
-Reversing in **groups of k** is the sub-range idea applied repeatedly: reverse the first `k` nodes as a sub-range, reconnect, then repeat for the next `k` nodes, and so on — except each group must first be confirmed to have a full `k` nodes available (by walking ahead and counting) before it is reversed at all, since a trailing group shorter than `k` is conventionally left untouched rather than reversed.
+1. Create a dummy node; set `dummy.next = head`. Walk a pointer `prevRange` forward from `dummy`, `left - 1` times, so it lands on the node just before position `left`.
+2. Save `rangeTail = prevRange->next` — the *original* node at position `left`, which will become the reversed range's *new tail*.
+3. Run the standard reversal loop, starting with `curr = rangeTail`, for exactly `right - left + 1` iterations — not until `curr` hits `nullptr`.
+4. After the loop, `prev` holds the new head of the reversed range; `curr` holds the first node after the range (or `nullptr` if `right` was the list's last position).
+5. Reconnect: `prevRange->next = prev` (splice the reversed range in after `prevRange`), and `rangeTail->next = curr` (the old tail — now the new tail — points at whatever followed the range).
+6. Return `dummy.next`.
+
+Because the range might start at the list's true head, where there is no "node before it," the **dummy head node** — wired to point at the real head before anything else happens — gives you a stand-in "node before position 1" so this case needs no special branch.
+
+**Group-of-k reversal (`reverseKGroup`)** is the sub-range idea applied repeatedly: reverse the first `k` nodes as a sub-range, reconnect, then repeat for the next `k` nodes, and so on — except each group must first be confirmed to have a full `k` nodes available before it is reversed at all, since a trailing group shorter than `k` is conventionally left untouched:
+
+1. Create a dummy node; set `dummy.next = head`, and `groupPrev = &dummy` (the node just before the current group).
+2. **Lookahead check:** walk a pointer `k` steps forward from `groupPrev`. If you run out of nodes (hit `nullptr`) before completing `k` steps, stop the whole algorithm here — the final short group is left untouched.
+3. If the lookahead succeeded, save `groupStart = groupPrev->next` (the group's original first node, which becomes its new tail) and `nextGroupStart` (the k-th node's original `next`, i.e. the first node after this group).
+4. Run the standard reversal loop across exactly this group's `k` nodes, seeding `prev = nextGroupStart` (so the new tail is pre-wired to the correct successor) and `curr = groupStart`.
+5. The k-th node (originally the group's last node) is now the group's new head; `groupStart` is now its new tail.
+6. Reconnect: `groupPrev->next` = the k-th node. Advance `groupPrev = groupStart` (the just-reversed group's new tail is the "node before" the next group). Repeat from step 2.
+7. Return `dummy.next`.
 
 ## Architecture
 
@@ -108,124 +109,86 @@ The "participants" here are not classes — they are roles played by a small, fi
 
 3. **`next` (a local, temporary variable, not a persistent role).** Exists for exactly one purpose: to hold `curr->next`'s original value across the single line of code that overwrites it. Without this variable, the loop has no way to continue past the node it just rewired.
 
-4. **The dummy head node (`reverseBetween` and `reverseKGroup` only).** A throwaway node whose `next` is wired to point at the list's real head before any reversal begins. It exists purely so that "the node just before the range/group I am about to reverse" always exists as a real, dereferenceable node — even when the range or group starts at position 1 — removing the need for an `if (left == 1)`-style special case. It is discarded (never part of the returned list) once `dummy.next` is read as the final answer.
+4. **The dummy head node (`reverseBetween` and `reverseKGroup` only).** A throwaway node whose `next` is wired to point at the list's real head before any reversal begins, so "the node just before the range/group I am about to reverse" always exists as a real, dereferenceable node — even at position 1 (see Solution for why this removes a special case). It is discarded once `dummy.next` is read as the final answer.
 
-Responsibilities in one line each: **`prev`** remembers the reversed-so-far result; **`curr`** is the node currently being flipped; **`next`** is the one-line lifeline back to the rest of the list; the **dummy head** turns "is this the true head?" from a special case into a non-issue.
+## Why Not Other Approaches?
 
-## Execution Flow
+**"Copy every value into an array or `std::vector`, reverse that, and either overwrite the original nodes' values or build an entirely new list from it."**
+Correct, and easy to reason about — most people's first instinct. But it costs **O(n) extra space**, one array slot per node in the affected range, on top of the list's own memory. The "overwrite values" variant also technically violates the spirit of most reversal problems: they usually mean "rearrange the *nodes themselves*," not "shuffle which value each node happens to hold" — and if a node carries a large payload, copying *values* is far more expensive than relinking pointers. In-place Reversal answers the exact same question with **three pointer variables** — O(1) space, regardless of list or payload size.
 
-**1. Whole-list reversal (`reverseList`):**
+**"Reverse it recursively: `reverse(head) = reverse(head->next)` then fix up the last link."**
+Genuinely elegant to *write*, and it reads beautifully in languages that make recursion cheap. But every recursive call adds a stack frame, and the recursion depth here is exactly the list's length — a recursive reversal of a list with a few hundred thousand nodes can blow the call stack in a way an iterative loop never would. This is the same "hidden O(n) space" trap that shows up whenever recursion processes a linear structure: the space complexity is not actually O(1) just because no explicit `std::vector` appears in the code — the call stack **is** the hidden data structure, proportional to `n`. [code.cpp](code.cpp) and every worked problem here use the **iterative** three-pointer version for every variant, deliberately, to keep the O(1) space claim honest — including for k-group reversal, where a recursive formulation is common in textbooks but pays this same hidden cost.
 
-1. Set `prev = nullptr` and `curr = head`.
-2. While `curr != nullptr`: save `next = curr->next`.
-3. Rewire: `curr->next = prev`.
-4. Advance: `prev = curr`, then `curr = next`.
-5. Repeat from step 2 until `curr` is `nullptr`.
-6. Return `prev` — it is now the head of the fully reversed list.
+**"Just build a doubly linked list to begin with, so you always have a `prev` pointer."**
+Sidesteps the specific problem of reversing a *singly* linked list without actually solving anything — it changes the data structure's shape rather than the algorithm, permanently pays extra memory (one more pointer per node, forever, not just during a reversal), and most real systems that hand you a singly linked list don't give you the option to redesign the input just because reversing it would be more convenient with a different shape.
 
-**2. Sub-range reversal `[left, right]` (`reverseBetween`), 1-indexed and inclusive:**
+**Net:** every alternative either costs O(n) extra space (array copy, new list) or hides an O(n) space cost inside the call stack (recursion) or solves a different problem than the one actually posed (redesigning the data structure). In-place Reversal is the one approach that is simultaneously O(1) space, single-pass, and works directly on the singly linked list you were actually given.
 
-1. Create a dummy node; set `dummy.next = head`.
-2. Walk a pointer `prevRange` forward from `dummy`, `left - 1` times, so it lands on the node just before position `left`.
-3. Save `rangeTail = prevRange->next` — this is the *original* node at position `left`, which will become the reversed range's *new tail*.
-4. Run the standard `prev`/`curr`/`next` reversal loop (steps 2-4 above) starting with `curr = rangeTail`, but only for exactly `(right - left + 1)` iterations — not until `curr` hits `nullptr`.
-5. After the loop, `prev` holds the new head of the reversed range (the *original* node at position `right`), and `curr` holds the first node *after* the range (or `nullptr` if `right` was the list's last position).
-6. Reconnect: `prevRange->next = prev` (splice the reversed range in after `prevRange`), and `rangeTail->next = curr` (the old tail's node — now the new tail — points at whatever followed the range).
-7. Return `dummy.next`.
+## Diagrams
 
-**3. k-group reversal (`reverseKGroup`):**
+- [images/recognition-diagram.md](images/recognition-diagram.md) — decision-tree flowchart: linked list? asked to reverse it, a sub-range, or groups of k? is O(1) space required? — branching to In-place Reversal vs. Fast & Slow Pointers vs. a copy-based approach, then into the three reversal variants.
+- [images/flow-diagram.md](images/flow-diagram.md) — Mermaid flowchart of the core `prev`/`curr`/`next` rewiring loop, the single shape shared by all three variants.
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of whole-list reversal on `1 -> 2 -> 3 -> 4 -> 5`, showing exactly where `prev`, `curr`, and the saved `next` value are positioned after each iteration, and what the partially-reversed list looks like at each step.
 
-1. Create a dummy node; set `dummy.next = head`. Set `groupPrev = &dummy` (the node just before the current group).
-2. **Lookahead check:** walk a pointer `k` steps forward from `groupPrev`. If you run out of nodes (hit `nullptr`) before completing `k` steps, stop the whole algorithm here — fewer than `k` nodes remain, and that final short group is left untouched.
-3. If the lookahead succeeded, that k-th node is the current group's original last node. Save `groupStart = groupPrev->next` (the group's original first node, which becomes its new tail) and `nextGroupStart` (the k-th node's original `next`, i.e. the first node of whatever comes after this group).
-4. Run the standard reversal loop across exactly this group's `k` nodes, seeding `prev = nextGroupStart` (so the group's new tail is pre-wired to the correct successor) and `curr = groupStart`.
-5. After the loop, the k-th node (originally the group's last node) is now the group's new head, and `groupStart` is now the group's new tail.
-6. Reconnect: `groupPrev->next` = the k-th node (the group's new head).
-7. Advance `groupPrev = groupStart` (the just-reversed group's new tail is the "node before" the next group).
-8. Repeat from step 2 for the next group.
-9. Return `dummy.next`.
+## The Code
 
-## Recognition Diagram
+The generic template in [code.cpp](code.cpp) is built around a minimal `ListNode` struct (matching the one used in `../fast-slow-pointers/code.cpp`, so the two sibling modules read consistently) and three small, reusable functions — `reverseList`, `reverseBetween`, and `reverseKGroup` — each a direct translation of the corresponding Solution section above into code. All three are iterative, not recursive, deliberately, to keep the O(1) space claim honest across every variant (see Why Not Other Approaches).
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full decision-tree flowchart (linked list? asked to reverse it, a sub-range, or groups of k? is O(1) space required? — branching to In-place Reversal vs. Fast & Slow Pointers vs. a copy-based approach, then into the three reversal variants).
-
-## Flow Diagram
-
-See [images/flow-diagram.md](images/flow-diagram.md) for the Mermaid flowchart of the core `prev`/`curr`/`next` rewiring loop — the single shape shared by all three variants of this pattern.
-
-## Trace Diagram
-
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of whole-list reversal on a concrete example list, `1 -> 2 -> 3 -> 4 -> 5`, showing exactly where `prev`, `curr`, and the saved `next` value are positioned after each iteration, and what the partially-reversed list looks like at each step.
-
-## Implementation
-
-The generic template in [code.cpp](code.cpp) is built around a minimal `ListNode` struct (matching the one used in `../fast-slow-pointers/code.cpp`, so the two sibling modules read consistently) and three small, reusable functions — `reverseList`, `reverseBetween`, and `reverseKGroup` — each one a direct translation of the corresponding Execution Flow section above into code.
-
-All three functions are iterative, not recursive — deliberately, to keep the O(1) space claim honest across every variant, including k-group reversal, where a recursive formulation is common in textbooks but pays a hidden O(n/k) call-stack cost (see Why Not Other Approaches).
-
-Before reading the code, notice the one line every function shares and must get exactly right:
+Every function shares one pair of lines that must be exactly right, and cannot be swapped:
 
 ```cpp
 ListNode* next = curr->next;  // save BEFORE overwriting curr->next
 curr->next = prev;
 ```
 
-Both lines are load-bearing, and their order cannot be swapped. Save first, rewire second — reverse that order, and `curr->next` would already be pointing backwards by the time you tried to read "what comes next," permanently losing everything after that node. This exact ordering is revisited in Common Mistakes because it is, empirically, the most common bug written against this pattern.
+Save first, rewire second — reverse that order, and `curr->next` would already be pointing backwards by the time you tried to read "what comes next," permanently losing everything after that node. This exact ordering is revisited in Common Mistakes because it is, empirically, the most common bug written against this pattern.
 
-## Code Walkthrough
+**`struct ListNode`.** The minimal singly linked list node: an `int val` and a `ListNode* next`. Kept deliberately tiny, and identical in shape to `../fast-slow-pointers/code.cpp`'s `ListNode`, for consistency across the family.
 
-See [code.cpp](code.cpp) for the full runnable file. Here is what each part does and why it exists.
+**`build_list(values)`.** A test-data helper that builds a plain, `nullptr`-terminated list from a `std::vector<int>`, so `main()` can construct test lists without repeating boilerplate.
 
-**`struct ListNode`.** The minimal singly linked list node: an `int val` and a `ListNode* next`. Kept deliberately tiny so the pattern's mechanics are not obscured by unrelated fields, and kept identical in shape to `../fast-slow-pointers/code.cpp`'s `ListNode` for consistency across the family.
+**`free_list(head)`.** Walks the list freeing every node with `delete`. Safe to call unconditionally here because none of this module's lists are ever cyclic (unlike `../fast-slow-pointers/code.cpp`, which must warn against calling it on one).
 
-**`build_list(values)`.** A test-data helper that builds a plain, `nullptr`-terminated list from a `std::vector<int>`. Exists so `main()` can construct test lists without repeating boilerplate.
+**`reverseList(head)`.** The whole-list template function: the three-pointer loop exactly as described in Solution, returning the new head. It is the standalone version every other variant (and `problems/01-reverse-linked-list.cpp`) builds on.
 
-**`free_list(head)`.** Walks the list freeing every node with `delete`. Exists to avoid memory leaks in the demo; safe to call unconditionally here because none of this module's lists are ever cyclic (unlike `../fast-slow-pointers/code.cpp`, which must warn against calling it on a cyclic list).
+**`reverseBetween(head, left, right)`.** The sub-range template function, using a local dummy node so `left == 1` needs no special case. Backs `problems/02-reverse-linked-list-ii.cpp`.
 
-**`reverseList(head)`.** The whole-list template function: implements the three-pointer loop exactly as described in Execution Flow §1, returning the new head. It exists as the standalone, reusable version of the reversal every other variant in this file (and `problems/01-reverse-linked-list.cpp`) builds on.
+**`reverseKGroup(head, k)`.** The k-group template function, looping over successive groups, each checked for a full `k` nodes before being reversed. Backs `problems/03-reverse-nodes-in-k-group.cpp` and, specialized to `k = 2`, `problems/04-swap-nodes-in-pairs.cpp`.
 
-**`reverseBetween(head, left, right)`.** The sub-range template function: implements Execution Flow §2, using a local dummy node so `left == 1` needs no special case. It exists as the reusable building block behind `problems/02-reverse-linked-list-ii.cpp`.
+**`print_list(head, max_nodes)`.** A demo-only helper that prints up to `max_nodes` values, so `main()`'s output is easy to read against the inline "expected" comments.
 
-**`reverseKGroup(head, k)`.** The k-group template function: implements Execution Flow §3, looping over successive groups, each one checked for a full `k` nodes before being reversed. It exists as the reusable building block behind `problems/03-reverse-nodes-in-k-group.cpp` and, specialized to `k = 2`, `problems/04-swap-nodes-in-pairs.cpp`.
+**`main()`.** Exercises all three template functions against nine categories of test data: whole-list reversal on a typical list, a single-node list, and an empty list; sub-range reversal that includes the true head, one that sits strictly inside the list, and a length-1 "no-op" range; and k-group reversal where the length is an exact multiple of `k`, where a trailing short group must be left untouched, and where `k` exceeds the entire list's length. Every printed result states its expected value inline, so the file is self-checking.
 
-**`print_list(head, max_nodes)`.** A demo-only helper that prints up to `max_nodes` values, used so `main()`'s output is easy to read and compare against the inline "expected" comments.
+**Every file in `problems/`.** Each of the four worked solutions (`01`-`04`) is intentionally **standalone** — it redefines its own `ListNode`, `build_list`, and `free_list` rather than including `code.cpp` — so any single file can be copy-pasted into a LeetCode submission box or compiled in isolation. `problems/README.md` explains why these specific four problems were chosen (the pure whole-list case, the sub-range case, the hard k-group generalization, and the k=2 special case presented as its own numbered problem).
 
-**`main()`.** Exercises all three template functions against nine categories of test data: whole-list reversal on a typical list, a single-node list, and an empty list; sub-range reversal that includes the true head, one that sits strictly inside the list, and a length-1 "no-op" range; and k-group reversal where the length is an exact multiple of `k`, where a trailing short group must be left untouched, and where `k` exceeds the entire list's length. Every printed result states its expected value inline so the file is self-checking when you read its output.
+## Tradeoffs
 
-**Every file in `problems/`.** Each of the four worked solutions (`01`-`04`) is intentionally **standalone** — it redefines its own `ListNode`, `build_list`, and `free_list` rather than including `code.cpp` — so that any single file can be copy-pasted into a LeetCode submission box or compiled in isolation without pulling in the rest of this folder. `problems/README.md` explains why these specific four problems were chosen (the pure whole-list case, the sub-range case, the hard k-group generalization, and the k=2 special case presented as its own numbered problem).
-
-## Advantages
+**What it buys you**
 
 - **O(1) extra space**, regardless of how long the list or the reversed range is — the headline advantage over any copy-based approach.
 - **Single pass** for whole-list and sub-range reversal; k-group reversal makes one lookahead pass plus one reversal pass per group, still linear overall.
 - **Works directly on the given structure.** No redesign of the list, no auxiliary array, no new nodes — the exact same node objects end up in the new order, which matters when nodes carry large or non-copyable payloads.
 - **One mechanism, three problems.** The identical `prev`/`curr`/`next` loop, with only its start/stop points and reconnection logic changing, answers "reverse the whole thing," "reverse a slice," and "reverse in groups" — you are learning one idea, not three.
-- **Composable with other patterns.** Reversing the second half of a list (found via Fast & Slow Pointers) is the standard second step in palindrome checks and list-reordering problems — see Similar Patterns below.
+- **Composable.** Reversing the second half of a list (found via Fast & Slow Pointers) is the standard second step in palindrome checks and list-reordering problems — see Similar Patterns below.
 
-## Disadvantages
+**What it costs you**
 
-- **Destroys the original list structure.** After an in-place reversal, the original forward order is gone unless you explicitly reverse it back (or kept a separate copy) — this is a real problem if some other part of a system still holds a reference to the list and expects the original order.
-- **Iterative whole-list reversal is easy; the other two variants are fiddly.** The three-pointer loop itself is simple, but correctly bookkeeping the dummy-node seams for `reverseBetween` and, especially, the repeated lookahead-then-reverse cycle for `reverseKGroup`, is where real bugs live. The Hard difficulty rating on LeetCode 25 reflects this bookkeeping burden, not a harder core algorithm.
-- **Off-by-one traps are numerous and silent.** Getting a sub-range boundary or a group-size lookahead wrong typically does not crash — it just reverses one node too many, one too few, or reverses a partial trailing group that should have been left alone. See Common Mistakes.
-- **Not safe on a list with an unknown or untrusted structure.** If a list might be cyclic (see `../fast-slow-pointers/`), reversing it with a loop that assumes `nullptr` termination will loop forever or corrupt the structure; cycle detection is a separate, prerequisite concern this pattern does not handle.
+- **Destroys the original list structure.** After an in-place reversal, the original forward order is gone unless you explicitly reverse it back or kept a separate copy — a real problem if another part of a system still holds a reference to the list and expects the original order.
+- **Readability at a glance.** Compared to "copy to an array, reverse the array, rebuild," a reviewer unfamiliar with the three-pointer idiom has to trace pointer rewrites mentally, where `std::reverse` on a vector is self-evidently correct.
+- **The bookkeeping, not the core loop, is where bugs live.** Whole-list reversal's three-pointer loop is simple; correctly managing the dummy-node seams for `reverseBetween`, and the repeated lookahead-then-reverse cycle for `reverseKGroup`, is what earns LeetCode 25 its Hard rating (a bookkeeping burden, not a harder core algorithm) — see Common Mistakes for the specific traps.
+- **Not safe on a list with an unknown or untrusted structure.** A reversal loop that assumes `nullptr` termination will loop forever or corrupt the structure on a cyclic list; cycle detection (`../fast-slow-pointers/`) is a separate, prerequisite concern this pattern does not handle.
 
-## Tradeoffs
-
-**What we gain:** O(1) space instead of O(n) for a copy-based rebuild, working directly on the caller's node objects (no copying of potentially expensive payloads), and a single unifying mechanism for three different-looking problems.
-
-**What we lose:** readability at a glance, compared to "copy to an array, reverse the array, rebuild" — a reviewer unfamiliar with the three-pointer idiom has to trace pointer rewrites mentally, whereas `std::reverse` on a vector is self-evidently correct. We also give up the *original* list's structure permanently (unless we deliberately reverse it back), which matters if something else in the system still expects to read it in its original order.
+This O(n) → O(1) space reduction, at no cost to the O(n) time complexity, is exactly why In-place Reversal is the textbook answer whenever a linked-list reversal problem explicitly calls out an O(1) space constraint.
 
 ## Complexity
 
-**Time:** O(n) for whole-list and sub-range reversal — every node in the affected portion is visited exactly once. O(n) for k-group reversal as well: each node is visited once during its group's lookahead check and once during its group's reversal pass, which is still a constant number of visits per node, not proportional to the number of groups.
+**Time:** O(n) for whole-list and sub-range reversal — every node in the affected portion is visited exactly once. O(n) for k-group reversal as well: each node is visited once during its group's lookahead check and once during its group's reversal pass, still a constant number of visits per node, not proportional to the number of groups.
 
 **Space:** **O(1)** for all three variants — a small, fixed number of pointer variables (plus one dummy node on the stack for `reverseBetween` and `reverseKGroup`), regardless of list length.
 
 **Space — replaced approach (copy into an array/new list):** **O(n)** — one array slot or new node per element of the affected range.
 
 **Space — replaced approach (recursive whole-list or k-group reversal):** technically **O(n)** (or O(n/k) for the grouped case) due to call-stack depth, even though no explicit array appears in the code — a subtlety worth remembering when asked to justify an "O(1) space" claim for a recursive solution.
-
-This O(n) → O(1) space reduction, at no cost to the O(n) time complexity, is exactly why In-place Reversal is the textbook answer whenever a linked-list reversal problem explicitly calls out an O(1) space constraint.
 
 ## Common Mistakes
 
@@ -254,22 +217,17 @@ This O(n) → O(1) space reduction, at no cost to the O(n) time complexity, is e
 - **When you only need to detect a cycle, find a middle, or check for a repeated value.** Those are Fast & Slow Pointers' job (`../fast-slow-pointers/`) — reversing anything is unnecessary work if the actual question is a yes/no or "where" question about the list's shape, not a request to change it.
 - **When the list might be cyclic and you have not verified it isn't.** A reversal loop that assumes `nullptr` termination will loop forever (or corrupt the structure) on a cyclic list; run a cycle check first if the list's origin is untrusted.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
-- **Interviews:** LeetCode 206 (Reverse Linked List) is one of the most frequently asked "warm-up" linked-list questions across nearly every company running standard DSA-style interview loops, precisely because it has a clean O(n) time / O(1) space answer that is easy to state but easy to get subtly wrong (the save-before-rewrite ordering). LeetCode 92 and 25 are common follow-ups used to test whether a candidate can generalize the same idea under added bookkeeping constraints, with 25 specifically used as a discriminator between "knows the loop" and "can manage the seams correctly under pressure."
-- **Undo/redo and command-history chains.** Some editor and application undo systems model history as a singly linked chain of command objects; reversing the direction of traversal (to walk from oldest to newest instead of newest to oldest, or vice versa) without rebuilding the chain is a direct, if less commonly discussed, application of this exact rewiring idea.
-- **Reversing a chain of middleware/interceptor handlers.** A pipeline modeled as a singly linked chain of handler nodes (each holding a reference to "the next handler to invoke") occasionally needs its execution order reversed (e.g., request handlers run forward, response handlers run in reverse) — reusing the same `prev`/`curr`/`next` rewiring rather than maintaining two separately-ordered chains.
+LeetCode 206 (Reverse Linked List) is one of the most frequently asked "warm-up" linked-list questions across nearly every company running standard DSA-style interview loops, precisely because it has a clean O(n) time / O(1) space answer that is easy to state but easy to get subtly wrong (the save-before-rewrite ordering). LeetCode 92 and 25 are common follow-ups used to test whether a candidate can generalize the same idea under added bookkeeping constraints, with 25 specifically used as a discriminator between "knows the loop" and "can manage the seams correctly under pressure."
+
+In production systems:
+
+- **Undo/redo and command-history chains.** Some editor and application undo systems model history as a singly linked chain of command objects; reversing the direction of traversal (oldest-to-newest vs. newest-to-oldest) without rebuilding the chain — or reversing just the affected sub-range when a batch of queued jobs needs to run in reverse priority order — is a direct, if less commonly discussed, application of this exact rewiring idea.
+- **Middleware, interceptor, and job-scheduling pipelines.** A pipeline modeled as a singly linked chain of handler nodes occasionally needs its execution order reversed (e.g. request handlers run forward, response handlers run in reverse); reusing the same `prev`/`curr`/`next` rewiring — via whole-list or k-group reversal — avoids maintaining two separately-ordered chains.
 - **Compiler/interpreter intermediate representations.** Some IR data structures represent instruction sequences as singly linked lists of instruction nodes; certain optimization or code-generation passes reverse a basic block's instruction order in place rather than allocating a new list, for the same memory-locality and allocation-avoidance reasons this pattern exists.
-
-## Where I Can Use This
-
-Five realistic ideas for your own backend or systems projects:
-
-1. **An undo-history chain modeled as a singly linked list of command objects**: reverse it in place (rather than rebuilding) when you need to replay history in the opposite direction, e.g., generating a "redo from scratch" sequence, without allocating a second history structure.
-2. **A pending-jobs queue implemented as a singly linked list** where a batch of jobs needs to run in reverse priority order under specific conditions: reverse the affected sub-range of the queue in place instead of dequeuing into an array and re-enqueuing.
-3. **A middleware/interceptor chain that needs its handlers invoked in reverse order for the "response" phase** of a request/response cycle (mirroring how many real HTTP middleware stacks conceptually unwind): reuse the k-group or whole-list reversal idea if the chain is represented as a singly linked structure internally.
-4. **A log-replay or event-sourcing structure where events are linked in insertion order** and a tool needs to present them oldest-last instead of oldest-first: reverse a singly linked event chain in place rather than materializing a second array purely to flip the presentation order.
-5. **A "reverse every k records" data-transformation utility** (e.g., normalizing a chain of paginated result nodes fetched in reversed page batches from an upstream service): apply `reverseKGroup`'s exact bookkeeping pattern to correctly stitch reversed batches back into one coherent chain.
+- **Log-replay and event-sourcing presentation.** A tool that needs to present insertion-ordered events oldest-last instead of oldest-first can reverse the linked event chain in place, rather than materializing a second array purely to flip the presentation order.
+- **Batch data-transformation utilities.** A "reverse every k records" utility — e.g. normalizing a chain of paginated result nodes fetched in reversed page batches from an upstream service — applies `reverseKGroup`'s exact bookkeeping to stitch reversed batches back into one coherent chain.
 
 ## Similar Patterns
 
@@ -288,28 +246,14 @@ Five realistic ideas for your own backend or systems projects:
 
 Experienced engineers rarely dwell on "can you reverse a linked list" in isolation — that specific loop is expected to be fast, correct, and typed without hesitation. The conversation that actually distinguishes candidates centers on the **variants and their bookkeeping**, and on **why an iterative approach is preferred**.
 
-Common follow-up questions:
-- *"Walk me through why you need to save `next` before rewiring `curr->next`."* The expected answer names the specific hazard directly: `curr->next` is the only remaining reference to the rest of the list at that point in the traversal, and overwriting it before reading it discards that reference permanently.
-- *"Now do it for just a sub-range `[left, right]`."* This tests whether the candidate reaches for a dummy head node proactively (to make `left == 1` a non-special case) or discovers the need for it mid-way through, after their first attempt breaks on that exact input.
-- *"Now do it in groups of k."* This is the question that separates "has memorized the sub-range trick" from "understands the reconnection logic well enough to repeat it in a loop." The expected answer explicitly calls out the lookahead-before-reversing check for a full group.
+- *"Now do it for just a sub-range `[left, right]`. Now do it in groups of k."* The standard follow-up progression — it is not retesting the core loop, which is assumed correct by now. It tests whether a candidate reaches for a dummy head node proactively (rather than discovering the need for it after their first attempt breaks on `left == 1`), and whether they remember the lookahead-before-reversing check once groups enter the picture.
 - *"Can you do the whole-list version recursively? What's the catch?"* A strong answer produces the elegant recursive version quickly, then proactively names the O(n) call-stack cost as the catch — showing they understand *why* the iterative version is generally preferred in production code, not just that "recursion is different."
 - *"What if the list turns out to be cyclic — what happens to your reversal loop?"* Tests whether the candidate connects this pattern to its sibling (Fast & Slow Pointers): a reversal loop written to assume `nullptr` termination will misbehave (infinite loop or corrupted structure) on cyclic input, so a list from an untrusted source should be checked for cycles first.
 
 Common misconceptions:
 - "Reversing a linked list is just one algorithm." It is one *mechanism* (the three-pointer rewiring loop) applied to three distinct problems (whole list, sub-range, k-group), each with its own seam-reconnection bookkeeping.
 - "A recursive solution is just as good if it produces the right output." Correct output is necessary but not sufficient — the recursive version's hidden call-stack space cost is a real production concern on long lists, and claiming "O(1) space" for it is inaccurate.
-- "In-place reversal has no downside since it saves memory." It genuinely mutates the caller's data structure; if anything else expects to read the list in its original order afterward, that is a real, not hypothetical, bug source — not a purely academic concern.
 - "The k-group version is basically the sub-range version, so it must be similarly easy." The *core* rewiring is the same, but managing it correctly across an unknown number of repeated groups, each requiring its own lookahead check, is exactly why LeetCode rates 25 as Hard while rating 92 as only Medium.
-
-## Summary
-
-- In-place Reversal rewires existing `next` pointers to reverse a whole list, a sub-range, or fixed-size groups, using **O(1) extra space**.
-- The core mechanism is three pointers — `prev`, `curr`, and a temporary `next` — used in a fixed order every iteration: save `next`, rewire `curr->next` to `prev`, advance both pointers.
-- It replaces a copy-into-an-array-or-new-list approach that works correctly but costs **O(n) space**, and a recursive approach that hides an O(n) (or O(n/k)) call-stack cost behind seemingly simple code.
-- Sub-range (`[left, right]`) and k-group reversal reuse the identical three-pointer loop, adding a **dummy head node** so a reversal starting at the true head needs no special case.
-- k-group reversal additionally needs a **lookahead check** before reversing each group, to correctly leave a trailing short group untouched.
-- The most common bug is rewiring `curr->next` before saving its original value, which silently discards the rest of the list.
-- It combines naturally with **Fast & Slow Pointers**: find the middle first, then reverse the second half — the standard shape behind palindrome checks and list-reordering problems.
 
 ## Key Takeaways
 

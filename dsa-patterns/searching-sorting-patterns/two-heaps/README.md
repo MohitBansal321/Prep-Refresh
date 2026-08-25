@@ -65,22 +65,6 @@ The naive way to answer "what's the median right now" is: keep every number you'
 - **Backpressure and dropped data.** A monitoring pipeline that cannot compute its running median fast enough either falls behind (queries answer with stale data) or has to sample/drop incoming events to keep up — directly degrading the signal you built the dashboard to observe.
 - **Wasted memory from repeated full copies.** Re-sorting an ever-growing array, or building a fresh sorted copy per query, allocates and discards memory proportional to n on every single query — memory churn that shows up as GC/allocator pressure in a long-running service.
 
-## Why Not Other Solutions?
-
-**"Keep an unsorted list, sort it every time someone asks for the median."**
-Simplest possible code, but each query costs O(n log n) — and if the median is queried after every insert (the realistic streaming case), total cost is O(n² log n). Correct, but it does not scale past toy input sizes; it is the "does it even finish in time" failure mode.
-
-**"Keep a single sorted array (or `std::multiset`), insert new elements in sorted position, read the middle in O(1)."**
-Reading the median is now O(1) — good — but **inserting** into a sorted `std::vector` while preserving order costs O(n) per insert (shifting elements). A `std::multiset` (a self-balancing tree) fixes the insert cost to O(log n), but you still need to *walk* to the middle element to read it, which costs O(n) in a tree without an order-statistics augmentation (indexed access), because a plain balanced BST does not know "how many elements are to my left" without extra bookkeeping. You could add that augmentation (an "order-statistics tree" / indexed skip list), but that is strictly more machinery than Two Heaps needs for exactly the same guarantee.
-
-**"Recompute the median from scratch with a selection algorithm (e.g. quickselect) on every query."**
-Quickselect finds the k-th order-statistic in expected O(n) time — better than a full sort, but still O(n) *per query*, and for a stream where queries interleave with inserts, that is O(n) work re-triggered every single time, with no reuse of work done on the previous query. Two Heaps instead pays for the "where is the boundary" bookkeeping incrementally, once per insert, and answers every query in O(1).
-
-**"Use a single balanced BST / order-statistics tree keyed by value."**
-This can be made to work (with subtree-size augmentation, giving true O(log n) insert and O(log n) median lookup), but it is considerably more code and conceptual overhead than two heaps for the same result. It is also solving a strictly harder problem than what's needed here — an order-statistics tree lets you find the k-th smallest for *any* k, not just the middle. If you only ever need the median (or a fixed split like "P50" of a fixed window), two heaps do it with two off-the-shelf `std::priority_queue`s and no augmented tree code at all.
-
-**Tradeoff summary:** every alternative either pays O(n) somewhere per operation (shifting a sorted array, walking an unaugmented tree, or re-running quickselect), or reaches for more machinery than is needed (an order-statistics tree) to solve a narrower problem (just the median) than that machinery is built for. Two Heaps is the sweet spot specifically because it needs nothing more exotic than two `std::priority_queue`s, and it only ever tracks the one boundary that actually matters.
-
 ## Solution
 
 The core idea: split every number you've seen into exactly two groups, always keeping the split at (or one away from) the halfway point.
@@ -98,6 +82,14 @@ Once that invariant holds:
 
 No code yet — the key conceptual leap is realizing you never need to know the internal order of either half; you only ever need to know where the split sits, and a heap is precisely the structure that keeps one boundary value cheaply accessible without sorting anything else.
 
+Step by step:
+
+1. **Insert.** A new number arrives. If `low` is empty, or the number is less than or equal to `low`'s current top (its max), push it into `low`. Otherwise, push it into `high`.
+2. **Rebalance.** Compare the sizes of `low` and `high`. If `low` has grown to hold two more elements than `high`, pop `low`'s top and push it into `high`. If `high` has grown to hold more elements than `low` (strictly more, since ties favor `low` holding the extra element by convention), pop `high`'s top and push it into `low`. After this step, the sizes differ by at most one, with `low` never smaller than `high`.
+3. **Query median.** If `low` and `high` are the same size, return the average of `low.top()` and `high.top()`. If `low` has one more element than `high` (the odd-count case), return `low.top()` directly — no averaging needed.
+
+Every insert costs O(log n) (one heap push, at most one heap pop-and-push during rebalancing). Every median query costs O(1) (reading up to two heap tops, no heap operation at all).
+
 ## Architecture
 
 1. **Max-heap ("lower half"), conventionally named `low` or `left`.** Holds the smaller half of all numbers seen so far, ordered so its largest element sits at the top. Its invariant: every element in `low` is `<=` every element in `high`. Its responsibility: answer "what is the largest value among the smaller half?" in O(1).
@@ -114,77 +106,58 @@ Responsibilities in one line each:
 - **Rebalancing rule:** guarantees the two heaps never drift more than one element apart in size.
 - **Insertion routing:** ensures every new element lands in the half it actually belongs to, so the size-based rebalancing move (top-of-larger to top-of-smaller) is also always a *value*-correct move, not just a size-correct one.
 
-## Execution Flow
+## Why Not Other Solutions?
 
-1. **Insert.** A new number arrives. If `low` is empty, or the number is less than or equal to `low`'s current top (its max), push it into `low`. Otherwise, push it into `high`.
-2. **Rebalance.** Compare the sizes of `low` and `high`. If `low` has grown to hold two more elements than `high`, pop `low`'s top and push it into `high`. If `high` has grown to hold more elements than `low` (strictly more, since ties favor `low` holding the extra element by convention), pop `high`'s top and push it into `low`. After this step, the sizes differ by at most one, with `low` never smaller than `high`.
-3. **Query median.** If `low` and `high` are the same size, return the average of `low.top()` and `high.top()`. If `low` has one more element than `high` (the odd-count case, by the convention chosen in step 2), return `low.top()` directly — no averaging needed.
+**"Keep an unsorted list, sort it every time someone asks for the median."**
+Simplest possible code, but each query costs O(n log n) — and if the median is queried after every insert (the realistic streaming case), total cost is O(n² log n). Correct, but it does not scale past toy input sizes; it is the "does it even finish in time" failure mode.
 
-Every insert costs O(log n) (one heap push, at most one heap pop-and-push during rebalancing). Every median query costs O(1) (reading up to two heap tops, no heap operation at all).
+**"Keep a single sorted array (or `std::multiset`), insert new elements in sorted position, read the middle in O(1)."**
+Reading the median is now O(1) — good — but **inserting** into a sorted `std::vector` while preserving order costs O(n) per insert (shifting elements). A `std::multiset` (a self-balancing tree) fixes the insert cost to O(log n), but you still need to *walk* to the middle element to read it, which costs O(n) in a tree without an order-statistics augmentation (indexed access), because a plain balanced BST does not know "how many elements are to my left" without extra bookkeeping. You could add that augmentation (an "order-statistics tree" / indexed skip list), but that is strictly more machinery than Two Heaps needs for exactly the same guarantee.
 
-## Recognition Diagram
+**"Recompute the median from scratch with a selection algorithm (e.g. quickselect) on every query."**
+Quickselect finds the k-th order-statistic in expected O(n) time — better than a full sort, but still O(n) *per query*, and for a stream where queries interleave with inserts, that is O(n) work re-triggered every single time, with no reuse of work done on the previous query. Two Heaps instead pays for the "where is the boundary" bookkeeping incrementally, once per insert, and answers every query in O(1).
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart distinguishing Two Heaps from Top K Elements and from a plain sorted-array-with-reinsertion approach, based on the signals in a problem statement.
+**"Use a single balanced BST / order-statistics tree keyed by value."**
+This can be made to work (with subtree-size augmentation, giving true O(log n) insert and O(log n) median lookup), but it is considerably more code and conceptual overhead than two heaps for the same result. It is also solving a strictly harder problem than what's needed here — an order-statistics tree lets you find the k-th smallest for *any* k, not just the middle. If you only ever need the median (or a fixed split like "P50" of a fixed window), two heaps do it with two off-the-shelf `std::priority_queue`s and no augmented tree code at all.
 
-## Flow Diagram
+**Net:** every alternative either pays O(n) somewhere per operation (shifting a sorted array, walking an unaugmented tree, or re-running quickselect), or reaches for more machinery than is needed (an order-statistics tree) to solve a narrower problem (just the median) than that machinery is built for. Two Heaps is the sweet spot specifically because it needs nothing more exotic than two `std::priority_queue`s, and it only ever tracks the one boundary that actually matters.
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of insert -> rebalance -> query, showing exactly which heap each step touches and why.
+## Diagrams
 
-## Trace Diagram
+- [images/recognition-diagram.md](images/recognition-diagram.md) — flowchart distinguishing Two Heaps from Top K Elements and from a plain sorted-array-with-reinsertion approach, based on the signals in a problem statement.
+- [images/flow-diagram.md](images/flow-diagram.md) — control-flow diagram of insert -> rebalance -> query, showing exactly which heap each step touches and why.
+- [images/trace-diagram.md](images/trace-diagram.md) — step-by-step trace of both heaps' contents as the numbers `5, 15, 1, 3, 8, 7, 9, 10` are inserted one at a time, showing the median after each insert.
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of both heaps' contents as the numbers `5, 15, 1, 3, 8, 7, 9, 10` are inserted one at a time, showing the median after each insert.
-
-## Implementation
+## The Code
 
 [code.cpp](code.cpp) provides a single, generic, reusable `MedianFinder` class built directly on `std::priority_queue`:
 
-- `std::priority_queue<int>` for `low` — this is a max-heap **by default** in C++ (the standard library's default comparator, `std::less<T>`, makes the *largest* element compare "highest priority" and sit at the top).
-- `std::priority_queue<int, std::vector<int>, std::greater<int>>` for `high` — passing `std::greater<int>` as the comparator inverts the ordering, making this a **min-heap** (the *smallest* element sits at the top).
+- `std::priority_queue<int>` for **`low`** (declared first, since `addNum`'s routing decision checks against it first: `low.empty() || num <= low.top()`) — this is a max-heap **by default** in C++ (the standard library's default comparator, `std::less<T>`, makes the *largest* element compare "highest priority" and sit at the top). By convention, when the total count is odd, `low` holds the extra element — which is why `findMedian` checks `low.size() > high.size()` (not `<`) to decide the odd-count branch.
+- `std::priority_queue<int, std::vector<int>, std::greater<int>>` for **`high`** — passing `std::greater<int>` as the comparator inverts the ordering, making this a **min-heap** (the *smallest* element sits at the top). This explicit comparator is the one line of this class that is easy to get backwards (see Common Mistakes).
 
 The class exposes exactly two public methods, matching LeetCode 295's contract directly:
-- `void addNum(int num)` — performs the insert + rebalance steps above.
-- `double findMedian()` — performs the query step above.
+- **`void addNum(int num)`** — first routes `num` into `low` or `high` based on the comparison against `low.top()` (or unconditionally into `low` if it's currently empty). Then rebalances: if `low` now holds two more elements than `high`, its top is popped and pushed into `high`; if `high` now holds strictly more elements than `low`, the symmetric move happens in reverse. This is the single insertion point that keeps both the *value* invariant and the *size* invariant true after every call.
+- **`double findMedian()`** — reads (never pops) the top of one or both heaps depending on which is larger. If sizes are equal, returns `(low.top() + high.top()) / 2.0` (the `2.0` forces floating-point division rather than integer truncation). If `low` is larger by one, returns `static_cast<double>(low.top())` directly. This proves the entire payoff of the pattern: after paying O(log n) per insert, every query is O(1) — no heap operation, no scan, just reading up to two cached root values.
 
-Templating on the element type is deliberately **not** done here (unlike the Two Pointers module's generic templates) because heap comparators and mixed-precision averaging (summing two `int`s and dividing by 2.0) are simplest and clearest when specialized to a concrete numeric type; `main()` demonstrates the class against hand-checkable sequences, including even-count and odd-count cases and negative numbers.
-
-## Code Walkthrough
-
-See [code.cpp](code.cpp) for the full runnable implementation.
-
-**`MedianFinder::low` (`std::priority_queue<int>`).** The lower-half max-heap. Declared first because `addNum`'s routing decision checks against it first (`low.empty() || num <= low.top()`). Holds up to one more element than `high` at any time — by convention, when the total count is odd, the extra element lives here, which is why `findMedian` checks `low.size() > high.size()` (not `<`) to decide the odd-count branch.
-
-**`MedianFinder::high` (`std::priority_queue<int, std::vector<int>, std::greater<int>>`).** The upper-half min-heap. The explicit `std::greater<int>` comparator is the one line of this class that is easy to get backwards (see Common Mistakes) — it is what makes `high.top()` return the *smallest* value in the upper half rather than the largest.
-
-**`MedianFinder::addNum(int num)`.** First routes `num` into `low` or `high` based on the comparison against `low.top()` (or unconditionally into `low` if it's currently empty — there is nothing to compare against yet). Then rebalances: if `low` now holds two more elements than `high`, its top is popped and pushed into `high`; if `high` now holds strictly more elements than `low`, the symmetric move happens in reverse. This function exists as the single insertion point that keeps both the *value* invariant (`low`'s elements are all `<= high`'s elements) and the *size* invariant (`|low.size() - high.size()| <= 1`) true after every call.
-
-**`MedianFinder::findMedian()`.** Reads (never pops) the top of one or both heaps depending on which is larger. If sizes are equal, returns `(low.top() + high.top()) / 2.0` (the `2.0` forces floating-point division rather than integer truncation). If `low` is larger by one, returns `static_cast<double>(low.top())` directly. This function exists to prove the entire payoff of the pattern: after paying O(log n) per insert, every query is O(1) — no heap operation, no scan, just reading up to two cached root values.
-
-**`main()`.** Exercises `addNum`/`findMedian` against several hand-checkable sequences — an odd-then-even count progression, a sequence requiring several rebalancing swaps, and a sequence including negative numbers and duplicate values — printing `[PASS]`/`[FAIL]` for each assertion to prove the class compiles and runs correctly end to end.
-
-## Advantages
-
-- **O(log n) insert, O(1) median query.** After the one-time cost of building the two heaps as data arrives, every median query is free of any heap operation at all — just reading up to two roots.
-- **No full re-sort, ever.** Unlike the sorted-array approach, no insertion ever shifts more than O(log n) worth of work (a single heap sift), regardless of how large the dataset has grown.
-- **Naturally incremental / streaming-friendly.** The structure is built one element at a time as data arrives, which matches exactly how real-world data (sensor readings, request latencies, live scores) actually shows up — there is no "batch it all up, then process" step required.
-- **Small, fixed memory overhead per structure.** Two heaps store exactly the n elements seen so far (no duplicated copies, no auxiliary sorted array) — memory is O(n) total, same as any approach that must remember every value, but with no extra structural overhead beyond the two heap's own array-backed storage.
-- **Built from off-the-shelf structures.** `std::priority_queue` is standard-library, well-tested, and familiar — no custom balanced tree or augmented order-statistics structure needs to be written or trusted.
-
-## Disadvantages
-
-- **Only gives you the median (or a fixed split), not arbitrary percentiles cheaply.** The two-heap split point is fixed at "half of everything seen so far." If you need the 90th percentile as well as the median, this exact structure does not give it to you for free — you would need a fundamentally different split ratio (a heap holding 90% and one holding 10%, which changes size as data grows and is far more awkward to keep continuously balanced), or a different structure entirely (e.g. a t-digest or an order-statistics tree that supports arbitrary-rank queries).
-- **Two data structures to keep in sync.** Every insert must correctly route the new value into the right heap *and* correctly rebalance sizes — miss either step and the two invariants (value ordering across the split, size balance) silently drift apart, producing a median that is subtly wrong rather than crashing loudly.
-- **No support for deletion in the classic form.** `std::priority_queue` cannot efficiently remove an arbitrary element (only the root). If your problem needs a *sliding window* median (old values must leave as new ones arrive — LeetCode 480), the classic two-heap approach needs an added "lazy deletion" layer (tracking which values are logically removed and cleaning them off the top when encountered) — meaningfully more complexity than the plain streaming-median case.
-- **No random access into either half.** You can read the boundary values in O(1), but you cannot ask "what is the 3rd-smallest value in the lower half" without popping through the heap (destroying it in the process) — a limitation inherent to the heap structure itself, not just this pattern's use of it.
+Templating on the element type is deliberately **not** done here (unlike the Two Pointers module's generic templates) because heap comparators and mixed-precision averaging (summing two `int`s and dividing by 2.0) are simplest and clearest when specialized to a concrete numeric type. `main()` exercises `addNum`/`findMedian` against several hand-checkable sequences — an odd-then-even count progression, a sequence requiring several rebalancing swaps, and a sequence including negative numbers and duplicate values — printing `[PASS]`/`[FAIL]` for each assertion.
 
 ## Tradeoffs
 
-**What we gain versus re-sorting on every query:** O(log n) per insert and O(1) per query, instead of O(n log n) per query — the entire reason this pattern exists.
+**What the two-heap split buys you**
 
-**What we gain versus a single sorted array with shifted insertion:** O(log n) insert instead of O(n) insert (no element-shifting), while keeping O(1) median reads in both approaches.
+- **O(log n) insert, O(1) median query.** After the one-time cost of building the two heaps as data arrives, every median query is free of any heap operation at all — just reading up to two roots.
+- **No full re-sort, ever.** Unlike the sorted-array approach, no insertion ever shifts more than O(log n) worth of work (a single heap sift), regardless of how large the dataset has grown.
+- **Naturally incremental / streaming-friendly.** The structure is built one element at a time as data arrives, matching exactly how real-world data (sensor readings, request latencies, live scores) actually shows up — no "batch it all up, then process" step required.
+- **Small, fixed memory overhead per structure.** Two heaps store exactly the n elements seen so far (no duplicated copies, no auxiliary sorted array) — memory is O(n) total, same as any approach that must remember every value, but with no extra structural overhead.
+- **Built from off-the-shelf structures.** `std::priority_queue` is standard-library, well-tested, and familiar — no custom balanced tree or augmented order-statistics structure needs to be written or trusted.
 
-**What we lose versus an order-statistics tree:** the ability to answer "what is the k-th smallest element" for an arbitrary k in O(log n) — two heaps only ever expose the one fixed boundary they were built to track (the median, or a similarly fixed split). If your problem needs arbitrary-rank queries, not just the median, the extra machinery of an order-statistics tree pays for itself; if it only needs the median, that machinery would be pure overhead.
+**What it costs you**
 
-**What we lose versus hashing/simple counters for other statistics:** two heaps solve exactly one narrow problem well (the running median). A running mean, a running max, or a running mode each has its own O(1)-or-near-O(1) technique that does not need heaps at all — reaching for two heaps when you only need a running average would be solving an easy problem with unnecessarily heavy machinery.
+- **Only gives you the median (or a fixed split), not arbitrary percentiles cheaply.** The two-heap split point is fixed at "half of everything seen so far." If you need the 90th percentile as well as the median, this exact structure does not give it to you for free — you would need a fundamentally different (and far more awkward to keep balanced) split ratio, or a different structure entirely (a t-digest or an order-statistics tree that supports arbitrary-rank queries).
+- **Two data structures to keep in sync.** Every insert must correctly route the new value into the right heap *and* correctly rebalance sizes — miss either step and the two invariants silently drift apart, producing a median that is subtly wrong rather than crashing loudly.
+- **No support for deletion in the classic form.** `std::priority_queue` cannot efficiently remove an arbitrary element (only the root). A *sliding-window* median (old values must leave as new ones arrive — LeetCode 480) needs an added "lazy deletion" layer (tracking which values are logically removed and cleaning them off the top when encountered) — meaningfully more complexity than the plain streaming-median case.
+- **No random access into either half.** You can read the boundary values in O(1), but you cannot ask "what is the 3rd-smallest value in the lower half" without popping through the heap (destroying it in the process).
+- **Versus an order-statistics tree specifically:** you lose the ability to answer "what is the k-th smallest element" for an arbitrary k in O(log n) — two heaps only ever expose the one fixed boundary they were built to track. That extra machinery only pays for itself if you need arbitrary-rank queries, not just the median.
 
 ## Complexity
 
@@ -225,25 +198,16 @@ See [code.cpp](code.cpp) for the full runnable implementation.
 - **The dataset is static and known up front, and you only need the median once.** A single `nth_element` (C++'s O(n) expected-time partial-sort / quickselect, `std::nth_element`) finds the median in one O(n) pass with no heap bookkeeping at all — simpler and just as fast for a one-shot query on a fixed array.
 - **You need to efficiently remove arbitrary elements (not just the two boundary values) as they age out.** Plain `std::priority_queue` heaps cannot do this; you would need the lazy-deletion extension (or a different structure like an indexed/order-statistics tree) — worth explicitly considering whether that added complexity is justified before committing to two heaps.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 Two Heaps (specifically, LeetCode 295 — Find Median from Data Stream) is a frequently asked interview question at companies including Amazon, Google, Bloomberg, and Two Sigma — precisely because it tests whether a candidate recognizes that "median of a stream" is a *fundamentally different* problem from "median of a fixed array," and whether they reach for the heap-balancing idea rather than a brute-force re-sort.
 
-Beyond interviews, the same idea shows up directly in production systems:
+Beyond interviews, the same idea shows up directly in production systems, and maps onto realistic backend work:
 
-- **Median/percentile latency tracking in monitoring systems.** Observability tools that need a running median (or a fixed set of percentiles) of request latency, without storing and re-sorting every single latency sample, use structures built on this exact "maintain the boundary incrementally" idea — full percentile-sketch libraries (like t-digest, used in some APM/observability backends) generalize the two-heap idea to arbitrary percentiles at the cost of exactness (they are approximate).
-- **Real-time analytics dashboards.** A dashboard showing "median order value in the last hour" or "median page-load time today," updated as new events stream in, needs exactly the insert-heavy, query-heavy access pattern that two heaps are built for — recomputing a full sort on every dashboard refresh does not scale past a modest number of events.
-- **Financial tick-data median/rolling-statistics computation.** Trading systems that compute a running median price (as a more outlier-resistant summary statistic than a moving average) over a stream of ticks use the same incremental-balance idea, often combined with the sliding-window/lazy-deletion extension to age out old ticks.
-
-## Where I Can Use This
-
-Five realistic ideas for your own backend/systems work:
-
-1. **A `/metrics` endpoint reporting running median request latency** for a service, updated incrementally as requests complete, instead of querying and sorting a stored latency table on every scrape.
-2. **A live leaderboard or exam-scoring system** reporting the median score as results stream in, without waiting for all scores to be in and re-sorting the whole set each time a new score arrives.
-3. **A pricing/inventory system tracking the median listing price** in a category as new listings are added and removed throughout the day, for a "typical price" widget that must stay current without expensive recomputation.
-4. **An IPO-style project scheduler** picking the highest-profit project you can currently afford, using a min-heap of not-yet-affordable projects (by capital requirement) paired with a max-heap of currently affordable projects (by profit) — structurally the same "two heaps split by a moving boundary" idea as the median pattern, applied to a scheduling problem instead.
-5. **A sliding-window anomaly detector** flagging when the most recent value deviates far from the median of the last N samples, using the sliding-window-median extension (two heaps plus lazy deletion) to keep the window's median current in O(log n) per new sample.
+- **Median/percentile latency tracking and real-time dashboards.** Observability tools that need a running median (or a fixed set of percentiles) of request latency, without storing and re-sorting every single latency sample, use structures built on this exact "maintain the boundary incrementally" idea — a `/metrics` endpoint reporting running median request latency, updated incrementally as requests complete, is a direct application. Full percentile-sketch libraries (like t-digest, used in some APM/observability backends) generalize the two-heap idea to arbitrary percentiles at the cost of exactness (they are approximate). The same access pattern powers dashboards showing "median order value in the last hour" or "median page-load time today," and a live leaderboard or exam-scoring system reporting the median score as results stream in.
+- **Financial tick-data and pricing statistics.** Trading systems that compute a running median price (a more outlier-resistant summary statistic than a moving average) over a stream of ticks use the same incremental-balance idea, often combined with the sliding-window/lazy-deletion extension to age out old ticks — the same idea also tracks a median listing price in a pricing/inventory system as listings are added and removed throughout the day.
+- **IPO-style project scheduling.** Picking the highest-profit project you can currently afford, using a min-heap of not-yet-affordable projects (by capital requirement) paired with a max-heap of currently affordable projects (by profit) — structurally the same "two heaps split by a moving boundary" idea as the median pattern, applied to a scheduling problem instead.
+- **Sliding-window anomaly detection.** Flagging when the most recent value deviates far from the median of the last N samples, using the sliding-window-median extension (two heaps plus lazy deletion) to keep the window's median current in O(log n) per new sample.
 
 ## Similar Patterns
 
@@ -260,44 +224,30 @@ Five realistic ideas for your own backend/systems work:
 
 ## Interview Discussion
 
-Experienced engineers do not spend interview time on "how do you get a max-heap out of `std::priority_queue`" — that's mechanical (know the default, know `std::greater<>`). What they actually probe is whether you can **state the two invariants precisely and explain why both are needed**: the *value* invariant (everything in `low` is `<=` everything in `high`) and the *size* invariant (`|low.size() - high.size()| <= 1`). A candidate who says "I keep two heaps roughly balanced" without being able to state exactly what "balanced" guarantees, and why both invariants together are what make `findMedian` correct, is reciting the pattern's shape without having understood its proof.
+Experienced engineers do not spend interview time on "how do you get a max-heap out of `std::priority_queue`" — that's mechanical (know the default, know `std::greater<>`). What they actually probe is whether you can **state the two invariants precisely and explain why both are needed**: the *value* invariant (everything in `low` is `<=` everything in `high`) and the *size* invariant (`|low.size() - high.size()| <= 1`). A candidate who says "I keep two heaps roughly balanced" without being able to state exactly what "balanced" guarantees is reciting the pattern's shape without having understood its proof.
 
 Common follow-up questions:
-- *"Why can't you just use one sorted structure?"* — expects the O(n) shift-insert (or O(n) walk-to-middle on an unaugmented tree) cost tradeoff explained precisely, not just "heaps are faster."
 - *"What if the numbers are extremely skewed (e.g. mostly the same value repeated)?"* — expects recognizing that heap operations remain O(log n) regardless of value distribution (heaps do not degrade the way, say, an unbalanced BST built from sorted input would), because a binary heap's shape is determined purely by insertion count, not by value ordering.
 - *"Extend this to a sliding-window median."* — expects recognizing the need for **lazy deletion**: since a `std::priority_queue` cannot remove an arbitrary element cheaply, you track "outgoing" values in a hash map and only actually pop them from a heap when they happen to surface at the top, cleaning up before every rebalance and every query.
-- *"How would you get the 90th percentile instead of the median with this same structure?"* — expects recognizing that this specific two-heap 50/50 split does not generalize to arbitrary percentiles without changing the whole balancing ratio, and naming an approximate structure (t-digest) or an exact one (order-statistics tree) as the right tool instead.
 - *"What's the time complexity if you called `findMedian` after every single `addNum`, for n numbers total?"* — expects O(n log n) total, and the ability to contrast that explicitly against the O(n² log n) of the re-sort-every-time approach.
 
 Common misconceptions:
 - "A heap keeps everything sorted internally." It does not — only the root property is guaranteed; that's precisely why heap operations are cheaper than maintaining a total order.
 - "You can just use one heap and pop halfway when you need the median." A single heap only gives you fast access to *one* extreme (its root); finding "the middle" from one heap still requires popping roughly half its elements, which is neither fast nor non-destructive.
-- "Two Heaps and Top K Elements are basically the same technique because both use heaps." They answer structurally different questions (middle value vs. extreme K values) and are sized/balanced completely differently — conflating them leads to reaching for the wrong one under pressure.
 - "The size invariant only matters for the odd/even median formula, not for correctness of the values." It matters for both — if sizes drift, the *value* invariant (low half all `<=` high half) can also break, since rebalancing is also what moves values across the boundary when they landed in the "wrong" heap due to timing.
-
-## Summary
-
-- Two Heaps splits a growing dataset into a max-heap holding the smaller half and a min-heap holding the larger half, kept balanced in size at every step.
-- The median (or similar middle order-statistic) is always readable in O(1) from the two heaps' top elements — no sorting, no scanning.
-- Every insert costs O(log n): one heap push, plus at most one rebalancing pop-and-push if the size invariant would otherwise be violated.
-- Two invariants must both hold at all times: the *value* invariant (lower half `<=` upper half) and the *size* invariant (`|low.size() - high.size()| <= 1`).
-- Typical complexity win: O(n log n) re-sort-per-query (or O(n) shift-insert) collapses to O(log n) insert / O(1) query.
-- The pattern only answers "what is the middle," not "what is the k-th smallest for arbitrary k" — that needs an order-statistics tree or an approximate quantile sketch instead.
-- Closely related but distinct: Top K Elements (one heap, tracks extreme K values, not the middle) and Merge Intervals (a sweep-based technique for overlap/scheduling, occasionally overlapping in "meeting rooms" style problems via a single heap of end-times).
-- The sliding-window extension (LeetCode 480) needs lazy deletion layered on top, because a plain `std::priority_queue` cannot remove an arbitrary aging-out element cheaply.
 
 ## Key Takeaways
 
 1. Two Heaps tracks a running median in O(log n) per insert and O(1) per query, by splitting the dataset into a max-heap (lower half) and a min-heap (upper half).
-2. Two invariants must both hold at all times: value ordering across the split, and size balance (differ by at most one).
-3. The rebalancing step (move the larger heap's top to the smaller heap) runs after **every** insert, unconditionally — never skip it.
-4. `std::priority_queue<int>` is a max-heap by default; `std::priority_queue<int, std::vector<int>, std::greater<int>>` is the min-heap — mixing these up is the most common implementation bug.
-5. Pick and document a fixed convention for which heap holds the "extra" element on odd counts, and apply it consistently in both rebalancing and query code.
-6. The pattern only answers "what's the middle" — arbitrary percentiles need a different structure (t-digest, or an order-statistics tree).
-7. A single sorted structure trades O(1) median reads for O(n) insert cost (array shifting) or O(n) middle-walk cost (unaugmented tree) — Two Heaps avoids both.
-8. Extending to a sliding-window median (LeetCode 480) requires lazy deletion, since `std::priority_queue` cannot remove an arbitrary element cheaply.
-9. Two Heaps is a structurally different tool from Top K Elements: middle value vs. extreme K values, balanced 50/50 vs. a fixed-size K.
-10. Real production use: median/percentile latency tracking in monitoring systems and real-time analytics dashboards that cannot afford to re-sort on every event.
+2. Two invariants must both hold at all times: value ordering across the split, and size balance (differ by at most one) — the rebalancing step runs after **every** insert, unconditionally.
+3. `std::priority_queue<int>` is a max-heap by default; `std::priority_queue<int, std::vector<int>, std::greater<int>>` is the min-heap — mixing these up is the most common implementation bug.
+4. Pick and document a fixed convention for which heap holds the "extra" element on odd counts, and apply it consistently in both rebalancing and query code.
+5. Complexity: O(log n) insert / O(1) query, versus O(n log n) per query for re-sort-on-demand or O(n) insert cost for a shift-insert sorted array (both trading the cost to the opposite side of the insert/query split).
+6. The pattern only answers "what's the middle" — arbitrary percentiles need a different structure (t-digest, or an order-statistics tree), and it does not support removing an arbitrary aging-out element, which a sliding-window median (LeetCode 480) needs lazy deletion to work around.
+7. Two Heaps is a structurally different tool from Top K Elements: middle value vs. extreme K values, balanced 50/50 vs. a fixed-size K.
+8. Real production use: median/percentile latency tracking in monitoring systems, real-time analytics dashboards, and financial tick-data statistics — all cases that cannot afford to re-sort on every event.
+9. Structurally the same "two heaps split by a moving boundary" idea also solves IPO-style scheduling (affordable-project max-heap paired with not-yet-affordable min-heap), not just the literal median.
+10. A single, static, one-shot median query is better served by `std::nth_element` (quickselect) — Two Heaps earns its keep specifically when queries and inserts interleave over a growing stream.
 
 ---
 
