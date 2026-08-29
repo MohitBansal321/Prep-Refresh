@@ -1,6 +1,6 @@
 # Pattern Recognition Guide
 
-The hard part of pattern-based prep is never the code once you know which pattern applies — it's the 30 seconds *before* you start typing, where you decide which of the 33 patterns this problem actually is. This page is a single lookup table for that decision, built from every pattern's own Recognition Signal. Use it as your entry point on a new problem; once it points you at a pattern, go to that pattern's own README for the Recognition Diagram/full depth.
+The hard part of pattern-based prep is never the code once you know which pattern applies — it's the 30 seconds *before* you start typing, where you decide which of the 36 patterns this problem actually is. This page is a single lookup table for that decision, built from every pattern's own Recognition Signal. Use it as your entry point on a new problem; once it points you at a pattern, go to that pattern's own README for the Recognition Diagram/full depth.
 
 ## The 3-step process
 
@@ -48,8 +48,11 @@ Below is Step 1 and Step 2 combined into one table, grouped by input shape.
 | Same, but question is about **paths/depth/subtree properties** | [Tree DFS](tree-graph-patterns/tree-dfs/README.md) | Tree & Graph |
 | General graph (possibly cyclic), need fewest hops or reachability, **every edge costs the same** | [Graph BFS/DFS](tree-graph-patterns/graph-bfs-dfs/README.md) | Tree & Graph |
 | Same, but edges carry **different (non-negative) costs/weights** | [Dijkstra's Algorithm](tree-graph-patterns/dijkstras-algorithm/README.md) | Tree & Graph |
+| Same, but edge weights **can be negative**, or you need to detect a **reachable negative cycle** | [Bellman-Ford](tree-graph-patterns/bellman-ford/README.md) | Tree & Graph |
+| Need shortest distances between **every pair** of nodes, not just from one source | [Floyd-Warshall](tree-graph-patterns/floyd-warshall/README.md) | Tree & Graph |
 | Directed "must come before" edges, need a valid order (or to detect a cycle in that ordering) | [Topological Sort](tree-graph-patterns/topological-sort/README.md) | Tree & Graph |
 | Edges arrive one at a time; you keep asking "connected?" or "would this create a cycle?" | [Union Find](tree-graph-patterns/union-find/README.md) | Tree & Graph |
+| "Minimum cost to connect everything," no privileged source/destination — a network, not a path | [Minimum Spanning Tree](tree-graph-patterns/mst-kruskal-prim/README.md) | Tree & Graph |
 
 ## 2D Grid input
 
@@ -94,6 +97,9 @@ When two patterns look equally plausible from the wording alone, the constraints
 | Repeated queries against the *same static* array, no mutation | **Prefix Sum** (or a one-time sort + **Modified Binary Search**) — amortize preprocessing across many queries. |
 | Queries interleaved *with* updates to the same array | **Segment Tree / Fenwick Tree** — Prefix Sum's O(n) rebuild per update stops being cheap. |
 | Graph edges have different costs | **Dijkstra's Algorithm**, not plain BFS. |
+| Graph edges can be **negative**, or a "refund/credit/gain" is modeled as a cost | **Bellman-Ford**, not Dijkstra's — a single negative edge invalidates Dijkstra's correctness argument outright. |
+| Need distances between **every pair**, not one fixed source | **Floyd-Warshall**, not `V` runs of Dijkstra/Bellman-Ford — same answer, one triple loop instead of managing V separate runs. |
+| "Minimize total cost to connect everything," no source/destination named at all | **Minimum Spanning Tree**, not Dijkstra's or Bellman-Ford — those minimize cost *to reach* a node; MST minimizes cost *to connect* every node, and the two can disagree on the same graph. |
 | Asked for "all" outputs (subsets/permutations/paths) with no way to prune | **Subsets**, not Backtracking. |
 | Asked for "all valid" outputs, and invalid states can be detected early | **Backtracking**, not Subsets. |
 | You need to choose between two branches and compare results before committing | **Dynamic Programming**, not Greedy. |

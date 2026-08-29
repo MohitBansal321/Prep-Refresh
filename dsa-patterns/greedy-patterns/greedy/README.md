@@ -69,21 +69,6 @@ Every one of these has the same shape: **a sequence of irrevocable decisions**, 
 - **You conclude "greedy doesn't work here" and reach for DP when a valid greedy rule existed** — trading `O(n log n)` time and `O(1)` space for `O(n · W)` time and memory, sometimes by orders of magnitude, on a problem that never needed it.
 - **You cannot debug the failure when it arrives.** With no crash and no stack trace, a wrong greedy rule surfaces as "the scheduler produces slightly worse plans than the old system" — a symptom nobody localizes to a comparator.
 
-## Why Not Other Approaches?
-
-**"Brute force, or backtracking with pruning."**
-Enumerating every subset or ordering is correct by construction and completely infeasible — `2^n` subsets, `n!` orderings. Backtracking with pruning (see [../../recursion-backtracking-patterns/backtracking/](../../recursion-backtracking-patterns/backtracking/)) improves the constant but still explores *both* branches at each decision, abandoning only the hopeless ones, so the worst case stays exponential. For the problems in this module that exponential search is entirely wasted: a proof exists that one branch is never worse, so exploring the other computes a result you already knew. Both are worth naming aloud as the correctness baseline your greedy answer must match, then discarding.
-
-**"Dynamic Programming — the honest contrast."**
-This deserves real space, because DP is the alternative that always works. DP considers both "take it" and "skip it" at every decision and lets a recurrence pick the winner, memoizing overlapping subproblems so the total stays polynomial. Coin Change (LeetCode 322) solved by DP is `O(amount · coins)` and gives the minimum coin count for *any* denomination set, including {1, 3, 4}. It never needs a proof about the denominations, because it never assumes anything — it computes both alternatives and compares.
-
-Greedy trades that unconditional guarantee for speed. Where DP is `O(n · W)` time and `O(W)` space, Greedy is typically `O(n log n)` time and `O(1)` extra space, with no table to allocate and no state to carry. **You are buying an order of magnitude by promising, in advance, that comparison is unnecessary — and the proof is how you pay for it.** No proof, no guarantee, and you have not saved time; you have hidden a defect. The practical decision rule: if you can state a one-sentence exchange argument, take the greedy win; if you cannot, write the DP, because a correct `O(n · W)` solution beats a fast wrong one at any scale. (Coin Change lives in [../../dynamic-programming-patterns/unbounded-knapsack/](../../dynamic-programming-patterns/unbounded-knapsack/) rather than here, and that filing is not an accident.)
-
-**"Sort, then do something clever with two pointers or a heap."**
-Often this *is* the greedy algorithm in disguise, which is fine. What is not fine is treating "I sorted the input" as evidence of correctness. Sorting is the enabling step, not the argument — a comparator on the wrong key produces an algorithm with exactly the same shape and a different answer.
-
-**Tradeoff summary:** brute force is correct and exponential; backtracking is correct and still exponential in the worst case; DP is correct and polynomial but pays time and memory for comparisons it may not need; Greedy is the only option that is `O(n log n)` and `O(1)` — and the only one that can be *wrong*. Every other pattern in this repository fails loudly. This one fails quietly, which is why the proof is not an academic flourish but the load-bearing part of the work.
-
 ## Solution
 
 Sort the input by a carefully-chosen key, then walk through it once, committing to a decision at each step that is never revisited. Maintain one small piece of state (the end time of the last kept interval, the farthest index reached so far, a pointer into a second sorted list) and use it to decide, in `O(1)`, whether to take or skip the current item. That is the code, and the code is the easy part. Here is the part that matters.
@@ -139,7 +124,24 @@ Responsibilities in one line each — **comparator:** puts items in the order th
 6. If the swap **fails**, stop. Construct the smallest concrete input where it fails, as with {1, 3, 4} and target 6. That counter-example is now your evidence, and DP is your algorithm.
 7. Sanity-check against small adversarial inputs regardless: duplicates, all-identical items, one item, zero items, and — critically — an input where the "obvious" alternative sort key gives a different answer. Passing tests never *proves* a greedy rule, but a failing test disproves one instantly and cheaply.
 
-## Recognition Diagram
+## Why Not Other Approaches?
+
+**"Brute force, or backtracking with pruning."**
+Enumerating every subset or ordering is correct by construction and completely infeasible — `2^n` subsets, `n!` orderings. Backtracking with pruning (see [../../recursion-backtracking-patterns/backtracking/](../../recursion-backtracking-patterns/backtracking/)) improves the constant but still explores *both* branches at each decision, abandoning only the hopeless ones, so the worst case stays exponential. For the problems in this module that exponential search is entirely wasted: a proof exists that one branch is never worse, so exploring the other computes a result you already knew. Both are worth naming aloud as the correctness baseline your greedy answer must match, then discarding.
+
+**"Dynamic Programming — the honest contrast."**
+This deserves real space, because DP is the alternative that always works. DP considers both "take it" and "skip it" at every decision and lets a recurrence pick the winner, memoizing overlapping subproblems so the total stays polynomial. Coin Change (LeetCode 322) solved by DP is `O(amount · coins)` and gives the minimum coin count for *any* denomination set, including {1, 3, 4}. It never needs a proof about the denominations, because it never assumes anything — it computes both alternatives and compares.
+
+Greedy trades that unconditional guarantee for speed. Where DP is `O(n · W)` time and `O(W)` space, Greedy is typically `O(n log n)` time and `O(1)` extra space, with no table to allocate and no state to carry. **You are buying an order of magnitude by promising, in advance, that comparison is unnecessary — and the proof is how you pay for it.** No proof, no guarantee, and you have not saved time; you have hidden a defect. The practical decision rule: if you can state a one-sentence exchange argument, take the greedy win; if you cannot, write the DP, because a correct `O(n · W)` solution beats a fast wrong one at any scale. (Coin Change lives in [../../dynamic-programming-patterns/unbounded-knapsack/](../../dynamic-programming-patterns/unbounded-knapsack/) rather than here, and that filing is not an accident.)
+
+**"Sort, then do something clever with two pointers or a heap."**
+Often this *is* the greedy algorithm in disguise, which is fine. What is not fine is treating "I sorted the input" as evidence of correctness. Sorting is the enabling step, not the argument — a comparator on the wrong key produces an algorithm with exactly the same shape and a different answer.
+
+**Tradeoff summary:** brute force is correct and exponential; backtracking is correct and still exponential in the worst case; DP is correct and polynomial but pays time and memory for comparisons it may not need; Greedy is the only option that is `O(n log n)` and `O(1)` — and the only one that can be *wrong*. Every other pattern in this repository fails loudly. This one fails quietly, which is why the proof is not an academic flourish but the load-bearing part of the work.
+
+## Diagrams
+
+### Recognition
 
 ```mermaid
 flowchart TD
@@ -154,7 +156,7 @@ flowchart TD
 
 See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart and a prose walkthrough of each fork, including how to spot problems where a greedy rule exists but the obvious key is the wrong one.
 
-## Flow Diagram
+### Flow
 
 ```mermaid
 flowchart TD
@@ -171,7 +173,7 @@ flowchart TD
 
 See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram plus an explanation of why the *absence* of a compare-both-branches box is the pattern's defining feature.
 
-## Trace Diagram
+### Trace
 
 ```mermaid
 flowchart TB
@@ -187,7 +189,7 @@ flowchart TB
 
 See [images/trace-diagram.md](images/trace-diagram.md) for the full step-by-step trace of this exact input (the one asserted in [code.cpp](code.cpp)'s first test), **plus a side-by-side trace of the failing {1, 3, 4} coin-change case** showing precisely where the greedy choice diverges from the optimum.
 
-## Implementation
+## The Code
 
 [code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly before looking at the worked, problem-specific solutions in [problems/](problems/). It provides two small functions covering the two structurally distinct flavors of greedy state:
 
@@ -196,7 +198,7 @@ See [images/trace-diagram.md](images/trace-diagram.md) for the full step-by-step
 
 That second function is deliberately there as a reminder that greedy does not *require* sorting. The pattern's essence is the irrevocable local commitment; sorting is merely the most common way to make such commitments safe.
 
-## Code Walkthrough
+### Code walkthrough
 
 **`maxNonOverlappingIntervals`** (in [code.cpp](code.cpp)). Takes its vector **by value** deliberately: it sorts in place, and a caller's input should not be reordered as a side effect of asking a question about it. The comparator compares `a.second < b.second`, i.e. **end** time — the single line that makes the algorithm correct, and the single line that would make it wrong if changed to `a.first < b.first`. `lastEnd` starts at `INT_MIN` rather than `0` so intervals with negative or zero starts are still accepted on the first iteration. The comparison is `>=`, not `>`: an interval starting at exactly the moment the previous one ended does not overlap it, which is why [code.cpp](code.cpp)'s second test asserts that `{1,2},{2,3},{3,4}` keeps all three.
 
@@ -206,7 +208,9 @@ That second function is deliberately there as a reminder that greedy does not *r
 
 **Files in [problems/](problems/).** Each is a complete, standalone solution to one named LeetCode problem, with its own includes and `main()`, and each header comment states **the greedy choice** and **the one-line argument for why it is safe** — the discipline this README argues for, applied four times. Briefly: `01` is the two-pointer assignment greedy (smallest sufficient resource to the least demanding consumer); `02` is interval scheduling, the cleanest exchange argument, with runnable demonstrations of why sorting by start *and* by duration both fail; `03` generalizes the frontier greedy from "can I reach the end" to "in how few jumps"; `04` is the hardest, where the insight is that the *most frequent* task dictates the schedule's skeleton. See [problems/README.md](problems/README.md) for the index.
 
-## Advantages
+## Tradeoffs
+
+**What greedy buys you**
 
 - **`O(n log n)` time, `O(1)` extra space** in the typical case — the sort dominates and the decision pass allocates nothing. Where no sort is needed (`canJumpToEnd`), it drops to `O(n)`.
 - **Tiny implementations with very few moving parts.** A comparator, a scalar, and one `if`. No table to size, no recursion to bound, no memo keys to design — very little surface area for implementation bugs, as opposed to reasoning bugs.
@@ -214,21 +218,17 @@ That second function is deliberately there as a reminder that greedy does not *r
 - **Explains itself to non-engineers.** "We always take the booking that frees the room soonest" is a sentence a product manager can audit. A DP recurrence is not.
 - **Composes as a subroutine inside bigger algorithms.** Dijkstra's shortest path (always expand the closest unvisited node) and Kruskal's MST (always add the cheapest non-cycling edge) are greedy at their core — see [../../tree-graph-patterns/dijkstras-algorithm/](../../tree-graph-patterns/dijkstras-algorithm/) and [../../tree-graph-patterns/union-find/](../../tree-graph-patterns/union-find/).
 
-## Disadvantages
+**What it costs you**
 
-- **It can be wrong, and it will not tell you.** Restating the central point because it is the only disadvantage that really matters: an incorrect greedy rule terminates normally and returns a plausible answer. Every other pattern's failures are louder.
+- **It can be wrong, and it will not tell you.** The one disadvantage that really matters: an incorrect greedy rule terminates normally and returns a plausible answer. Every other pattern's failures are louder.
 - **Correctness depends on the input distribution, not just the code.** Greedy coin change is correct for {1, 5, 10, 25} and wrong for {1, 3, 4} — meaning a greedy algorithm can be correct today and incorrect after a configuration change nobody thought of as touching the algorithm.
 - **The proof is real work and is not always short.** Some rules (Huffman coding, the Task Scheduler formula in [problems/04-task-scheduler.cpp](problems/04-task-scheduler.cpp)) need a genuinely non-trivial argument. Budget for it, and be honest when you are past your depth.
 - **No partial credit on the sort key.** Right shape and wrong key yields an algorithm that is wrong, not approximately right — unlike DP, where an awkward recurrence is usually still correct, just slower.
 - **Not extensible.** Add one constraint and the greedy rule frequently collapses rather than adjusting: unweighted interval scheduling is greedy, weighted interval scheduling is DP, and there is no incremental path between them.
 
-## Tradeoffs
+**Versus DP directly:** an order-of-magnitude drop in both time and space — `O(n log n)`/`O(1)` against `O(n · W)`/`O(W)` — in exchange for the unconditional correctness guarantee. DP is correct for every input satisfying the problem statement; Greedy is correct for every input satisfying the problem statement **and** the greedy choice property. That second clause is the entire risk, and DP does not have it.
 
-**What we gain versus DP:** an order-of-magnitude drop in both time and space — `O(n log n)`/`O(1)` against `O(n · W)`/`O(W)` — plus code short enough to verify by inspection and stateless enough to run on a stream.
-
-**What we lose versus DP:** the unconditional correctness guarantee. DP is correct for every input satisfying the problem statement; Greedy is correct for every input satisfying the problem statement **and** the greedy choice property. That second clause is the entire risk, and DP does not have it.
-
-**What we gain versus brute force and backtracking:** a near-linear runtime instead of exponential, by declining to explore branches a proof has already ruled out. **What we lose:** brute force needs no cleverness and no proof — for a genuinely tiny `n` under time pressure, an exhaustive search you are sure about beats a greedy rule you are guessing at.
+**Versus brute force and backtracking:** a near-linear runtime instead of exponential, by declining to explore branches a proof has already ruled out — but brute force needs no cleverness and no proof, so for a genuinely tiny `n` under time pressure, an exhaustive search you are sure about beats a greedy rule you are guessing at.
 
 **The meta-tradeoff:** greedy moves work from *runtime* to *design time*. The cost you avoid at execution reappears as reasoning you must do before writing the loop — a good trade when you actually do the reasoning, and a bad one when you skip it.
 
@@ -273,19 +273,17 @@ That last column is the whole pattern in one table cell.
 - **The constraint cannot be summarized in `O(1)` state.** If deciding on item `i` requires knowing the full set of previously-chosen items rather than one scalar summary, the local choice is not actually local, and DP or search is the honest tool.
 - **The cost of being subtly wrong is high and the proof is shaky** — billing, capacity planning, safety limits. Prefer a slower algorithm you can defend line by line.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 Greedy is one of the most commonly asked interview families, and interviewers use it specifically to see whether a candidate volunteers a correctness argument unprompted. Non-overlapping Intervals (435), Jump Game (55), Jump Game II (45), Gas Station (134), Task Scheduler (621), Assign Cookies (455), and Minimum Number of Arrows to Burst Balloons (452) are all standard, and in each the gap between a passing and a strong answer is whether you said *why* the sort key is safe.
 
-Beyond interviews, the same shape runs through real systems:
+In real systems:
 
 - **Huffman coding, inside every gzip/DEFLATE and JPEG payload you have ever served.** Repeatedly merge the two least-frequent symbols into a subtree. The greedy choice property here has a real proof, and the algorithm has been correct in production for sixty years — the canonical example of greedy done properly.
 - **Dijkstra's shortest path, in every routing table and map application.** Always finalize the closest unvisited node. Its proof depends on a precondition — non-negative edge weights — and introducing a negative edge breaks the greedy choice property, which is exactly why Bellman-Ford exists. A perfect illustration that greedy correctness is a property of the input, not the code.
 - **Kruskal's and Prim's minimum spanning tree, in network topology and clustering.** Always take the cheapest edge that does not create a cycle; see [../../tree-graph-patterns/union-find/](../../tree-graph-patterns/union-find/) for the disjoint-set structure that makes the cycle check fast.
 - **CPU and Kubernetes schedulers.** Shortest-Job-First provably minimizes average waiting time via an exchange argument on adjacent jobs, while the bin-packing heuristics that place pods on nodes are greedy and only *approximately* optimal — bin packing is NP-hard, so its greedy rules come with a ratio bound rather than a guarantee.
 - **Rate limiters and token buckets.** "Serve the request if tokens remain, else reject" is an irrevocable local decision against `O(1)` running state with no lookahead — greedy in the structural sense, even though nobody calls it that.
-
-## Where I Can Use This
 
 Five realistic ideas for your own backend/systems work:
 
@@ -334,19 +332,6 @@ Common misconceptions:
 - **"Greedy always needs a sort."** `canJumpToEnd` in [code.cpp](code.cpp) sorts nothing, and neither does Gas Station. Sorting is the usual way to make local choices safe, not a definitional requirement.
 - **"If greedy agrees with DP on my test cases, greedy is correct."** It means they agree on those cases. Agreement on a chosen set of inputs is not equivalence — which is precisely why the differential test must be *randomized* and *exhaustive on small sizes*, not hand-picked.
 - **"Greedy and DP are alternatives you pick between by taste."** They are alternatives you pick between by *proof*. The proof either exists, in which case greedy is strictly better, or it does not, in which case greedy is wrong and DP is the only option.
-
-## Summary
-
-- Greedy makes one irrevocable locally-optimal choice per step — usually after sorting by a carefully-chosen key — and never revisits it, exploring exactly one branch where DP explores both.
-- The code is never the hard part. The hard part is proving the local choice is safe, via an **exchange argument**: assume an optimal solution disagrees, swap your choice in, show nothing got worse.
-- Correctness requires two conditions: the **greedy choice property** (some optimal solution contains your choice) and **optimal substructure** (the remainder is a smaller instance of the same problem).
-- Greedy is the only pattern in this repository whose failures are silent — a wrong rule terminates, returns a plausible number, and passes your samples.
-- The canonical counter-example: coin change with {1, 3, 4} making 6. Greedy takes 4+1+1 = 3 coins; the optimum is 3+3 = 2. It violates the greedy choice property (no optimal solution for 6 contains a 4) while optimal substructure still holds — which is exactly why DP works there and greedy does not.
-- Activity Selection sorts by **END** time, and both alternative keys are disprovable on three elements: start-time-first and shortest-duration-first each fail concretely.
-- Complexity is `O(n log n)` time and `O(1)` extra space against DP's `O(n · W)`/`O(W)` — you buy the speedup by promising comparison is unnecessary, and the proof is how you pay.
-- Greedy correctness is a property of the input distribution, not just the algorithm: Dijkstra is greedy and correct only for non-negative weights; greedy coin change only for well-behaved denominations.
-- Adding weights or history-dependent constraints to a counting problem usually destroys the greedy rule outright — unweighted interval scheduling is greedy, weighted is DP.
-- To validate a greedy rule in practice, differential-test it against brute force on small random inputs; example-based tests cannot establish it.
 
 ## Key Takeaways
 

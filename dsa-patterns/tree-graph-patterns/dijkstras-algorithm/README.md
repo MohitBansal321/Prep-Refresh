@@ -54,7 +54,7 @@ std::vector<int> dijkstra(int n, int src,
 ## Common Mistakes
 
 - **Marking a node "visited" and skipping it on the next pop, instead of comparing distances.** The `if (d > dist[u]) continue;` check above is what makes stale heap entries harmless — without it (or with a separate `visited` array checked before popping), a subtle bug creeps in if you ever push a node more than once, which Dijkstra does routinely.
-- **Using Dijkstra with negative edge weights.** The correctness argument depends on "the cheapest unfinalized node can never get cheaper later" — a negative edge breaks that outright (a longer path could later subtract enough to beat a shorter one already finalized). Negative weights require Bellman-Ford instead.
+- **Using Dijkstra with negative edge weights.** The correctness argument depends on "the cheapest unfinalized node can never get cheaper later" — a negative edge breaks that outright (a longer path could later subtract enough to beat a shorter one already finalized). Negative weights require [Bellman-Ford](../bellman-ford/) instead.
 - **Forgetting `dist[src] = 0` before pushing the source**, or pushing the source with a distance that isn't 0.
 
 ## When To Use
@@ -63,14 +63,17 @@ std::vector<int> dijkstra(int n, int src,
 
 ## When NOT To Use
 
-- **Edge weights can be negative** — use Bellman-Ford (`O(V·E)`, also detects negative cycles).
+- **Edge weights can be negative** — use [Bellman-Ford](../bellman-ford/) (`O(V·E)`, also detects negative cycles).
 - **All edges cost the same (unweighted)** — plain BFS ([../graph-bfs-dfs/](../graph-bfs-dfs/)) gets the same answer in `O(V + E)`, with no heap needed.
-- **You need shortest paths between every pair of nodes on a small graph** — Floyd-Warshall (`O(V³)`) computes all pairs at once, simpler to reason about than running Dijkstra from every source.
+- **You need shortest paths between every pair of nodes on a small graph** — [Floyd-Warshall](../floyd-warshall/) (`O(V³)`) computes all pairs at once, simpler to reason about than running Dijkstra from every source.
 - **The graph is a DAG** — a single topological-order pass ([../topological-sort/](../topological-sort/)) computes shortest paths in `O(V + E)`, no heap required, since the ordering already guarantees you process predecessors before successors.
 
 ## Similar Patterns
 
 - **Graph BFS/DFS** ([../graph-bfs-dfs/](../graph-bfs-dfs/)): the unweighted special case — Dijkstra degenerates to BFS when every edge weight is 1.
+- **Bellman-Ford** ([../bellman-ford/](../bellman-ford/)): the fallback the moment a negative edge is possible — slower (`O(V·E)` vs. `O((V+E) log V)`), but correct unconditionally, and detects a reachable negative cycle as a byproduct.
+- **Floyd-Warshall** ([../floyd-warshall/](../floyd-warshall/)): the all-pairs generalization — computes every pair's shortest distance in one `O(V³)` pass instead of running Dijkstra from every source.
+- **Minimum Spanning Tree** ([../mst-kruskal-prim/](../mst-kruskal-prim/)): Prim's variant reuses this exact "min-heap driving a greedy frontier" shape, but the heap key means something different — cumulative distance here, a single edge's weight there — and the two algorithms answer genuinely different questions (cheapest path to one node vs. cheapest way to connect every node).
 - **Top "K" Elements / Two Heaps** ([../../searching-sorting-patterns/](../../searching-sorting-patterns/)): share the same "min-heap driving a greedy selection" mechanic, applied to a different problem shape.
 
 ## Further Reading

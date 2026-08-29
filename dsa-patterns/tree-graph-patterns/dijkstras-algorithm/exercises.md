@@ -1,6 +1,6 @@
 # Dijkstra's Algorithm — Exercises
 
-Work through these in order. The goal is to build two reflexes: (1) recognizing the "weighted graph + minimum cost to reach" signal that means "reach for Dijkstra" — and equally, recognizing when the answer is actually BFS, Bellman-Ford, or Floyd-Warshall; and (2) writing the lazy-deletion min-heap loop correctly from memory, including the stale-entry check.
+Work through these in order. The goal is to build two reflexes: (1) recognizing the "weighted graph + minimum cost to reach" signal that means "reach for Dijkstra" — and equally, recognizing when the answer is actually BFS, [Bellman-Ford](../bellman-ford/), or [Floyd-Warshall](../floyd-warshall/); and (2) writing the lazy-deletion min-heap loop correctly from memory, including the stale-entry check.
 
 > Rule of thumb for every exercise: before writing a single line, ask "can any edge weight be negative?" and "is the metric a sum of edge weights, or something else (a max along the path, a count of paths, a constrained state)?" If you cannot answer both questions, you are not ready to write the relaxation rule yet.
 

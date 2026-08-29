@@ -2,6 +2,27 @@
 
 This traces the tree shape produced by [code.cpp](../code.cpp)'s own `main()`, which inserts `"apple"` then `"app"`.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Trie as trie (root)
+    participant Node as current node
+
+    Trie->>Node: insert("apple"), cur = root
+    Node->>Node: 'a' -- no child yet, ALLOCATE, cur = a
+    Node->>Node: 'p' -- no child yet, ALLOCATE, cur = a.p
+    Node->>Node: 'p' -- no child yet, ALLOCATE, cur = a.p.p
+    Node->>Node: 'l' -- no child yet, ALLOCATE, cur = a.p.p.l
+    Node->>Node: 'e' -- no child yet, ALLOCATE, cur = a.p.p.l.e
+    Node-->>Trie: cur.isWord = true (only the 'e' node)
+
+    Trie->>Node: insert("app"), cur = root
+    Node->>Node: 'a' -- child EXISTS (from "apple"), REUSE, cur = a
+    Node->>Node: 'p' -- child EXISTS, REUSE, cur = a.p
+    Node->>Node: 'p' -- child EXISTS, REUSE, cur = a.p.p
+    Node-->>Trie: cur.isWord = true (the SECOND 'p' node -- no new nodes allocated)
+```
+
 ## After `insert("apple")`
 
 ```

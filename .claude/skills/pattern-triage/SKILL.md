@@ -1,6 +1,6 @@
 ---
 name: pattern-triage
-description: Given an unseen problem, identify which of this repo's 33 DSA patterns (or which design pattern / JS concept) it calls for, and why — using the recognition guides and the input-shape → question-shape → constraint tie-break process, without solving it. Use when the user pastes a LeetCode or interview problem and asks which pattern applies, how to approach it, or which pattern two similar problems differ on.
+description: Given an unseen problem, identify which of this repo's 36 DSA patterns (or which design pattern / JS concept) it calls for, and why — using the recognition guides and the input-shape → question-shape → constraint tie-break process, without solving it. Use when the user pastes a LeetCode or interview problem and asks which pattern applies, how to approach it, or which pattern two similar problems differ on.
 allowed-tools: Read, Grep, Glob
 ---
 

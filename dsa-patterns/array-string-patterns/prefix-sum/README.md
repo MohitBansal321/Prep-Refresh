@@ -65,22 +65,6 @@ The naive way to answer a single range-sum query is to walk from index `i` to in
 - **Wasted CPU on data that never changes.** If the underlying array is static between queries (e.g., yesterday's finalized sales figures, a submitted exam's per-question scores), re-deriving the same partial sums over and over is pure waste — the same work is being redone identically every time.
 - **Poor scalability under concurrent read load.** A dashboard with many users each requesting different ranges over the same dataset multiplies the naive O(n) cost by every concurrent request, turning a CPU-bound endpoint into a bottleneck exactly when it needs to serve the most traffic.
 
-## Why Not Other Approaches?
-
-**"Just re-scan and sum the range every time a query comes in."**
-This is correct and requires zero preprocessing, so it is the right choice if you expect **at most a handful of queries** against an array you will not touch again — building a prefix array for one query is pure overhead. But it does not scale: every additional query costs another full O(range length) pass, and the cost is paid identically each time even though the underlying data has not changed at all between queries.
-
-**"Use a Segment Tree for range-sum queries."**
-A Segment Tree answers range-sum queries in O(log n) and also supports point/range **updates** in O(log n) — genuinely more powerful than Prefix Sum. But that power costs real implementation complexity (building and maintaining a tree structure, recursive query/update logic) and O(n) space with a larger constant factor, for a capability — updates — you do not need if the array is static. Reaching for a Segment Tree when there are **no updates** is solving a problem you do not have at the cost of code you did not need to write; Prefix Sum gets you O(1) queries (strictly better than a Segment Tree's O(log n)) with far less code, precisely because it gives up the one thing a Segment Tree buys you: mutability.
-
-**"Use a Fenwick Tree (Binary Indexed Tree) for range-sum queries."**
-Same trade as the Segment Tree, just with a smaller constant factor and less code than a full Segment Tree: O(log n) update and O(log n) query, implemented over a compact array using bit tricks. Excellent when updates and queries are interleaved. Overkill — and, in query speed, strictly slower than the O(1) you would get from Prefix Sum — when the array never changes.
-
-**"Cache each query's answer after computing it the slow way (memoization)."**
-This only helps if the *exact same* range `(i, j)` is queried more than once. Real range-query workloads (a dashboard with a user-adjustable date-range picker, for instance) tend to ask for a huge variety of distinct ranges, so the cache hit rate is often low, and you still pay the full O(n) cost on every cache miss — which, for a wide-enough range of possible queries, is most of them.
-
-**Tradeoff summary:** every alternative either repeats work that a one-time O(n) precomputation would have eliminated (naive re-scan, memoization with a cold cache) or pays for a capability — dynamic updates — you do not actually need (Segment Tree, Fenwick Tree). Prefix Sum wins precisely when the array is static (or nearly so) and you need the fastest possible query: nothing beats O(1) per query. The moment updates become frequent, this advantage inverts completely — see Disadvantages and When NOT To Use.
-
 ## Solution
 
 The core idea: build one auxiliary array, once, that stores **the running total from the start of the array up to each position**. Every subsequent range-sum query is then answered by subtracting two entries of that array — no re-scanning, ever.
@@ -142,19 +126,29 @@ Responsibilities in one line each:
 
 **If the array mutates** (a value at some index changes): the prefix array must be rebuilt from that index onward (or from scratch, for simplicity) before any further query can trust its answer — see Disadvantages for why this is the pattern's central weakness.
 
-## Recognition Diagram
+## Why Not Other Approaches?
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart deciding between Prefix Sum, Segment Tree/Fenwick Tree, and Sliding Window based on the signals in a problem statement (many range-sum queries? updates present or absent? need O(1) per query?).
+**"Just re-scan and sum the range every time a query comes in."**
+This is correct and requires zero preprocessing, so it is the right choice if you expect **at most a handful of queries** against an array you will not touch again — building a prefix array for one query is pure overhead. But it does not scale: every additional query costs another full O(range length) pass, and the cost is paid identically each time even though the underlying data has not changed at all between queries.
 
-## Flow Diagram
+**"Use a Segment Tree for range-sum queries."**
+A Segment Tree answers range-sum queries in O(log n) and also supports point/range **updates** in O(log n) — genuinely more powerful than Prefix Sum. But that power costs real implementation complexity (building and maintaining a tree structure, recursive query/update logic) and O(n) space with a larger constant factor, for a capability — updates — you do not need if the array is static. Reaching for a Segment Tree when there are **no updates** is solving a problem you do not have at the cost of code you did not need to write; Prefix Sum gets you O(1) queries (strictly better than a Segment Tree's O(log n)) with far less code, precisely because it gives up the one thing a Segment Tree buys you: mutability.
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the build-then-query lifecycle (one-time linear build, followed by any number of O(1) queries).
+**"Use a Fenwick Tree (Binary Indexed Tree) for range-sum queries."**
+Same trade as the Segment Tree, just with a smaller constant factor and less code than a full Segment Tree: O(log n) update and O(log n) query, implemented over a compact array using bit tricks. Excellent when updates and queries are interleaved. Overkill — and, in query speed, strictly slower than the O(1) you would get from Prefix Sum — when the array never changes.
 
-## Trace Diagram
+**"Cache each query's answer after computing it the slow way (memoization)."**
+This only helps if the *exact same* range `(i, j)` is queried more than once. Real range-query workloads (a dashboard with a user-adjustable date-range picker, for instance) tend to ask for a huge variety of distinct ranges, so the cache hit rate is often low, and you still pay the full O(n) cost on every cache miss — which, for a wide-enough range of possible queries, is most of them.
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of the prefix array being built from a concrete example array, followed by a worked range-sum query against it.
+**Tradeoff summary:** every alternative either repeats work that a one-time O(n) precomputation would have eliminated (naive re-scan, memoization with a cold cache) or pays for a capability — dynamic updates — you do not actually need (Segment Tree, Fenwick Tree). Prefix Sum wins precisely when the array is static (or nearly so) and you need the fastest possible query: nothing beats O(1) per query. The moment updates become frequent, this advantage inverts completely — see Disadvantages and When NOT To Use.
 
-## Implementation
+## Diagrams
+
+- **Recognition** — [images/recognition-diagram.md](images/recognition-diagram.md), the full flowchart deciding between Prefix Sum, Segment Tree/Fenwick Tree, and Sliding Window based on the signals in a problem statement (many range-sum queries? updates present or absent? need O(1) per query?).
+- **Flow** — [images/flow-diagram.md](images/flow-diagram.md), the control-flow diagram of the build-then-query lifecycle (one-time linear build, followed by any number of O(1) queries).
+- **Trace** — [images/trace-diagram.md](images/trace-diagram.md), a step-by-step trace of the prefix array being built from a concrete example array, followed by a worked range-sum query against it.
+
+## The Code
 
 [code.cpp](code.cpp) is a **generic, reusable template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/).
 
@@ -163,7 +157,7 @@ It provides:
 - A `PrefixSum` class — constructed from a `std::vector<int>`, it builds the 1D prefix array once in its constructor and exposes a `rangeSum(i, j)` query method plus a `rebuild()` method to recompute after a mutation.
 - `buildPrefixSum2D` and `rangeSum2D` — free functions implementing the two-dimensional variant (submatrix sums) using the inclusion-exclusion recurrence, demonstrating that the same core idea extends cleanly beyond one dimension.
 
-## Code Walkthrough
+### Code walkthrough
 
 **`PrefixSum` class** (in [code.cpp](code.cpp)). The constructor takes a `const std::vector<int>&` and immediately builds `prefix_`, a member vector of length `n + 1`, with `prefix_[0] = 0` and `prefix_[i] = prefix_[i-1] + arr[i-1]`. `rangeSum(i, j)` validates the indices (throws `std::out_of_range` on an invalid range — a deliberate choice so a bug surfaces loudly instead of silently returning a wrong number) and then returns `prefix_[j+1] - prefix_[i]` in O(1). `rebuild(const std::vector<int>&)` exists specifically to make the mutability problem explicit in code: instead of pretending updates are free, the class forces the caller to explicitly ask for an O(n) rebuild, naming the exact cost that Segment Tree/Fenwick Tree exist to avoid.
 
@@ -175,7 +169,9 @@ It provides:
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem — not using the generic `PrefixSum` class directly (to keep each file dependency-free and independently readable), but implementing the *same* prefix-sum logic inline, with problem-specific comments tying every decision back to the general principles established in this README. See [problems/README.md](problems/README.md) for the index. Briefly: `01` is the pure "build once, query many times" use case; `02` and `03` compose a prefix-sum running total with a hash map of *frequencies of prefix-sum values seen so far* — a step up in sophistication that turns "does a subarray with property X exist" into an O(n) single pass; `04` shows a prefix/suffix product variant of the same "precompute from both directions" idea, applied to products instead of sums.
 
-## Advantages
+## Tradeoffs
+
+**What prefix sum buys you**
 
 - **O(1) query time after a one-time O(n) build.** Once `P` exists, any range sum — no matter how wide — costs the same fixed, tiny amount of work: two lookups and a subtraction.
 - **Trivial to reason about and prove correct.** The formula `P[j+1] - P[i]` has a one-sentence justification (subtract the unwanted prefix), unlike more elaborate data structures that require understanding recursive tree structure.
@@ -183,23 +179,17 @@ It provides:
 - **Generalizes cleanly to more dimensions.** The same "precompute a running total, subtract to isolate a range" idea extends from 1D ranges to 2D submatrices (and, in principle, further), just by adding inclusion-exclusion terms.
 - **Composes with a hash map for a whole family of harder problems.** Tracking the *frequency of prefix-sum values seen so far* turns "does some subarray sum to K" or "does some subarray have equal counts of 0s and 1s" into a single O(n) pass with O(n) space — see problems 02 and 03.
 
-## Disadvantages
+**What it costs you**
 
 - **The array must be (effectively) static.** The entire benefit rests on building `P` once and reusing it for many queries. If the underlying array changes, every query issued *after* that change is answered against stale data unless `P` is rebuilt first.
-- **A single-element update forces an O(n) rebuild.** Because `P[i]` depends on `P[i-1]`, changing `arr[k]` invalidates every entry `P[k+1], P[k+2], ..., P[n]` — not just one cell. The cheapest correct fix is either recomputing the whole array (simplest, O(n)) or recomputing the suffix from `k+1` onward (still O(n) in the worst case, since an update near the front invalidates almost everything). There is no way to make a single point update cheaper than O(n) with a plain prefix array — that O(n) cost, repeated for every update, is exactly why **Segment Tree** and **Fenwick Tree** (Binary Indexed Tree) exist: both support point updates *and* range queries in O(log n), a far better bound when updates and queries are interleaved. See [../../advanced-ds-patterns/segment-tree-fenwick-tree/](../../advanced-ds-patterns/segment-tree-fenwick-tree/).
+- **A single-element update forces an O(n) rebuild.** Because `P[i]` depends on `P[i-1]`, changing `arr[k]` invalidates every entry `P[k+1], P[k+2], ..., P[n]` — not just one cell. There is no way to make a single point update cheaper than O(n) with a plain prefix array — that O(n) cost, repeated for every update, is exactly why **Segment Tree** and **Fenwick Tree** (Binary Indexed Tree) exist: both support point updates *and* range queries in O(log n), a far better bound when updates and queries are interleaved. See [../../advanced-ds-patterns/segment-tree-fenwick-tree/](../../advanced-ds-patterns/segment-tree-fenwick-tree/).
 - **O(n) extra space.** The prefix array is a full second array of (roughly) the same size as the original — for the 2D variant, `O(rows * cols)` extra space, which can matter for very large matrices.
 - **Integer overflow risk on large arrays.** A running total accumulates every element seen so far; if `arr` holds `int`-range values and `n` is large, `P`'s later entries can overflow a 32-bit `int` even when no individual `arr[i]` is large. Prefer a wider accumulator type (`long long` in C++) for the prefix array unless you have proven the sums cannot overflow.
 - **Forgetting to rebuild silently produces wrong answers, not a crash.** Unlike many bugs, a stale prefix array does not throw an exception — it just returns a plausible-looking but incorrect number, which can be far harder to catch in production than a loud failure.
 
-## Tradeoffs
+**Versus Segment Tree/Fenwick Tree:** a strictly faster query (O(1) vs. O(log n)) and drastically simpler code (no tree structure, no recursion) — in exchange for losing the ability to handle updates cheaply. Prefix Sum's O(n) rebuild-per-update is asymptotically worse than either structure's O(log n) update, so the moment updates are frequent and interleaved with queries, this tradeoff flips entirely in the tree structures' favor.
 
-**What we gain versus the naive re-scan:** every range query drops from O(range length) to O(1), at the one-time cost of an O(n) build — a clear win the moment more than a handful of queries are expected against the same static array.
-
-**What we gain versus Segment Tree/Fenwick Tree:** a strictly faster query (O(1) vs. O(log n)) and drastically simpler code (no tree structure, no recursion) — but only because we give up the one capability those structures provide.
-
-**What we lose versus Segment Tree/Fenwick Tree:** the ability to handle updates cheaply. Prefix Sum's O(n) rebuild-per-update is asymptotically worse than either structure's O(log n) update, so the moment updates are frequent and interleaved with queries, this tradeoff flips entirely in the tree structures' favor.
-
-**What we lose versus the naive re-scan:** nothing computationally for a static array — Prefix Sum is strictly better whenever the array does not change and more than one query is expected. The only real cost is the O(n) extra space for `P`, which the naive approach avoids by doing more work per query instead.
+**Versus the naive re-scan:** nothing computationally is lost for a static array — Prefix Sum is strictly better whenever the array does not change and more than one query is expected. The only real cost is the O(n) extra space for `P`, which the naive approach avoids by doing more work per query instead.
 
 ## Complexity
 
@@ -246,19 +236,17 @@ The table makes the crossover explicit: Prefix Sum only pays for itself once `q`
 - **The aggregate you need is not invertible (e.g., range minimum/maximum).** The `P[j+1] - P[i]` trick relies on being able to "subtract off" the unwanted prefix; minimum and maximum have no inverse operation (you cannot "un-take-the-min" of a value once folded in), so plain Prefix Sum does not apply — a Sparse Table (for static data) or Segment Tree (if updates are needed) is the right tool for range min/max queries instead.
 - **Memory is severely constrained and the array is huge.** The O(n) (or O(rows*cols) in 2D) extra space for the prefix array may not be affordable; in that case, the naive per-query scan trades memory for time.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 Prefix Sum appears constantly in interviews as the "aha" behind an otherwise-quadratic-looking subarray problem — Range Sum Query - Immutable, Subarray Sum Equals K, and Contiguous Array (equal 0s and 1s) are among the most commonly cited "recognize the pattern" problems, because the brute force is an obvious O(n²) nested loop and the prefix-sum-plus-hash-map trick collapses it to O(n).
 
-Beyond interviews, the same idea shows up directly in production systems:
+The same idea shows up directly in production systems:
 
 - **Financial ledgers and running-balance queries.** Bank statements, accounting systems, and expense-tracking apps precompute running balances so "what changed between two dates" is a subtraction, not a re-derivation from transaction history.
 - **Analytics dashboards.** Precomputed cumulative metrics (cumulative revenue, cumulative signups, cumulative page views by day) let a dashboard answer "totals over this date range" for any user-selected window without re-aggregating raw event data on every request.
 - **Image processing: integral images / summed-area tables.** A 2D prefix sum over pixel intensities lets a box blur, a Haar-like feature (as used in the classic Viola-Jones face-detection algorithm), or any rectangular-region average be computed in O(1) per rectangle, regardless of the rectangle's size — a direct real-world application of the 2D prefix sum in this module.
 - **Database materialized views and rollup tables.** A data warehouse precomputing daily/monthly cumulative rollups (e.g., a `running_total` column maintained by a window function like SQL's `SUM(...) OVER (ORDER BY date)`) is doing prefix summation at the database layer, for exactly the same reason: answer range aggregates without re-scanning raw rows.
 - **Fenwick Tree / Binary Indexed Tree as "prefix sum with cheap updates."** Understanding plain prefix sum first is a prerequisite for understanding why the Fenwick Tree's clever bit-manipulation trick exists at all — it is, at its core, a prefix-sum structure re-engineered to support O(log n) point updates.
-
-## Where I Can Use This
 
 Five realistic ideas for your own backend/systems work:
 
@@ -297,17 +285,6 @@ Common misconceptions:
 - "You can just patch the prefix array in O(1) after an update." You cannot, in general — because every `P[k]` for `k` at or after the updated index depends on the updated value, so an update invalidates a whole suffix of `P`, not one cell.
 - "Prefix Sum and Sliding Window solve the same problems." They answer structurally different questions (arbitrary after-the-fact range queries vs. a single pass tracking the best contiguous window) even though both involve "sums over subarrays."
 - "The leading zero slot in the prefix array is just a convention, not load-bearing." It specifically eliminates the need for a special case when a query's range starts at index 0 — removing it forces exactly that special case back into the query formula.
-
-## Summary
-
-- Prefix Sum precomputes a running total once, so any subsequent range-sum query costs O(1) instead of O(range length).
-- Build: `P[0] = 0`, `P[i] = P[i-1] + arr[i-1]` for `i = 1..n` — one O(n) pass.
-- Query: `rangeSum(i, j) = P[j+1] - P[i]` — two lookups, one subtraction, regardless of range width.
-- The technique's whole value proposition rests on the array being static (or rarely-changing); a single point update forces an O(n) rebuild.
-- The 2D variant (submatrix sums) uses the same idea with a four-term inclusion-exclusion formula, and is the basis of integral images/summed-area tables in image processing.
-- Composed with a hash map of prefix-sum frequencies, the same idea solves a whole family of "does a subarray with property X exist" problems in O(n).
-- When updates and queries are both frequent, Segment Tree or Fenwick Tree (Binary Indexed Tree) are the right tools — both trade O(1) query for O(log n) query in exchange for O(log n) updates instead of O(n) rebuilds.
-- Only works directly for **invertible** aggregates (sum, product, XOR) — range minimum/maximum needs a different structure entirely.
 
 ## Key Takeaways
 

@@ -23,10 +23,13 @@ problems/README.md
 
 **README heading order** (`##` level, reference: `tree-graph-patterns/tree-bfs/README.md`):
 
-`Intent` · `Real Life Analogy` · `Problem` · `Why Not Other Approaches?` · `Solution` ·
-`Architecture` · `Diagrams` · `The Code` · `Tradeoffs` · `Complexity` · `Common Mistakes` ·
-`When To Use` · `When NOT To Use` · `Where This Shows Up` · `Similar Patterns` ·
-`Interview Discussion` · `Key Takeaways` · `Further Reading`
+`Intent` · `Real Life Analogy` · `Problem` · `Solution` · `Architecture` ·
+`Why Not Other Approaches?` · `Diagrams` · `The Code` · `Tradeoffs` · `Complexity` ·
+`Common Mistakes` · `When To Use` · `When NOT To Use` · `Where This Shows Up` ·
+`Similar Patterns` · `Interview Discussion` · `Key Takeaways` · `Further Reading`
+
+`Why Not Other Approaches?` sits *after* Solution/Architecture, not before: a reader should
+meet the pattern's own mechanism before being asked to judge alternatives to it.
 
 Open with a short "Pick your depth" block (`###`) routing the reader to cheatsheet vs README
 vs problems depending on how much time they have.

@@ -21,7 +21,7 @@ All code is **C++ (C++17)**, chosen because it forces you to think explicitly ab
 
 Each family folder has its own `README.md` explaining the family and how to tell its patterns apart. Every pattern is a **Full module** — a folder per pattern with `README.md`, `code.cpp`, `exercises.md`, `cheatsheet.md`, worked `problems/` (4 fully-solved C++ problems), and `images/` (Mermaid diagrams).
 
-All 33 patterns are built to this format and every `.cpp` file compiles and passes its tests — see [`INDEX.md`](./INDEX.md) for the tracker.
+All 36 patterns are built to this format and every `.cpp` file compiles and passes its tests — see [`INDEX.md`](./INDEX.md) for the tracker.
 
 For studying and revision, use the [revision tracker (INDEX.md)](./INDEX.md) — it lists every pattern's build status, the recommended study order, and a spaced-repetition schedule.
 
@@ -57,4 +57,4 @@ g++ -std=c++17 -Wall path/to/file.cpp -o /tmp/out && /tmp/out
 - **New to DSA, want comprehensive mastery, or refreshing after a long break?** → [`LEARNING-PATHS.md`](./LEARNING-PATHS.md) has a specific path for each of those, plus a path for "I only need one family right now." Read that first — it tells you how to move through everything below.
 - Comfortable with arrays/strings, want the highest-leverage patterns first → start with [Two Pointers](array-string-patterns/two-pointers/README.md), then [Sliding Window](array-string-patterns/sliding-window/README.md).
 - Ready to extend pointer techniques to linked lists → [Fast & Slow Pointers](linked-list-patterns/fast-slow-pointers/README.md).
-- **Staring at a new problem and not sure which pattern it needs?** → [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md) is a single lookup table across all 33 patterns, organized by input shape and problem signal — the fastest way in. Each pattern's own **Recognition Signal** section (or Recognition Diagram, for Full-tier modules) goes deeper once you've narrowed it down.
+- **Staring at a new problem and not sure which pattern it needs?** → [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md) is a single lookup table across all 36 patterns, organized by input shape and problem signal — the fastest way in. Each pattern's own **Recognition Signal** section (or Recognition Diagram, for Full-tier modules) goes deeper once you've narrowed it down.

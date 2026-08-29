@@ -68,22 +68,6 @@ The naive way to answer any of these is to check **every combination**. For a pa
 - **Unnecessary extra memory.** Reaching for a hash set to solve a problem that sorted-input Two Pointers could solve in O(1) extra space wastes memory proportional to `n` — relevant when processing large batches or running inside a memory-constrained environment (a Lambda function, an embedded system, a hot path processing millions of requests).
 - **In-place compaction done wrong becomes O(n²).** Removing elements from the middle of a `std::vector` one at a time (e.g. repeated `erase()`) shifts every subsequent element down by one on every call — turning what should be a single O(n) pass into O(n²) element movement.
 
-## Why Not Other Approaches?
-
-**"Brute-force nested loops over every pair/triplet."**
-For pair-sum search: O(n²) time, O(1) space. For 3Sum: O(n³) time, O(1) space. Correct, but the complexity is the whole problem — a service processing large arrays will time out or burn CPU that a linear-time approach would not. This is the "does it even finish in time" failure mode, not a subtle bug.
-
-**"Sort, then use a hash map (or hash set) to find complements."**
-For an unsorted pair-sum search where you must preserve **original indices**, this is actually the *right* choice (classic LeetCode "Two Sum," not "Two Sum II") — O(n) time, O(n) space, and it does not require the array to be sorted at all. But once the array **is** sorted (or index-order does not matter), Two Pointers gets the same O(n) time in O(1) space, because the sort order itself does the work a hash set would otherwise need memory to do. Using a hash set on already-sorted data is strictly wasteful — you are paying for information you already have for free.
-
-**"Sort, then binary-search for the complement of each element."**
-This works — O(n log n) for the sort, then O(log n) per element for `n` elements, giving O(n log n) total. That is asymptotically worse than Two Pointers' O(n) (after the same O(n log n) sort, if a sort was even needed), and it is strictly more code: you still need the sort, plus a binary search routine, plus edge-case handling for the search. Two Pointers reaches the same or better bound with less machinery once the input is sorted.
-
-**"Use recursion / backtracking to enumerate all pairs/triplets."**
-This is essentially the brute force above wearing a different syntax — same O(n²)/O(n³) complexity, plus function-call overhead and stack depth to worry about. There is no complexity benefit, only added ceremony.
-
-**Tradeoff summary:** every alternative either pays for information the sorted array already encodes (hashing), adds an unnecessary log factor (binary search per element), or is a straightforward restatement of the brute force (recursion). Two Pointers wins specifically *because* it is the only approach that turns "the array is sorted" into a direct, O(1)-space, O(n)-time elimination rule — that is its entire value proposition, and it is worthless the moment the sortedness assumption is not actually true.
-
 ## Solution
 
 The core idea splits into two flavors, and recognizing which one a problem wants is half the battle.
@@ -135,19 +119,29 @@ Responsibilities in one line each:
    c. If not, do nothing except let `read` continue — `write` stays where it is.
 3. After the loop, `arr[0 .. write-1]` holds the compacted result; `write` itself is the new logical length.
 
-## Recognition Diagram
+## Why Not Other Approaches?
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full flowchart deciding between Two Pointers, Sliding Window, Hashing, and Binary Search based on the signals in a problem statement.
+**"Brute-force nested loops over every pair/triplet."**
+For pair-sum search: O(n²) time, O(1) space. For 3Sum: O(n³) time, O(1) space. Correct, but the complexity is the whole problem — a service processing large arrays will time out or burn CPU that a linear-time approach would not. This is the "does it even finish in time" failure mode, not a subtle bug.
 
-## Flow Diagram
+**"Sort, then use a hash map (or hash set) to find complements."**
+For an unsorted pair-sum search where you must preserve **original indices**, this is actually the *right* choice (classic LeetCode "Two Sum," not "Two Sum II") — O(n) time, O(n) space, and it does not require the array to be sorted at all. But once the array **is** sorted (or index-order does not matter), Two Pointers gets the same O(n) time in O(1) space, because the sort order itself does the work a hash set would otherwise need memory to do. Using a hash set on already-sorted data is strictly wasteful — you are paying for information you already have for free.
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the control-flow diagram of the converging-pointers loop (initialize, compare, decide which pointer moves, repeat).
+**"Sort, then binary-search for the complement of each element."**
+This works — O(n log n) for the sort, then O(log n) per element for `n` elements, giving O(n log n) total. That is asymptotically worse than Two Pointers' O(n) (after the same O(n log n) sort, if a sort was even needed), and it is strictly more code: you still need the sort, plus a binary search routine, plus edge-case handling for the search. Two Pointers reaches the same or better bound with less machinery once the input is sorted.
 
-## Trace Diagram
+**"Use recursion / backtracking to enumerate all pairs/triplets."**
+This is essentially the brute force above wearing a different syntax — same O(n²)/O(n³) complexity, plus function-call overhead and stack depth to worry about. There is no complexity benefit, only added ceremony.
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a step-by-step trace of `left`/`right` positions and comparisons across the concrete Pair with Target Sum example (array `[1,2,3,4,6,8,9,14,15]`, target `13`).
+**Tradeoff summary:** every alternative either pays for information the sorted array already encodes (hashing), adds an unnecessary log factor (binary search per element), or is a straightforward restatement of the brute force (recursion). Two Pointers wins specifically *because* it is the only approach that turns "the array is sorted" into a direct, O(1)-space, O(n)-time elimination rule — that is its entire value proposition, and it is worthless the moment the sortedness assumption is not actually true.
 
-## Implementation
+## Diagrams
+
+- **Recognition** — [images/recognition-diagram.md](images/recognition-diagram.md), the full flowchart deciding between Two Pointers, Sliding Window, Hashing, and Binary Search based on the signals in a problem statement.
+- **Flow** — [images/flow-diagram.md](images/flow-diagram.md), the control-flow diagram of the converging-pointers loop (initialize, compare, decide which pointer moves, repeat).
+- **Trace** — [images/trace-diagram.md](images/trace-diagram.md), a step-by-step trace of `left`/`right` positions and comparisons across the concrete Pair with Target Sum example (array `[1,2,3,4,6,8,9,14,15]`, target `13`).
+
+## The Code
 
 [code.cpp](code.cpp) is a **generic, problem-agnostic template**, not a solution to one specific LeetCode question — the goal is to see the *shape* of the pattern clearly, separated from any one problem's details, before looking at the worked, problem-specific solutions in [problems/](problems/).
 
@@ -160,7 +154,7 @@ It provides four small function templates:
 
 Templates (rather than hard-coded `int`/`vector<int>` signatures) are used deliberately so the same four functions work over `vector<long long>`, `vector<double>`, or any other random-access container without rewriting the pointer logic — the pointer *movement rules* are what matter, not the element type.
 
-## Code Walkthrough
+### Code walkthrough
 
 **`two_pointer_find_pair`** (in [code.cpp](code.cpp)). Takes a sorted container, a target value, and an optional `combine` function (defaulting to `std::plus<>`, i.e. plain addition). Places `left` at 0 and `right` at the last index, and loops while `left < right`, computing `combine(sorted[left], sorted[right])` each iteration. If it matches `target`, the pair of indices is returned immediately wrapped in `std::optional`. If the combined value is too small, `left` advances (only a larger left element can raise the sum, given sorted ascending order); if too large, `right` retreats. Returns `std::nullopt` if the pointers cross without a match. This function exists to demonstrate the exact-match converging flavor in its most generic form — it is the direct ancestor of [problems/01-pair-with-target-sum.cpp](problems/01-pair-with-target-sum.cpp).
 
@@ -174,7 +168,9 @@ Templates (rather than hard-coded `int`/`vector<int>` signatures) are used delib
 
 **Files in [problems/](problems/).** Each file is a complete, standalone solution to one specific, named LeetCode problem — not using the generic templates above directly (to keep each file dependency-free and independently readable), but implementing the *same* pointer-movement logic inline, with problem-specific comments tying every decision back to the general principles established in this README. See [problems/README.md](problems/README.md) for the index and the "why these four" rationale. Briefly: `01` is the pure exact-match converging search; `02` is the pure same-direction compaction; `03` composes converging pointers with an outer loop and sorting to solve a harder (triplet) problem, and is the canonical example of duplicate-skipping; `04` is the pure optimization-flavor converging search with a non-obvious but provable elimination rule.
 
-## Advantages
+## Tradeoffs
+
+**What two pointers buys you**
 
 - **Linear time where brute force is quadratic (or cubic).** Turns O(n²) pair searches into O(n), and O(n³) triplet searches into O(n²) — often the difference between "fast enough" and "times out" on realistic input sizes.
 - **Constant extra space.** No hash set, no auxiliary array — just a couple of integer indices. This matters directly in memory-constrained contexts (embedded systems, high-throughput services processing many arrays concurrently, Lambda's memory limits).
@@ -182,7 +178,7 @@ Templates (rather than hard-coded `int`/`vector<int>` signatures) are used delib
 - **Provable correctness, not heuristic.** Every pointer movement has an explicit justification ("this element cannot be part of any valid answer given what we already know"), which makes the algorithm easy to prove correct and easy to explain precisely — a genuine advantage in code review and interviews alike.
 - **Composable.** The converging search nests naturally inside an outer loop (3Sum: fix one element, converge on the rest), extending the technique from pairs to triplets (and, in principle, further) without inventing new machinery.
 
-## Disadvantages
+**What it costs you**
 
 - **Requires sorted (or sort-tolerant) input.** If the array is unsorted and original index order matters (as in classic "Two Sum," not "Two Sum II"), Two Pointers cannot be applied directly — you would need to sort a copy (losing original indices) or fall back to hashing.
 - **Direction mistakes are silent, not loud.** Moving the wrong pointer, or moving both when only one should move, does not usually crash — it just silently produces a wrong answer or an infinite loop, which can be harder to catch than an exception.
@@ -190,15 +186,9 @@ Templates (rather than hard-coded `int`/`vector<int>` signatures) are used delib
 - **Does not generalize to arbitrary conditions.** The technique depends on the comparison being **monotonic** as pointers move (moving `left` forward always increases the tracked value; moving `right` backward always decreases it, or similar). If the relationship is not monotonic, no direction is provably safe, and Two Pointers cannot be applied at all.
 - **Sorting cost, if needed, is not free.** If the input arrives unsorted and sorting is required first, that is an unavoidable O(n log n) up front — Two Pointers only wins over a hash-based approach if the array is *already* sorted, or if the problem needs a sort anyway for other reasons (as 3Sum does, for duplicate-skipping).
 
-## Tradeoffs
+**Versus hashing specifically:** the same O(n) time bound (for pair-sum search) but in O(1) space instead of O(n), because the sort order does the "have I seen a complement" work a hash set would otherwise need memory to do — at the cost of requiring sorted data and losing original index order, both of which hashing gets for free.
 
-**What we gain versus brute force:** we go from O(n²)/O(n³) time down to O(n)/O(n²), in O(1) extra space, by exploiting the sortedness of the data to eliminate large portions of the search space per step instead of checking every combination.
-
-**What we gain versus hashing:** the same O(n) time bound (for pair-sum search) but in O(1) space instead of O(n) — because the sort order does the "have I seen a complement" work that a hash set would otherwise need memory to do.
-
-**What we lose versus hashing:** hashing works on **unsorted** data and preserves **original indices** for free; Two Pointers needs the data sorted (destroying original index order unless you separately track it) and cannot be applied at all if the array cannot be sorted or reordered.
-
-**What we lose versus brute force:** nothing computationally — Two Pointers is strictly better in complexity whenever it applies. The only thing "lost" is applicability: brute force works on any condition, sorted or not, monotonic or not; Two Pointers only works when the monotonicity argument actually holds.
+**Versus brute force specifically:** nothing computationally is lost — Two Pointers is strictly better in complexity whenever it applies. The only thing given up is applicability: brute force works on any condition, sorted or not, monotonic or not; Two Pointers only works when the monotonicity argument actually holds.
 
 ## Complexity
 
@@ -245,18 +235,16 @@ Templates (rather than hard-coded `int`/`vector<int>` signatures) are used delib
 - **You need to search for a single element/index**, not a pair — that is Binary Search's job, not Two Pointers'.
 - **The data is a linked list and you need cycle detection or the middle element** — that calls for **Fast & Slow Pointers** (different rates on one structure), a related but distinct pattern (see Similar Patterns below).
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 Two Pointers is one of the most frequently asked patterns at essentially every major tech company's coding interview (Google, Amazon, Meta, Microsoft, and most mid-size and startup interview loops) precisely because it tests whether a candidate can move past "brute force works, ship it" and reason about a provable elimination rule — Two Sum II, 3Sum, Container With Most Water, and Trapping Rain Water are among the most commonly cited "everyone has seen this exact question" problems in interview-prep communities.
 
-Beyond interviews, the same-direction pointer idea is not just an interview trick — it shows up directly in real systems:
+The same-direction pointer idea is not just an interview trick — it shows up directly in real systems:
 
 - **The merge step of merge sort** is a same-direction two-pointer walk over two sorted subarrays, always taking the smaller of the two current heads — the exact mechanical ancestor of "merge two sorted arrays" problems.
 - **Diffing two sorted logs or event streams** (e.g. comparing a service's local event log against a downstream system's log to find discrepancies, or reconciling two sorted export files during a data migration) uses the same converging/same-direction walk: advance whichever stream is "behind" in sort order, and flag mismatches when timestamps/keys do not line up.
 - **Database merge joins.** A merge join in a relational database's query planner (used when both inputs are already sorted on the join key, e.g. via an index scan) is a two-pointer walk over the two sorted inputs — conceptually identical to merging two sorted arrays.
 - **Two-pointer partitioning is the core of quicksort's partition step** (Lomuto or Hoare partition schemes both use pointers converging or advancing at different rates to separate elements around a pivot) — an algorithmic building block, not just an interview trick.
-
-## Where I Can Use This
 
 Five realistic ideas for your own backend/systems work:
 
@@ -297,17 +285,6 @@ Common misconceptions:
 - "Two Pointers and Sliding Window are the same thing." They share a "two indices into an array" shape but answer different question types (pair/triplet from anywhere vs. best contiguous range) — conflating them leads to reaching for the wrong template under pressure.
 - "You can always tell which pointer to move by just trying both and seeing what works." There is always a provable, stateable reason; "trying both" is a sign the elimination argument has not actually been understood yet.
 - "Sorting an array to use Two Pointers is free." Sorting costs O(n log n) and, if you need original indices, destroys the information needed to report them — a real, not hypothetical, tradeoff to mention explicitly.
-
-## Summary
-
-- Two Pointers replaces nested-loop scans over pairs/triplets with a single linear pass by walking two indices whose movement is provably monotonic.
-- Two flavors: **converging** (opposite ends of sorted data, moving inward) for pair/triplet search and endpoint-based optimization; **same-direction** (slow `write` + fast `read`) for in-place compaction.
-- The technique's entire justification rests on the input's order — sorted for the converging variant, order-preserving for the same-direction variant — and breaks down completely without it.
-- Typical complexity win: O(n²) → O(n) for pair search and compaction; O(n³) → O(n²) for triplet search (3Sum).
-- Space cost is O(1) extra in both flavors — no hash structure needed, unlike the hashing alternative.
-- 3Sum's duplicate-skipping is the single most commonly botched detail; it is required for output *correctness*, not just style.
-- The same mechanical idea (advance whichever side is "behind") underlies the merge step of merge sort, database merge joins, and diffing two sorted logs/streams in production.
-- Closely related but distinct: Sliding Window (contiguous range, not two anchored endpoints) and Fast & Slow Pointers (different speeds on a linked list, not converging ends of an array).
 
 ## Key Takeaways
 

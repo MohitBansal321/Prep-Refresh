@@ -3,13 +3,13 @@
 This is the master index for the DSA patterns repo. Use it three ways:
 1. **Find** a pattern quickly.
 2. **Revise** on a spaced-repetition schedule so patterns move into long-term memory.
-3. **Identify** which pattern a new problem needs — see [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md), a single lookup table across all 33 patterns by input shape and problem signal.
+3. **Identify** which pattern a new problem needs — see [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md), a single lookup table across all 36 patterns by input shape and problem signal.
 
 New here, or refreshing after a long break? [`LEARNING-PATHS.md`](./LEARNING-PATHS.md) has a specific walkthrough for how to use this index and the rest of the repo depending on where you're starting from — read that before diving into the tables below.
 
-All 33 patterns share the same module shape: README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace diagrams) + `problems/` with 4 fully worked LeetCode solutions. Every README now opens with a one-line summary, a runnable snippet, and a "pick your depth" table — some (the shorter, code-forward ones) stop there; others follow with a longer deep-dive. Either way, you never have to read the whole file to find the loop.
+All 36 patterns share the same module shape: README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace diagrams) + `problems/` with 4 fully worked LeetCode solutions. Every README now opens with a one-line summary, a runnable snippet, and a "pick your depth" table — some (the shorter, code-forward ones) stop there; others follow with a longer deep-dive. Either way, you never have to read the whole file to find the loop.
 
-Every `.cpp` file in the repo (165 total) compiles with `g++ -std=c++17 -Wall` and passes its own test assertions.
+Every `.cpp` file in the repo (180 total) compiles with `g++ -std=c++17 -Wall` and passes its own test assertions.
 
 ---
 
@@ -95,14 +95,20 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 | [Topological Sort](tree-graph-patterns/topological-sort/README.md) | Full | Not started | — | Study next | — |
 | [Union Find](tree-graph-patterns/union-find/README.md) | Full | Not started | — | Study next | — |
 | [Dijkstra's Algorithm](tree-graph-patterns/dijkstras-algorithm/README.md) | Full | Not started | — | Study next | — |
+| [Bellman-Ford](tree-graph-patterns/bellman-ford/README.md) | Full | Not started | — | Study next | — |
+| [Floyd-Warshall](tree-graph-patterns/floyd-warshall/README.md) | Full | Not started | — | Study next | — |
+| [Minimum Spanning Tree (Kruskal's/Prim's)](tree-graph-patterns/mst-kruskal-prim/README.md) | Full | Not started | — | Study next | — |
 
 ### Recommended study order (tree & graph)
 
 1. **Tree BFS** and **Tree DFS** together — the two traversal shapes on the simplest structure.
 2. **Graph BFS/DFS** — the same traversals generalized with a `visited` set.
 3. **Dijkstra's Algorithm** — swap BFS's FIFO queue for a min-heap once edges carry non-negative weights.
-4. **Topological Sort** — builds on graph BFS (Kahn's) or DFS (post-order + reverse).
-5. **Union Find** — a genuinely different tool: connectivity without traversal.
+4. **Bellman-Ford** — drop Dijkstra's non-negative-weight assumption by relaxing every edge instead of selecting one; the natural next step once negative weights come up.
+5. **Floyd-Warshall** — generalize Bellman-Ford's single-source relaxation to all-pairs, once "distances between every pair" replaces "distances from one source."
+6. **Topological Sort** — builds on graph BFS (Kahn's) or DFS (post-order + reverse).
+7. **Union Find** — a genuinely different tool: connectivity without traversal.
+8. **Minimum Spanning Tree (Kruskal's/Prim's)** — reuses Union Find directly (Kruskal's) and the min-heap-frontier shape from Dijkstra (Prim's), applied to a genuinely different question: cheapest way to connect everything, not cheapest way to reach one node.
 
 ---
 
@@ -180,19 +186,19 @@ If you fail recall on a pattern, drop it back one rung. Update the two date colu
 
 ## Status overview
 
-All 33 patterns are now **Full tier** — every one has README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace) + `problems/` (4 worked solutions each).
+All 36 patterns are now **Full tier** — every one has README + `code.cpp` + `exercises.md` + `cheatsheet.md` + `images/` (recognition / flow / trace) + `problems/` (4 worked solutions each).
 
 | Family | Patterns | Full tier |
 |--------|----------|-----------|
 | Array & String | 6 | Two Pointers, Sliding Window, Prefix Sum, Cyclic Sort, Merge Intervals, Kadane's Algorithm |
 | Linked List | 2 | Fast & Slow Pointers, In-place Reversal |
 | Searching & Sorting | 4 | Modified Binary Search, Two Heaps, Top K Elements, K-way Merge |
-| Tree & Graph | 6 | Tree BFS, Tree DFS, Graph BFS/DFS, Topological Sort, Union Find, Dijkstra's Algorithm |
+| Tree & Graph | 9 | Tree BFS, Tree DFS, Graph BFS/DFS, Topological Sort, Union Find, Dijkstra's Algorithm, Bellman-Ford, Floyd-Warshall, Minimum Spanning Tree (Kruskal's/Prim's) |
 | Recursion & Backtracking | 2 | Subsets, Backtracking |
 | Dynamic Programming | 7 | 0/1 Knapsack, Unbounded Knapsack, LCS, LIS, Palindromic Subsequence, DP on Grids, Bitmask DP |
 | Greedy | 1 | Greedy |
 | Advanced Data Structures | 5 | Monotonic Stack/Queue, Bit Manipulation, Trie, Segment Tree/Fenwick Tree, LRU Cache |
-| **Total** | **33** | **33** |
+| **Total** | **36** | **36** |
 
 ---
 

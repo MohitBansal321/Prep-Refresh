@@ -27,3 +27,4 @@ flowchart TD
     Reconstruct -- Yes --> WalkBack["Walk backwards from (n, m) to (0, 0):<br/>match -> record character, step diagonally<br/>no-match -> step toward whichever neighbor<br/>the forward pass actually used"]
     WalkBack --> Reverse[Reverse the collected characters<br/>since the walk moved end-to-start]
     Reverse --> Done
+```

@@ -71,18 +71,6 @@ The natural first instinct is to check every possible contiguous range directly:
 
 Both brute-force shapes share the same root cause: they treat every window as an independent problem instead of noticing that consecutive windows are related by exactly one element entering and (usually) one element leaving.
 
-## Why Not Other Solutions?
-
-**"Just recompute each window's sum/count from scratch."** This is the brute force above. It is correct but wasteful — it is O(n·k) or O(n²)/O(n³) precisely because it never reuses the (k-1) or (window-size − 1) elements shared between adjacent windows. Every millisecond spent re-summing or re-counting those shared elements is pure waste.
-
-**"Sort the array first."** Sorting destroys contiguity — once you reorder elements, "subarray" and "substring" stop meaning anything, because the pattern's entire value comes from exploiting the *original order* of the data. Sorting is the right move for a different family of problems (see Two Pointers, below), but it is actively wrong here.
-
-**"Use dynamic programming with a 2D table of every (start, end) pair."** For some variants (e.g., "is s[i..j] a palindrome") a DP table over all `(i, j)` pairs is a legitimate O(n²)-space, O(n²)-time solution. It works, but it is strictly worse than Sliding Window whenever the underlying condition can be tracked incrementally with O(1) or O(alphabet)-size state — which is true for the vast majority of window problems (sums, distinct-character counts, frequency matching). Reach for the 2D table only when the condition genuinely cannot be summarized by a small running aggregate (e.g., "is this substring a palindrome" needs more than a running count).
-
-**Contrast with Two Pointers.** Two Pointers (see `../two-pointers/`) also uses two indices moving through the array, but the classic use case is a **sorted** array where the two pointers move *toward* or *away from* each other (e.g., "find a pair that sums to target" — move `left` right or `right` left based on a comparison). Sliding Window's two pointers (`left` and `right`) almost always move in the **same direction** (both only ever increase), tracing out a contiguous range rather than searching from both ends inward. Sliding Window is best understood as **Two Pointers specialized to contiguous ranges with a running aggregate** — the family README (`../README.md`) calls Sliding Window a direct generalization of Two Pointers for exactly this reason.
-
-**Tradeoff summary:** every brute-force alternative pays for information the previous window's computation already had. Sliding Window's entire value proposition is refusing to throw that information away — it costs a small amount of bookkeeping (the running aggregate) in exchange for turning O(n·k) or O(n²)/O(n³) into O(n).
-
 ## Solution
 
 The core idea has one sentence: maintain a window `[left, right]` over the array/string that only ever **grows** (by advancing `right`) or **shrinks** (by advancing `left`) — it never resets to the beginning and never re-scans elements it has already accounted for.
@@ -146,25 +134,25 @@ Responsibilities in one line each:
 
 The only difference between the "longest" and "shortest" shapes is **when** you record the candidate answer relative to the shrink loop — before/during shrinking (shortest) or after the window is confirmed valid post-shrink (longest). The grow/shrink mechanics on `left`, `right`, and the aggregate are otherwise identical.
 
-## Recognition Diagram
+## Why Not Other Solutions?
 
-See [images/recognition-diagram.md](images/recognition-diagram.md) for the full Mermaid flowchart deciding "is this a Sliding Window problem, and which variant?" against Two Pointers, Prefix Sum, and Kadane's Algorithm.
+**"Just recompute each window's sum/count from scratch."** This is the brute force above. It is correct but wasteful — it is O(n·k) or O(n²)/O(n³) precisely because it never reuses the (k-1) or (window-size − 1) elements shared between adjacent windows. Every millisecond spent re-summing or re-counting those shared elements is pure waste.
 
-**How to read it:** the gate is always "contiguous or not" first, then "is the window size given (fixed) or something to search for (variable)," and — for the variable-size branch — whether the constraint is **monotonic** in window size (growing the window only ever helps or only ever hurts the condition, never both). That monotonicity check is the one people skip and is exactly why "subarray sum equals K with negative numbers allowed" is *not* a Sliding Window problem (it needs Prefix Sum + a hash map instead).
+**"Sort the array first."** Sorting destroys contiguity — once you reorder elements, "subarray" and "substring" stop meaning anything, because the pattern's entire value comes from exploiting the *original order* of the data. Sorting is the right move for a different family of problems (see Two Pointers, below), but it is actively wrong here.
 
-## Flow Diagram
+**"Use dynamic programming with a 2D table of every (start, end) pair."** For some variants (e.g., "is s[i..j] a palindrome") a DP table over all `(i, j)` pairs is a legitimate O(n²)-space, O(n²)-time solution. It works, but it is strictly worse than Sliding Window whenever the underlying condition can be tracked incrementally with O(1) or O(alphabet)-size state — which is true for the vast majority of window problems (sums, distinct-character counts, frequency matching). Reach for the 2D table only when the condition genuinely cannot be summarized by a small running aggregate (e.g., "is this substring a palindrome" needs more than a running count).
 
-See [images/flow-diagram.md](images/flow-diagram.md) for the full Mermaid flowchart of the variable-size window's control flow: expand right, update the aggregate, while-loop shrink from the left while invalid (updating the aggregate on every shrink step), record the best answer, repeat.
+**Contrast with Two Pointers.** Two Pointers (see `../two-pointers/`) also uses two indices moving through the array, but the classic use case is a **sorted** array where the two pointers move *toward* or *away from* each other (e.g., "find a pair that sums to target" — move `left` right or `right` left based on a comparison). Sliding Window's two pointers (`left` and `right`) almost always move in the **same direction** (both only ever increase), tracing out a contiguous range rather than searching from both ends inward. Sliding Window is best understood as **Two Pointers specialized to contiguous ranges with a running aggregate** — the family README (`../README.md`) calls Sliding Window a direct generalization of Two Pointers for exactly this reason.
 
-**How to read it:** `right` always advances exactly once per outer iteration; `left` advances a *variable* number of times (zero or more) inside the inner while-loop. The while-loop, not an if-statement, is what correctly handles cases where a single shrink step is not enough to restore validity — see Common Mistakes below.
+**Tradeoff summary:** every brute-force alternative pays for information the previous window's computation already had. Sliding Window's entire value proposition is refusing to throw that information away — it costs a small amount of bookkeeping (the running aggregate) in exchange for turning O(n·k) or O(n²)/O(n³) into O(n).
 
-## Trace Diagram
+## Diagrams
 
-See [images/trace-diagram.md](images/trace-diagram.md) for a full step-by-step trace of `left`, `right`, and the window's character set on the concrete example `s = "abcabcbb"` (Longest Substring Without Repeating Characters).
+- **Recognition** — [images/recognition-diagram.md](images/recognition-diagram.md), the full Mermaid flowchart deciding "is this a Sliding Window problem, and which variant?" against Two Pointers, Prefix Sum, and Kadane's Algorithm. The gate is always "contiguous or not" first, then "is the window size given (fixed) or something to search for (variable)," and — for the variable-size branch — whether the constraint is **monotonic** in window size (growing the window only ever helps or only ever hurts the condition, never both). That monotonicity check is the one people skip and is exactly why "subarray sum equals K with negative numbers allowed" is *not* a Sliding Window problem (it needs Prefix Sum + a hash map instead).
+- **Flow** — [images/flow-diagram.md](images/flow-diagram.md), the variable-size window's control flow: expand right, update the aggregate, while-loop shrink from the left while invalid (updating the aggregate on every shrink step), record the best answer, repeat. `right` always advances exactly once per outer iteration; `left` advances a *variable* number of times (zero or more) inside the inner while-loop — the while-loop, not an if-statement, is what correctly handles cases where a single shrink step is not enough to restore validity.
+- **Trace** — [images/trace-diagram.md](images/trace-diagram.md), a full step-by-step trace of `left`, `right`, and the window's character set on `s = "abcabcbb"` (Longest Substring Without Repeating Characters). Watch how, at `right = 6` and `right = 7`, the shrink loop runs *twice* in a single outer iteration before the window becomes valid again — direct, concrete proof of why the shrink step must be a `while`, not a single conditional check.
 
-**How to read it:** watch how, at `right = 6` and `right = 7`, the shrink loop runs *twice* in a single outer iteration before the window becomes valid again — direct, concrete proof of why the shrink step must be a `while`, not a single conditional check.
-
-## Implementation
+## The Code
 
 Before looking at [code.cpp](code.cpp), understand what it is demonstrating: two **generic, reusable template functions**, not solutions to one specific interview problem. The point of the file is to show the *shape* of the pattern in its purest form so that the four fully worked problems in `problems/` read as "the same shape, applied," rather than four unrelated tricks.
 
@@ -176,7 +164,7 @@ Before looking at [code.cpp](code.cpp), understand what it is demonstrating: two
 
 All three share the same skeleton described in Execution Flow above; they differ only in what the aggregate is and what "valid"/"invalid" means for that aggregate.
 
-## Code Walkthrough
+### Code walkthrough
 
 See [code.cpp](code.cpp) for the full runnable implementation, and `problems/` for four fully worked, standalone LeetCode-style solutions. Here is what each part does and why it exists.
 
@@ -198,26 +186,24 @@ See [code.cpp](code.cpp) for the full runnable implementation, and `problems/` f
 
 **Interactions.** All five files (`code.cpp` plus the four `problems/` files) share the same `left`/`right`/aggregate/best-tracker architecture described above. The differences between them are entirely in what the aggregate tracks and what "valid" means — proof that internalizing the one control-flow shape lets you solve a wide variety of problems that look unrelated on the surface.
 
-## Advantages
+## Tradeoffs
+
+**What sliding window buys you**
 
 - **Turns O(n·k) or O(n²)/O(n³) into O(n).** The single biggest reason to reach for this pattern — see Complexity below for the exact numbers.
 - **Constant or near-constant extra space.** A running sum is O(1); a frequency map is bounded by the alphabet size, not the input size.
 - **Every element is processed a bounded number of times.** Each index is added to the aggregate exactly once (by `right`) and removed at most once (by `left`), which is what makes the amortized analysis O(n) even though there is a nested-looking `while` loop inside the `for` loop.
-- **Directly matches how many real systems already work.** Network buffers, TCP flow control, and rate limiters all use a literal sliding window over a byte stream or a time axis — this is not just an interview trick (see Real Interview/Production Examples).
+- **Directly matches how many real systems already work.** Network buffers, TCP flow control, and rate limiters all use a literal sliding window over a byte stream or a time axis — this is not just an interview trick.
 - **Short, teachable, reusable skeleton.** Once you internalize "grow right, conditionally shrink left, update aggregate both times," a huge fraction of array/string interview problems become "which aggregate, which condition" instead of "invent a new algorithm."
 
-## Disadvantages
+**What it costs you**
 
 - **Only applies to contiguous ranges.** If the problem allows skipping elements or reordering, Sliding Window does not apply at all — you need a different pattern entirely (subsequence DP, hashing, sorting).
 - **Variable-size windows require the constraint to be monotonic in window size.** If growing the window can make an invalid window valid again (non-monotonic), the "shrink while invalid" logic is unsound — this rules out things like "subarray sum equals K" with negative numbers allowed.
 - **The running aggregate must be updated symmetrically.** Every operation that folds an element in on the right must have a matching, correct undo when that element leaves on the left. Getting this wrong (see Common Mistakes) produces answers that are subtly wrong on some inputs and correct on others — a nasty class of bug to debug.
 - **Can obscure edge cases.** Empty input, `k` larger than the array, "no valid window exists" — these are easy to skip past when focused on the main sliding mechanism, and they are exactly where interview candidates lose points.
 
-## Tradeoffs
-
-**What we gain:** linear time instead of quadratic-or-worse, small constant/near-constant extra space, and a single reusable mental model across a large family of problems.
-
-**What we lose:** generality. The pattern only fires when the problem is about contiguous ranges *and* (for the variable-size case) the condition being tracked is monotonic with window size. Outside those two constraints, Sliding Window either does not apply or silently gives wrong answers if forced onto a non-monotonic condition.
+**Net:** generality is what you give up. The pattern only fires when the problem is about contiguous ranges *and* (for the variable-size case) the condition being tracked is monotonic with window size. Outside those two constraints, Sliding Window either does not apply or silently gives wrong answers if forced onto a non-monotonic condition.
 
 ## Complexity
 
@@ -261,15 +247,13 @@ See [code.cpp](code.cpp) for the full runnable implementation, and `problems/` f
 - You need to answer **many independent range-sum queries** on a static array with no sliding relationship between them — Prefix Sum answers each query in O(1) after an O(n) precompute, which is a better fit than re-sliding a window per query.
 - The window's "state" cannot be summarized by a small incremental aggregate (e.g., "is this substring a palindrome," which genuinely needs more information than a running count) — a different technique (often DP) is required.
 
-## Real Interview/Production Examples
+## Where This Shows Up
 
 - **Interview contexts:** Sliding Window is one of the most frequently asked pattern families at nearly every major tech company's SWE interviews (Amazon, Google, Meta, Microsoft, Bloomberg among others commonly feature it) — Longest Substring Without Repeating Characters (LC 3) and Minimum Window Substring (LC 76) are two of the most-repeated medium/hard string questions in practice, precisely because they test whether a candidate can maintain a running aggregate correctly rather than just "knowing the trick."
 - **Rate limiting.** A "sliding window rate limiter" is a real, named production technique: instead of a fixed per-minute bucket that can be gamed by bursting at a bucket boundary, you track request timestamps in a rolling time window and reject requests once the window's count exceeds a threshold — an almost literal translation of the algorithmic pattern onto a time axis instead of an array index.
 - **TCP flow control.** TCP's sliding window protocol governs how many unacknowledged bytes a sender may have in flight at once; the window slides forward as acknowledgments arrive, exactly mirroring "grow on new data, shrink as old data is confirmed/consumed."
 - **Network packet buffering / stream processing.** Systems that process a continuous stream of data (log lines, sensor readings, packets) and need a rolling statistic (moving average, recent-max, recent-distinct-count) over the last N items or the last T seconds use the same expand/shrink mechanics as this pattern.
 - **Media/analytics dashboards.** "Requests per second over the last 60 seconds" or "moving average latency over the last 100 requests" widgets are Sliding Window computations running continuously against a live stream rather than a fixed array.
-
-## Where I Can Use This
 
 Five realistic ideas for your own backend projects:
 
@@ -307,16 +291,6 @@ Common misconceptions:
 - "A nested while-inside-for loop is automatically O(n²)." Not if the inner loop's total iterations across the *entire* outer loop are bounded by n — always check whether the inner pointer resets or only ever advances.
 - "Sliding Window can find the maximum-sum subarray with no window-size constraint." That is Kadane's Algorithm's job, not Sliding Window's — Sliding Window needs either a fixed size or an explicit optimization target (longest/shortest) with a monotonic condition.
 - "Any 'find the best subarray' problem is Sliding Window." Only if the condition is monotonic in window size; otherwise reach for Prefix Sum, DP, or a different technique entirely.
-
-## Summary
-
-- Sliding Window computes something about every contiguous subarray/substring in O(n) by maintaining a window `[left, right]` and a running aggregate updated incrementally, instead of re-scanning each window from scratch.
-- Two shapes: **fixed-size** (width given, unconditional slide) and **variable-size** (width searched for, conditional grow/shrink).
-- The variable-size shape requires the tracked condition to be **monotonic** with window size — this is the check people forget before reaching for the pattern.
-- Complexity: replaces O(n·k) (fixed-size brute force) or O(n²)/O(n³) (variable-size brute force) with O(n), because each index is added to the aggregate once and removed at most once.
-- The most common bugs are all about the **shrink step**: using `if` instead of `while`, forgetting to undo the aggregate's update, or forgetting to erase a zero-count map entry.
-- It generalizes Two Pointers to contiguous ranges, and contrasts with Prefix Sum (precompute vs. scan) and Kadane's Algorithm (no size constraint at all).
-- It shows up in real systems, not just interviews: rate limiting, TCP flow control, and rolling metrics/monitoring dashboards.
 
 ## Key Takeaways
 

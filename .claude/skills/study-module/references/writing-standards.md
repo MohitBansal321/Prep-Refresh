@@ -27,9 +27,11 @@ crash. "Writing `for (i = 0; i < q.size(); ++i)` still visits every node in FIFO
 never crashes; it just fuses adjacent levels — a silent correctness bug rather than a visible
 failure." Always answer: what does the reader *see* when they get this wrong?
 
-**5. Why before how, always.** `Problem` → `Why Not Other Solutions?` → `Solution` →
-`Architecture` come before any code. The `Solution` section explains the thinking; it does not
-show the implementation.
+**5. Why before how, always.** `Problem` → `Solution` → `Architecture` → `Why Not Other
+Solutions?` come before any code. The `Solution` section explains the thinking; it does not
+show the implementation. `Why Not Other Solutions?` follows Architecture rather than leading
+into Solution — a reader should meet the pattern's own mechanism before being asked to weigh
+alternatives to it.
 
 ## Section-specific requirements
 

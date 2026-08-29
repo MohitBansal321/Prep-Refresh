@@ -169,7 +169,7 @@ The "participants" are:
 
 ## Where This Shows Up
 
-- **Kruskal's minimum spanning tree algorithm** uses Union Find directly to decide, for each candidate edge in increasing weight order, whether adding it would create a cycle (skip it) or connect two previously-separate components (include it).
+- **[Kruskal's minimum spanning tree algorithm](../mst-kruskal-prim/)** uses Union Find directly to decide, for each candidate edge in increasing weight order, whether adding it would create a cycle (skip it) or connect two previously-separate components (include it).
 - **Image segmentation** algorithms use Union Find to merge adjacent pixels into connected regions based on similarity, building up segments incrementally.
 - **Network and service-mesh connectivity monitoring.** Tracking which nodes in a network (or services in a mesh) remain mutually reachable as links come online, using Union Find to answer connectivity queries without re-running a full traversal after every link event — the same shape as a dynamic service-mesh connectivity checker answering "can service A currently reach service B" in near-constant time.
 - **Detecting redundant connections in infrastructure or dependency graphs.** Identifying which added edge (in a build order, or a set of declared dependencies) is the one that would introduce a cycle — directly analogous to "Redundant Connection"-style problems, and to an incremental build-dependency validator that flags a newly-declared dependency the moment it would create a cycle (a hybrid with Topological Sort).

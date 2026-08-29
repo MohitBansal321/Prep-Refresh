@@ -1,6 +1,6 @@
 # Learning Paths — How To Use This Repo
 
-The repo has 33 patterns and three other docs ([`README.md`](./README.md), [`INDEX.md`](./INDEX.md), [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md)). What order you touch them in should depend on where you're starting from — a first-timer and someone refreshing a 3-year-old memory should *not* use this repo the same way. Pick the path below that matches you.
+The repo has 36 patterns and three other docs ([`README.md`](./README.md), [`INDEX.md`](./INDEX.md), [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md)). What order you touch them in should depend on where you're starting from — a first-timer and someone refreshing a 3-year-old memory should *not* use this repo the same way. Pick the path below that matches you.
 
 ---
 

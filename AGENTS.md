@@ -14,7 +14,7 @@ Not a production codebase — read, run, and practice against, never deploy.
 - `sys-design/` — all **15 GoF patterns** (5 creational, 5 behavioral, 5 structural),
   each a full module (`README.md` + `code.ts` + `exercises.md` + `cheatsheet.md` +
   `images/`). Revision tracker: `INDEX.md`.
-- `dsa-patterns/` — 33 C++17 DSA patterns across 8 families (array/string,
+- `dsa-patterns/` — 36 C++17 DSA patterns across 8 families (array/string,
   linked-list, searching/sorting, tree/graph, recursion/backtracking, DP, greedy,
   advanced DS). Every pattern has README+`code.cpp`+`exercises.md`+`cheatsheet.md`
   +`images/`+`problems/`; each README opens with a one-line summary, a runnable

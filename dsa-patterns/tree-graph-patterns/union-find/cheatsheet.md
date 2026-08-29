@@ -11,7 +11,7 @@
 | **Cons** | Cannot report the actual path/edges between two connected nodes · no efficient "un-union" / edge-removal support · needs elements mapped to small dense integer indices (extra step for strings/records) · undirected only — no notion of edge direction. |
 | **Use When** | Dynamic/incremental connectivity queries · cycle detection while building a graph edge by edge · counting connected components from a full edge list · merging records that share a common key (accounts by email, stones by row/column) · Kruskal's MST (skip edges that would close a cycle). |
 | **Avoid When** | You need the actual path or shortest hop count (use Graph BFS/DFS) · the graph is directed with a "must come before" ordering (use Topological Sort) · edges need to be *removed* efficiently and re-queried (Union Find has no cheap un-union). |
-| **Related Patterns** | Graph BFS/DFS (path/shortest-path/one-shot cycle detection, not repeated incremental queries) · Topological Sort (directed dependency ordering, not undirected connectivity) · Kruskal's MST (uses Union Find directly as its cycle-skip mechanism). |
+| **Related Patterns** | Graph BFS/DFS (path/shortest-path/one-shot cycle detection, not repeated incremental queries) · Topological Sort (directed dependency ordering, not undirected connectivity) · [Minimum Spanning Tree](../mst-kruskal-prim/README.md) (Kruskal's uses Union Find directly as its cycle-skip mechanism). |
 
 ### Template Skeleton
 
