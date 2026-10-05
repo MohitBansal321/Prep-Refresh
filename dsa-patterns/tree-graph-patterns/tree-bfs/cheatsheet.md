@@ -2,74 +2,78 @@
 
 | Field | Summary |
 |-------|---------|
-| **Category** | Tree/Graph pattern — iterative, queue-based level-by-level (breadth-first) traversal. |
-| **Recognition Signal** | Problem says **"level order"**, **"level by level"**, **"each row/depth"**, asks for a **per-level aggregate** (sum, average, max, width), asks to **connect same-level nodes**, or asks a **minimum/shallowest/fewest-hops** question — "minimum depth," "nearest matching node." |
-| **Problem** | The answer's natural unit is a **level** (a set of nodes equidistant from the root), but recursion's call stack tracks *how you got here* (a path), not *how far you have spread out* — so DFS has to synthesize levels after the fact from a threaded `depth` parameter, and can never early-exit on "shallowest." |
-| **Solution** | A `std::queue` seeded with the root, plus the **level-size snapshot**: read `level_size = q.size()` once into a named local *before* the inner loop, process exactly that many nodes (dequeue · do the per-node work · push non-null children), then commit the level. Children pushed during the loop land behind the snapshot and become the next level. |
-| **Time / Space Complexity** | O(n) time — every node enqueued once and dequeued once, O(1) work each · O(n) space worst case for the queue: the widest level of a complete tree holds ~n/2 nodes at once · `minDepth` keeps O(n) worst case but gains an O(1)-relative-to-n best case via early exit · problem 04's second solution reaches **O(1)** space by using the already-linked level as its own queue. |
-| **Pros** | A level exists as a concrete, iterable collection at every step — no reconstruction pass · genuine early exit on minimum/shallowest questions that DFS structurally cannot match · fully iterative, so no recursion-depth limit on a deep narrow tree · one skeleton absorbs collecting, reversing, aggregating, and linking by changing only the per-node line · deterministic order (shallow-to-deep, left-to-right) that is trivial to state and prove. |
-| **Cons** | O(n) queue space regardless of tree shape, where DFS's stack is O(h) and shape-sensitive · path questions need a path manually bolted onto every queue entry, which DFS gets free from the call stack · bottom-up subtree answers (height, balance, diameter) run against BFS's top-down order · no per-level result exists until that level is fully drained, so no streaming partial output · requires an explicit queue you must manage and terminate correctly. |
-| **Use When** | Level-order output · per-level aggregation · connecting or comparing same-level nodes (next-right pointers, zigzag, per-level max width) · minimum depth or nearest-match-by-hops, where early exit pays · you specifically need an iterative traversal. |
-| **Avoid When** | Root-to-leaf paths, path sums, or lowest common ancestor (use Tree DFS) · bottom-up subtree properties like height, balance, or diameter (Tree DFS, postorder) · the input can have cycles, be disconnected, or lack a single root (Graph BFS/DFS — you need a `visited` set) · memory is tight and the tree is wide and shallow (DFS's O(h) may be far cheaper). |
-| **Related Patterns** | Tree DFS (path-by-path via the call stack, O(h) space, natural for paths and bottom-up aggregation) · Graph BFS/DFS (the identical queue mechanic plus a mandatory `visited` set, because a graph can revisit a node through a cycle and a tree cannot). |
+| **Category** | Tree/Graph pattern — level-by-level (breadth-first) traversal driven by a **queue**. |
+| **Recognition Signal** | The problem says **"level"** — level order, zigzag by level, right-side view, average per level, largest value per level — or asks for **minimum depth**, which is a shortest-path question in disguise. |
+| **Problem** | Recursion naturally goes *down* one branch to the bottom before touching a sibling, so nodes at the same depth are visited far apart in time with no way to group them. And for minimum depth, DFS must explore *every* branch to the bottom before it can be sure, even when a shallow leaf sits two nodes from the root. |
+| **Solution** | A queue processes nodes in arrival order, which is exactly non-decreasing depth. To recover level *boundaries*, **snapshot `queue.size()` at the top of each outer iteration** — that count is precisely the current level's width, because all of its children are enqueued only during the inner loop that follows. For minimum depth, **return the moment the first leaf is dequeued**: BFS reaches nodes in depth order, so the first leaf found is the shallowest. |
+| **Time / Space Complexity** | **O(n)** time (each node enqueued and dequeued once). **O(w)** space where w is the maximum level width — **O(n/2) = O(n)** for a balanced tree's bottom level, but only O(1)–O(h) on a skewed one. |
+| **Pros** | Level grouping is nearly free — one size snapshot per level · minimum depth short-circuits at the first leaf, often touching a tiny fraction of the tree where DFS would touch all of it · iterative, so no stack-overflow risk on deep trees · queue order gives left-to-right output naturally, and reversing the inner append handles zigzag · trees have no cycles, so **no visited set is needed** (unlike graph BFS). |
+| **Cons** | Space is the mirror image of DFS's: O(n) worst case on a wide balanced tree, where DFS would use only O(log n) · forgetting the size snapshot — or reading `queue.size()` *inside* the inner loop while it grows — merges all levels into one flat list · null children must be filtered before enqueueing or the level widths are wrong · genuinely awkward for anything needing the root-to-node path or subtree aggregates, which are DFS's home ground. |
+| **Use When** | Any per-level output (level order, zigzag, averages, maxima, right/left side view) · minimum depth · "nearest node satisfying P" · connecting level-order siblings (next-right pointers) · serialising a tree level by level · anything where shallower answers should be found first. |
+| **Avoid When** | The question is about root-to-leaf **paths** or **path sums** (Tree DFS — the call stack carries the path) · you need subtree aggregates like height, balance, or diameter (postorder DFS) · **maximum** depth on a wide tree, where DFS uses far less memory for the same O(n) · memory is tight and the tree is bushy. |
+| **Related Patterns** | Tree DFS (branch-first rather than level-first; use it for paths and aggregates) · Graph BFS (the same queue, plus the visited set that cycles force) · Two Heaps / K-way Merge (other "process in a controlled order via a container" designs). |
 
 ### Template Skeleton
 
 ```cpp
-// The one skeleton every function in this module reuses. Only the marked
-// per-node and per-level lines change from problem to problem.
-ResultType bfs(TreeNode* root) {
-    ResultType result{};
-    if (root == nullptr) return result;      // No root -> zero levels. Do this FIRST.
+// A. LEVEL ORDER — the size snapshot is the entire trick.
+std::vector<std::vector<int>> levelOrder(TreeNode* root) {
+    std::vector<std::vector<int>> levels;
+    if (!root) return levels;                 // empty tree: not an error, just no levels
 
     std::queue<TreeNode*> q;
     q.push(root);
-    int depth = 1;                           // Convention: a single node has depth 1.
 
     while (!q.empty()) {
-        size_t level_size = q.size();        // *** THE SNAPSHOT ***
-                                             // Read ONCE, into a named local, BEFORE
-                                             // consuming. Never `i < q.size()` inline:
-                                             // the pushes below grow q mid-loop and the
-                                             // loop would slide into the next level.
+        int levelSize = q.size();             // SNAPSHOT before the inner loop.
+                                              // Everything in the queue right now is
+                                              // exactly one level; children pushed below
+                                              // belong to the NEXT level.
+        std::vector<int> currentLevel;
+        for (int i = 0; i < levelSize; ++i) { // fixed count — q.size() grows in here
+            TreeNode* node = q.front(); q.pop();
+            currentLevel.push_back(node->val);
 
-        // *** PER-LEVEL STATE -- must be reset HERE, inside the outer loop. ***
-        std::vector<int> level_values;        // fresh vector per level (problems 01/02)
-        TreeNode* prev = nullptr;             // reset link cursor per level (problem 04)
-        level_values.reserve(level_size);
+            if (node->left)  q.push(node->left);    // filter nulls at push time,
+            if (node->right) q.push(node->right);   // or level widths go wrong
+        }
+        levels.push_back(currentLevel);
+    }
+    return levels;
+}
+// Zigzag: same loop, reverse currentLevel on alternate levels (or push_front).
 
-        for (size_t i = 0; i < level_size; ++i) {
-            TreeNode* node = q.front();
-            q.pop();
+// B. MINIMUM DEPTH — return at the FIRST leaf dequeued. This is why BFS wins here.
+int minDepth(TreeNode* root) {
+    if (!root) return 0;
 
-            // *** PER-NODE WORK -- the only genuinely problem-specific line(s). ***
-            level_values.push_back(node->val);      // collect  (01, 02)
-            if (prev) prev->next = node;            // link     (04)
-            prev = node;
+    std::queue<TreeNode*> q;
+    q.push(root);
+    int depth = 1;
 
-            // Early exit (03): safe because BFS dequeues in non-decreasing depth
-            // order, so the first match is provably the shallowest.
-            if (!node->left && !node->right) return depth;   // leaf = BOTH null
+    while (!q.empty()) {
+        int levelSize = q.size();
+        for (int i = 0; i < levelSize; ++i) {
+            TreeNode* node = q.front(); q.pop();
 
-            // Null-check every push: a nullptr in the queue crashes on dereference.
+            // A leaf means BOTH children are null. A node with one child is NOT a leaf.
+            if (!node->left && !node->right) return depth;   // shallowest, guaranteed
+
             if (node->left)  q.push(node->left);
             if (node->right) q.push(node->right);
         }
-
-        // *** PER-LEVEL COMMIT -- after the inner loop, not inside it. ***
-        result.push_back(std::move(level_values));
         ++depth;
     }
-    return result;
+    return depth;   // unreachable for a non-null root
 }
 ```
 
 ### Remember In One Sentence
-> **Tree BFS walks a tree level by level with a FIFO queue, and the entire pattern is one line — `level_size = q.size()` read into a named local *before* the inner loop — which freezes the current level's membership so the children pushed during that loop become the *next* level instead of silently merging into this one; you pay O(n) space for the widest level in exchange for levels as a first-class unit and a real early exit on "shallowest" questions.**
+> **Tree BFS uses a queue so nodes come out in non-decreasing depth — snapshot `queue.size()` before each inner loop to carve that stream into levels, and return at the first dequeued leaf for minimum depth, because the first thing BFS finds at a given depth is the shallowest.**
 
 ### Two Facts People Get Wrong
-- The level-size snapshot is a minor implementation detail you could write either way? **No** — it *is* the mechanism that converts "a queue of nodes" into "a queue of levels." Writing `for (size_t i = 0; i < q.size(); ++i)` instead still visits every node in correct FIFO order and never crashes; it just fuses adjacent levels together, so you get a silent correctness bug rather than a visible failure. Trace the [trace diagram](images/trace-diagram.md)'s level 0 by hand: the snapshot is 1, but `q.size()` is already 2 by the end of that single iteration.
-- BFS on a tree needs a `visited` set, just like graph BFS? **No** — a tree has exactly one path from the root to any node, so no node can ever be reached (and therefore enqueued) twice, making `visited` pure overhead. A general graph needs it because a cycle lets you arrive at the same node again and loop forever. Reaching for `visited` on a tree out of habit is the tell that *why* graphs need it has not clicked yet.
+- You can read `q.size()` inside the inner loop instead of snapshotting it? **No** — the inner loop *pushes children into the same queue*, so the size is moving while you read it. The boundary between levels is destroyed and every level merges into one flat list. Capture the size **once**, before the inner loop begins.
+- A node with one null child is a leaf, so `minDepth` can return there? **No** — a leaf has **both** children null. Returning at a one-child node gives a depth that no actual leaf occupies. (This is also exactly why the naive recursive `1 + min(left, right)` is wrong for minimum depth: a null child returns 0 and wins the `min` despite not being a leaf at all.)
 
 ---
 
@@ -77,13 +81,13 @@ ResultType bfs(TreeNode* root) {
 
 Use these for active recall during revision. Say the answer out loud or write it, *then* check against the [README](README.md). If you miss one, that section is the only thing you need to re-study.
 
-1. Why must `level_size = q.size()` be read into a named local before the inner loop, and what exactly is the output if you write `for (size_t i = 0; i < q.size(); ++i)` instead — a crash, or something worse?
-2. `levelOrder` and `minDepth` in [code.cpp](code.cpp) share an identical skeleton. Name every line that differs between them, and say which of those differences is the actual pattern and which is problem-specific.
-3. Why is `minDepth`'s early return provably correct — what property of the queue, not of the leaf, justifies stopping there? What does a Tree DFS solution have to do instead, and why?
-4. In `03-minimum-depth-of-binary-tree.cpp`, why is the leaf check `&&` and not `||`? Sketch the one-sided chain from its tests and give the wrong answer the `||` version would print.
-5. In `04-populating-next-right-pointers-ii.cpp`, why is `prev` declared inside the outer `while` loop? Describe precisely what the tree looks like afterward if that declaration is hoisted above the loop — and why nothing crashes.
-6. Problem 04's second implementation drops the queue entirely and reaches O(1) extra space. What replaces the queue, and what is the role of the `dummy` node? Why does that solution handle "cousins with distant parents" with no extra code?
-7. `02-binary-tree-zigzag-level-order-traversal.cpp` never changes the traversal order. What does it change instead, and what does that tell you about where the pattern's variability actually lives?
-8. State Tree BFS's worst-case space complexity, the tree shape that causes it, and how it compares to Tree DFS's worst case on (a) a balanced tree and (b) a long left-skewed chain.
-9. Why does Tree BFS need no `visited` set while Graph BFS always does — what structural property of a tree is doing the work?
-10. Name two question shapes that mention no levels at all but should still be solved with Tree BFS, and two that sound tree-shaped but belong to Tree DFS instead.
+1. What single word in a problem statement most reliably signals Tree BFS?
+2. Why does a queue produce nodes in non-decreasing depth order?
+3. Explain the size-snapshot trick: what does `levelSize` equal at that moment, and why?
+4. Describe exactly what goes wrong if `q.size()` is read inside the inner loop.
+5. Why must null children be filtered before pushing rather than skipped after popping?
+6. Why can `minDepth` return immediately at the first leaf it dequeues? State the guarantee.
+7. Define "leaf" precisely, and explain why the recursive `1 + min(left, right)` is wrong for minimum depth.
+8. Compare BFS and DFS space usage on (a) a balanced tree and (b) a degenerate skewed one. Which wins in each case?
+9. Why does Tree BFS need no visited set, while Graph BFS does?
+10. Name two problems where you must use DFS instead, and say what BFS lacks in each.

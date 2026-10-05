@@ -2,51 +2,64 @@
 
 | Field | Summary |
 |-------|---------|
-| **Category** | Dynamic Programming pattern — subset-state technique. |
-| **Recognition Signal** | `n` is small (**`n <= ~20`**, sometimes `~24`) **and** the subproblem depends on *which specific* items have been used, not merely how many — visiting every city exactly once, assigning workers to tasks, partitioning into equal-sum groups, turn-based games over a shrinking pool of numbered choices. |
-| **Problem** | Plain DP indexes states by prefix/count (`dp[i][w]`), but here two different choices of the same size lead to genuinely different futures — there is no ordering of the items under which "everything before me" captures the relevant history. Brute force over permutations costs `O(n!)`. |
-| **Solution** | Encode the used-set as an `n`-bit integer `mask`; allocate a table over all `2^n` masks (`dp[mask]`, or `dp[mask][last]` when the most recent choice matters). Transitions extend the subset by one unset bit: `dp[mask | (1<<i)]` from `dp[mask]`. Iterating masks in increasing numeric order guarantees dependencies are ready, because setting a bit strictly increases the integer. |
-| **Time-Space Complexity** | Time `O(2^n * n)` for simple shapes, `O(2^n * n^2)` when a `last` dimension is needed (TSP shape). Space `O(2^n)` or `O(2^n * n)` for the table — plus recursion stack if top-down. |
-| **Pros** | Turns `O(n!)` permutation search into polynomial-in-`2^n` DP · exact answers where greedy/heuristics fail · uniform, hard-to-get-wrong iteration order · composes cleanly with memoization, BFS-over-states, and game-theory negamax · `__builtin_popcount`/bit tests make state queries O(1). |
-| **Cons** | Exponential space — `n = 24` already means 16M+ states per dimension · completely intractable past `n ≈ 20-25` · easy to confuse "count needed" (use Knapsack) with "identity needed" (use bitmask) · subset-enumeration transitions (submasks of a mask) add another `3^n` factor if used carelessly. |
-| **Use When** | Small `n` + assignment/partition/permutation/game problem whose future depends on the exact chosen set · counting valid arrangements position-by-position (Beautiful Arrangement) · optimal partitioning into `k` groups (Partition to K Equal Sum Subsets, Fair Distribution of Cookies) · adversarial turn games with finite removable resources (Can I Win). |
-| **Avoid When** | `n > ~24` (`2^n` explodes — think greedy, graph algorithms, or meet-in-the-middle instead) · state only needs *how many* items used, not *which* (plain 0/1 Knapsack is smaller and simpler) · the problem asks to enumerate all solutions rather than count/optimize (backtracking without memoization is enough). |
-| **Related Patterns** | 0/1 Knapsack (same include/exclude shape, count-only state) · Subsets enumeration (the generator bitmask DP memoizes) · Backtracking (same recursion tree, minus the memo table) · Game Theory minimax (bitmask encodes the shared, finite game state). |
+| **Category** | DP pattern — memoise over **subsets of a small set**, using an integer as the subset key. |
+| **Recognition Signal** | **n is suspiciously small (≤ 20)**, and the state you need to remember is *"which of these have I already used?"* — not how many, not the last one, but the exact set. Assignment/matching, travelling-salesman, and "partition into k groups" problems. |
+| **Problem** | The subproblem depends on the **set** of consumed items, and there are 2ⁿ such sets. You cannot index a DP table by an unordered collection, and re-deriving the set at each step means re-exploring permutations — n! work for something that only has 2ⁿ distinct states. |
+| **Solution** | Encode the subset as an **integer mask** (bit *i* = "item *i* used") — now it is a plain array index. `dp[mask][j]` = best cost to have visited exactly the set `mask`, currently sitting at `j`. Transition by iterating candidate next items `k` **not yet in the mask** (`!(mask & (1 << k))`) and relaxing `dp[mask | (1 << k)][k]`. The tiny n is what makes 2ⁿ tractable; the mask is what collapses n! orderings into 2ⁿ sets. |
+| **Time / Space Complexity** | Typically **O(2ⁿ · n²)** time and **O(2ⁿ · n)** space for TSP-shaped problems (2ⁿ masks × n endpoints × n transitions). For subset-feasibility problems like `canPartitionIntoKSubsets`, O(2ⁿ · n) time / O(2ⁿ) space. |
+| **Pros** | Collapses n! permutations into 2ⁿ subsets — for n = 15 that is 10¹² down to 32768 · the mask is a cheap array index, so no hashing and no allocation · subset operations (add, test, remove, iterate) are single instructions · the state is self-describing, which makes debugging by printing masks in binary genuinely practical. |
+| **Cons** | **Hard ceiling around n ≈ 20–22** — memory and time both double per extra element, so there is no gentle degradation, it simply stops fitting · the code is dense and unreadable without disciplined comments · iteration order matters: masks must be processed in increasing order so every source state is final before it is read · `1 << k` on a 32-bit `int` and unfilled sentinel values (`INT_MAX + cost` overflow) are constant hazards. |
+| **Use When** | Travelling salesman (closed tour) / minimum Hamiltonian path on tiny graphs · assignment problems (n workers to n tasks) · partition into k equal-sum subsets · covering problems over a small universe · any "visit every item exactly once, order matters for cost" question with n ≤ 20. |
+| **Avoid When** | n exceeds ~22 (use heuristics, branch-and-bound, or an approximation) · only the **count** of used items matters, not which ones (a plain 1D DP over counts suffices) · the items are interchangeable, making the set irrelevant · a greedy or flow formulation solves it exactly (assignment problems often reduce to Hungarian/min-cost-flow in polynomial time). |
+| **Related Patterns** | Bit Manipulation (supplies every mask idiom used here) · Subsets/backtracking (the un-memoised enumeration this pattern accelerates) · 0/1 Knapsack (also "which items did I take," but where only the aggregate weight matters, so no mask is needed). |
 
 ### Template Skeleton
 
 ```cpp
-// Shape 1 — flat: dp[mask] depends only on which items are used.
-std::vector<long long> dp(1 << n, -1);   // -1 = not computed (top-down)
-long long solve(int mask) {
-    if (mask == (1 << n) - 1) return baseValue();   // all items used
-    long long& ans = dp[mask];
-    if (ans != -1) return ans;
-    for (int i = 0; i < n; ++i) {
-        if (mask & (1 << i)) continue;              // item i already used
-        ans = std::min(ans, cost + solve(mask | (1 << i)));
-    }
-    return ans;
-}
+// A. TSP-shaped: dp[mask][j] = min cost, visited exactly `mask`, now standing at j.
+int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
+    int n = cost.size();
+    const int kInf = std::numeric_limits<int>::max() / 2;   // /2 so dp + cost cannot overflow
+    std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, kInf));
 
-// Shape 2 — TSP-style: dp[mask][last] also tracks the most recent choice.
-for (int mask = 1; mask < (1 << n); ++mask)
-    for (int last = 0; last < n; ++last) {
-        if (!(mask & (1 << last))) continue;        // last must be in mask
-        for (int next = 0; next < n; ++next) {
-            if (mask & (1 << next)) continue;       // already visited
-            dp[mask | (1 << next)][next] =
-                std::min(dp[mask | (1 << next)][next], dp[mask][last] + w);
+    dp[1][0] = 0;   // mask 0b1 = "only node 0 visited", standing at node 0
+
+    for (int mask = 0; mask < (1 << n); ++mask) {   // ASCENDING: a mask is only ever
+        for (int j = 0; j < n; ++j) {               // extended, so sources are final
+            if (dp[mask][j] == kInf) continue;      // unreachable state, skip
+            if (!(mask & (1 << j)))  continue;      // j must actually be in the mask
+
+            for (int k = 0; k < n; ++k) {
+                if (mask & (1 << k)) continue;      // k already visited — skip
+                int next = mask | (1 << k);         // add k to the set
+                dp[next][k] = std::min(dp[next][k], dp[mask][j] + cost[j][k]);
+            }
         }
     }
+    int full = (1 << n) - 1;
+    int best = kInf;
+    for (int j = 0; j < n; ++j)                     // close the tour: + return leg j -> 0
+        if (dp[full][j] < kInf) best = std::min(best, dp[full][j] + cost[j][0]);
+    return best;
+}
+
+// B. Feasibility-shaped: dp[mask] = state after consuming exactly the items in `mask`.
+//    (canPartitionIntoKSubsets: dp[mask] = sum accumulated in the CURRENT bucket.)
+//    Same shape — iterate masks ascending, extend by one unused element at a time.
+
+// Mask idioms used throughout
+mask & (1 << i)     // is i in the set?
+mask | (1 << i)     // add i
+(1 << n) - 1        // the full set
+__builtin_popcount(mask)   // how many are in the set
 ```
 
 ### Remember In One Sentence
-> **Bitmask DP makes "which subset of a small set has been used" a legal array index by packing it into the bits of an integer, converting exponential-permutation search into a `2^n`-state table filled in strictly increasing numeric order — because setting a bit always produces a larger number.**
+> **Bitmask DP uses an integer as the subset key so "which items have I used" becomes an array index — collapsing n! orderings into 2ⁿ states — and it only works because n is small enough that 2ⁿ fits, with masks iterated in ascending order so a state is finalised before anything reads it.**
 
 ### Two Facts People Get Wrong
-- Bitmask DP is just "DP with bit tricks" and helps whenever bits appear? **No** — it is specifically a *state-space* technique for subset-dependent subproblems; if your state only needs a count or a running total, a mask adds `2^n` blowup for zero benefit and 0/1 Knapsack is the right tool.
-- You need special handling to visit masks in dependency order? **No** — `mask | (1 << i)` is always strictly greater than `mask`, so a plain `for (mask = 0; mask < (1<<n); ++mask)` bottom-up loop, or ordinary memoized recursion, automatically respects the DAG; no topological sort or unordered_map iteration needed.
+- The mask can be iterated in any order because it is just a DP table? **No** — transitions only ever **add** bits (`mask | (1 << k)` > `mask` numerically), so ascending mask order is exactly what guarantees `dp[mask][j]` is final when read. Iterating descending reads states that have not been relaxed yet and quietly returns a too-large answer.
+- Use `INT_MAX` as the "unreachable" sentinel? **Dangerous** — the transition computes `dp[mask][j] + cost[j][k]`, which overflows to a negative number and then wins the `min`. Use `INT_MAX / 2` (as above) or guard with an explicit `if (dp[mask][j] == kInf) continue;` — the template does both.
 
 ---
 
@@ -54,14 +67,13 @@ for (int mask = 1; mask < (1 << n); ++mask)
 
 Use these for active recall during revision. Say the answer out loud or write it, *then* check against the [README](README.md). If you miss one, that section is the only thing you need to re-study.
 
-1. State the two conditions that must hold simultaneously before reaching for bitmask DP — and name the pattern you should use when only the second fails.
-2. Why does iterating masks in increasing numeric order guarantee every transition's dependency is already computed? Which bit operation creates the "strictly larger" guarantee?
-3. When do you need the extra `last` dimension (`dp[mask][last]`) beyond `dp[mask]`, and what does the time complexity become?
-4. What is the time and space complexity of the TSP-shaped DP for `n = 20`? Roughly how many entries does the table have?
-5. In Partition to K Equal Sum Subsets, why does storing `(running sum) % target` in `dp[mask]` work even though several different placement histories map to the same mask?
-6. How does a game-theory problem like Can I Win encode its state as a mask, and what single fact lets you memoize on the mask alone without tracking whose turn it is?
-7. What does `__builtin_popcount(mask)` compute, and in Beautiful Arrangement, what does that value tell you about which position you are filling next?
-8. Give the brute-force complexity that bitmask DP replaces for: (a) TSP, (b) counting valid beautiful arrangements, (c) checking all partitions into k groups.
-9. Why is `int` safe for masks up to `n <= 20` but risky near `n = 31`, and what would you change?
-10. What distinguishes bitmask DP from plain backtracking over the same choice tree — both explore subsets — and when is backtracking actually the better tool?
-
+1. What is the single strongest signal in a problem statement that this is bitmask DP?
+2. What does `dp[mask][j]` mean, in words — both components?
+3. Explain how the mask collapses n! into 2ⁿ. What information is deliberately thrown away?
+4. Why must masks be iterated in ascending numeric order? What is the concrete failure if they are not?
+5. Write the three mask idioms for test / add / full-set from memory.
+6. Why is `kInf` set to `INT_MAX / 2` instead of `INT_MAX`?
+7. What are the two `continue` guards in the inner loop checking, and what would go wrong if each were removed?
+8. Where does the final answer live for a closed tour (TSP), and why is it a loop over `j` plus `cost[j][0]` rather than a single cell? What changes if the problem wants an open Hamiltonian *path* instead?
+9. State the time and space complexity for the TSP shape and break down where each factor comes from.
+10. Why does the pattern stop working past n ≈ 22, and name one alternative you would reach for at n = 100.
