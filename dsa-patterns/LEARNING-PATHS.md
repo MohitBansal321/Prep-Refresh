@@ -1,5 +1,7 @@
 # Learning Paths — How To Use This Repo
 
+> **Want to finish all 36 as fast as you can?** Skip choosing a path — follow [`PLAN.md`](./PLAN.md) and run `/today`.
+
 The repo has 36 patterns and three other docs ([`README.md`](./README.md), [`INDEX.md`](./INDEX.md), [`PATTERN-RECOGNITION-GUIDE.md`](./PATTERN-RECOGNITION-GUIDE.md)). What order you touch them in should depend on where you're starting from — a first-timer and someone refreshing a 3-year-old memory should *not* use this repo the same way. Pick the path below that matches you.
 
 ---

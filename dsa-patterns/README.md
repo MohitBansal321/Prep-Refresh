@@ -1,5 +1,8 @@
 # DSA Patterns
 
+> **▶ Start here: [`PLAN.md`](./PLAN.md)** — 36 patterns in 6 weeks, one a day, 4 LeetCode problems each. Type `/today` in Claude and it
+> tells you exactly what to do next. You don't need to read anything below this line to begin.
+
 Almost every array/string/tree/graph interview question is a disguised version of one of a small number of **patterns**. Learn the pattern — what signal in the problem statement triggers it, what the template looks like, what its complexity is — and you can solve any problem that fits it, not just the one you've memorized. That's the philosophy of this repo: **study patterns, not individual problems.**
 
 All code is **C++ (C++17)**, chosen because it forces you to think explicitly about pointers, memory, and complexity — exactly the muscles these patterns exercise.
