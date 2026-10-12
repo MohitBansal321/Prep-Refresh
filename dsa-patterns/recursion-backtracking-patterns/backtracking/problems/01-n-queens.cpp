@@ -51,27 +51,30 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 namespace {
 
-bool isSafe(const std::vector<int>& colOfRow, int row, int col) {
+bool isSafe(const vector<int>& colOfRow, int row, int col) {
   for (int prevRow = 0; prevRow < row; ++prevRow) {
     int prevCol = colOfRow[prevRow];
     if (prevCol == col) return false;                                      // same column
-    if (std::abs(prevCol - col) == std::abs(prevRow - row)) return false;  // same diagonal
+    if (abs(prevCol - col) == abs(prevRow - row)) return false;  // same diagonal
   }
   return true;
 }
 
-std::vector<std::string> buildBoard(const std::vector<int>& colOfRow, int n) {
-  std::vector<std::string> board(n, std::string(n, '.'));
+vector<string> buildBoard(const vector<int>& colOfRow, int n) {
+  vector<string> board(n, string(n, '.'));
   for (int row = 0; row < n; ++row) {
     board[row][colOfRow[row]] = 'Q';
   }
   return board;
 }
 
-void backtrack(int n, int row, std::vector<int>& colOfRow,
-               std::vector<std::vector<std::string>>& solutions) {
+void backtrack(int n, int row, vector<int>& colOfRow,
+               vector<vector<string>>& solutions) {
   if (row == n) {
     solutions.push_back(buildBoard(colOfRow, n));
     return;
@@ -90,10 +93,10 @@ void backtrack(int n, int row, std::vector<int>& colOfRow,
 
 }  // namespace
 
-std::vector<std::vector<std::string>> solveNQueens(int n) {
-  std::vector<std::vector<std::string>> solutions;
+vector<vector<string>> solveNQueens(int n) {
+  vector<vector<string>> solutions;
   if (n <= 0) return solutions;
-  std::vector<int> colOfRow(n, -1);
+  vector<int> colOfRow(n, -1);
   backtrack(n, 0, colOfRow, solutions);
   return solutions;
 }
@@ -102,12 +105,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -121,7 +124,7 @@ int main() {
 
   {
     auto solutions = solveNQueens(4);
-    std::vector<std::vector<std::string>> expected = {
+    vector<vector<string>> expected = {
         {".Q..", "...Q", "Q...", "..Q."},
         {"..Q.", "Q...", "...Q", ".Q.."},
     };
@@ -136,6 +139,6 @@ int main() {
     check(matches, "n=4 solutions match known board layouts exactly");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

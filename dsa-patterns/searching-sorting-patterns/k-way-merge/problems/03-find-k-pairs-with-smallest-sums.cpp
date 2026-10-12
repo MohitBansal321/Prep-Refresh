@@ -58,13 +58,16 @@
 #include <tuple>
 #include <vector>
 
-using HeapEntry = std::tuple<int, int, int>;  // {sum, i (nums1 index), j (nums2 index)}
-using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>>;
+using namespace std;
 
-std::vector<std::vector<int>> kSmallestPairs(const std::vector<int>& nums1,
-                                              const std::vector<int>& nums2,
+
+using HeapEntry = tuple<int, int, int>;  // {sum, i (nums1 index), j (nums2 index)}
+using MinHeap = priority_queue<HeapEntry, vector<HeapEntry>, greater<>>;
+
+vector<vector<int>> kSmallestPairs(const vector<int>& nums1,
+                                              const vector<int>& nums2,
                                               int k) {
-  std::vector<std::vector<int>> result;
+  vector<vector<int>> result;
   if (nums1.empty() || nums2.empty() || k <= 0) return result;
 
   MinHeap heap;
@@ -77,22 +80,22 @@ std::vector<std::vector<int>> kSmallestPairs(const std::vector<int>& nums1,
   // Seeding all of them anyway is also correct, just seeds a slightly
   // larger (though still bounded) heap; we cap it here purely to keep the
   // heap size tight.
-  const int seed_count = std::min(static_cast<int>(nums1.size()), k);
+  const int seed_count = min(static_cast<int>(nums1.size()), k);
   for (int i = 0; i < seed_count; ++i) {
     heap.emplace(nums1[i] + nums2[0], i, 0);
   }
 
   while (!heap.empty() && static_cast<int>(result.size()) < k) {
-    // Unpack the tuple field by field with std::get<> rather than a C++17
+    // Unpack the tuple field by field with get<> rather than a C++17
     // structured binding, so this file compiles on older toolchains too.
     const HeapEntry top = heap.top();
-    const int i = std::get<1>(top);
-    const int j = std::get<2>(top);
+    const int i = get<1>(top);
+    const int j = get<2>(top);
     heap.pop();
-    // std::get<0>(top) is the sum itself; it drove the heap's ordering but is
+    // get<0>(top) is the sum itself; it drove the heap's ordering but is
     // not part of the required output, which is the (u, v) pair.
 
-    result.push_back(std::vector<int>{nums1[i], nums2[j]});
+    result.push_back(vector<int>{nums1[i], nums2[j]});
 
     // Advance the source pointer: this same i's next candidate is one
     // step further into nums2.
@@ -109,75 +112,75 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // ---- Test 1: the classic LeetCode example -----------------------------------
   {
-    std::vector<int> nums1 = {1, 7, 11};
-    std::vector<int> nums2 = {2, 4, 6};
+    vector<int> nums1 = {1, 7, 11};
+    vector<int> nums2 = {2, 4, 6};
     auto result = kSmallestPairs(nums1, nums2, 3);
-    std::vector<std::vector<int>> expected = {{1, 2}, {1, 4}, {1, 6}};
+    vector<vector<int>> expected = {{1, 2}, {1, 4}, {1, 6}};
     check(result == expected, "nums1=[1,7,11], nums2=[2,4,6], k=3 -> [[1,2],[1,4],[1,6]]");
   }
 
   // ---- Test 2: k larger than total possible pairs -----------------------------
   {
-    std::vector<int> nums1 = {1, 2};
-    std::vector<int> nums2 = {3};
+    vector<int> nums1 = {1, 2};
+    vector<int> nums2 = {3};
     auto result = kSmallestPairs(nums1, nums2, 10);
     // Only 2*1 = 2 pairs exist total: [1,3] and [2,3].
-    std::vector<std::vector<int>> expected = {{1, 3}, {2, 3}};
+    vector<vector<int>> expected = {{1, 3}, {2, 3}};
     check(result == expected, "k larger than total pairs -> returns all available pairs, sorted");
   }
 
   // ---- Test 3: k = 1 -----------------------------------------------------------
   {
-    std::vector<int> nums1 = {1, 1, 2};
-    std::vector<int> nums2 = {1, 2, 3};
+    vector<int> nums1 = {1, 1, 2};
+    vector<int> nums2 = {1, 2, 3};
     auto result = kSmallestPairs(nums1, nums2, 1);
-    std::vector<std::vector<int>> expected = {{1, 1}};
+    vector<vector<int>> expected = {{1, 1}};
     check(result == expected, "k=1 returns the single smallest-sum pair");
   }
 
   // ---- Test 4: one input array is empty ----------------------------------------
   {
-    std::vector<int> nums1 = {};
-    std::vector<int> nums2 = {1, 2, 3};
+    vector<int> nums1 = {};
+    vector<int> nums2 = {1, 2, 3};
     auto result = kSmallestPairs(nums1, nums2, 3);
     check(result.empty(), "empty nums1 -> no pairs possible");
   }
 
   // ---- Test 5: duplicate values in both arrays ----------------------------------
   {
-    std::vector<int> nums1 = {1, 1};
-    std::vector<int> nums2 = {1, 1};
+    vector<int> nums1 = {1, 1};
+    vector<int> nums2 = {1, 1};
     auto result = kSmallestPairs(nums1, nums2, 4);
-    std::vector<std::vector<int>> expected = {{1, 1}, {1, 1}, {1, 1}, {1, 1}};
+    vector<vector<int>> expected = {{1, 1}, {1, 1}, {1, 1}, {1, 1}};
     check(result == expected, "all-duplicate inputs produce all-duplicate pairs, correct count");
   }
 
   // ---- Test 6: larger arrays, k somewhere in the middle -------------------------
   {
-    std::vector<int> nums1 = {1, 2, 3};
-    std::vector<int> nums2 = {1, 2, 3};
+    vector<int> nums1 = {1, 2, 3};
+    vector<int> nums2 = {1, 2, 3};
     auto result = kSmallestPairs(nums1, nums2, 5);
     // All sums: (1,1)=2 (1,2)=3 (1,3)=4 (2,1)=3 (2,2)=4 (2,3)=5 (3,1)=4 (3,2)=5 (3,3)=6
     // Sorted by sum (ties broken by heap order, but sum sequence must match):
     // 2,3,3,4,4,4,5,5,6 -> first 5 sums: 2,3,3,4,4
-    std::vector<int> expected_sums = {2, 3, 3, 4, 4};
-    std::vector<int> actual_sums;
+    vector<int> expected_sums = {2, 3, 3, 4, 4};
+    vector<int> actual_sums;
     for (const auto& pair : result) actual_sums.push_back(pair[0] + pair[1]);
     check(actual_sums == expected_sums, "k=5 pairs have the correct non-decreasing sum sequence");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

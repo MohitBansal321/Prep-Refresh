@@ -32,16 +32,19 @@
 #include <unordered_map>
 #include <vector>
 
-std::vector<std::string> topKFrequentWords(const std::vector<std::string>& words, int k) {
-    std::unordered_map<std::string, int> frequency;
-    for (const std::string& word : words) {
+using namespace std;
+
+
+vector<string> topKFrequentWords(const vector<string>& words, int k) {
+    unordered_map<string, int> frequency;
+    for (const string& word : words) {
         ++frequency[word];
     }
 
-    using WordCount = std::pair<std::string, int>;  // (word, frequency)
+    using WordCount = pair<string, int>;  // (word, frequency)
 
     // Comparator returns true when `a` is BETTER than `b` (higher frequency, or a
-    // lexicographically smaller word on a tie). Because std::priority_queue keeps
+    // lexicographically smaller word on a tie). Because priority_queue keeps
     // the element the comparator treats as "greatest" on top, and this comparator
     // treats "better" as "less than", the WORST word ends up on top -- exactly the
     // one we want cheap to evict.
@@ -52,7 +55,7 @@ std::vector<std::string> topKFrequentWords(const std::vector<std::string>& words
         return a.first < b.first;  // tie on frequency: lexicographically smaller wins
     };
 
-    std::priority_queue<WordCount, std::vector<WordCount>, decltype(better)> minHeap(better);
+    priority_queue<WordCount, vector<WordCount>, decltype(better)> minHeap(better);
 
     for (const auto& entry : frequency) {
         minHeap.push(entry);
@@ -63,27 +66,27 @@ std::vector<std::string> topKFrequentWords(const std::vector<std::string>& words
 
     // Popping yields worst-to-best order; reverse to get the required
     // best-first (highest frequency, then lexicographically smallest) order.
-    std::vector<std::string> result;
+    vector<string> result;
     result.reserve(minHeap.size());
     while (!minHeap.empty()) {
         result.push_back(minHeap.top().first);
         minHeap.pop();
     }
-    std::reverse(result.begin(), result.end());
+    reverse(result.begin(), result.end());
     return result;
 }
 
 namespace {
-void check(const std::vector<std::string>& actual, const std::vector<std::string>& expected,
-           const std::string& label) {
+void check(const vector<string>& actual, const vector<string>& expected,
+           const string& label) {
     bool pass = (actual == expected);
-    std::cout << (pass ? "[PASS] " : "[FAIL] ") << label << '\n';
+    cout << (pass ? "[PASS] " : "[FAIL] ") << label << '\n';
     if (!pass) {
-        std::cout << "        got: ";
-        for (const auto& w : actual) std::cout << w << ' ';
-        std::cout << "\n        expected: ";
-        for (const auto& w : expected) std::cout << w << ' ';
-        std::cout << '\n';
+        cout << "        got: ";
+        for (const auto& w : actual) cout << w << ' ';
+        cout << "\n        expected: ";
+        for (const auto& w : expected) cout << w << ' ';
+        cout << '\n';
     }
 }
 }  // namespace
@@ -105,6 +108,6 @@ int main() {
     check(topKFrequentWords({"b", "a", "b", "a", "c"}, 3), {"a", "b", "c"},
           "three-way tie in frequency, lexicographic order enforced");
 
-    std::cout << "\nAll topKFrequentWords checks executed.\n";
+    cout << "\nAll topKFrequentWords checks executed.\n";
     return 0;
 }

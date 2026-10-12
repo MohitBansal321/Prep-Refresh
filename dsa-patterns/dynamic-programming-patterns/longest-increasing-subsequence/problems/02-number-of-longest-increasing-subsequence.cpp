@@ -62,12 +62,15 @@
 #include <string>
 #include <vector>
 
-int findNumberOfLIS(const std::vector<int>& nums) {
+using namespace std;
+
+
+int findNumberOfLIS(const vector<int>& nums) {
   const size_t n = nums.size();
   if (n == 0) return 0;
 
-  std::vector<int> length(n, 1);
-  std::vector<int> count(n, 1);
+  vector<int> length(n, 1);
+  vector<int> count(n, 1);
 
   int max_length = 1;
 
@@ -86,7 +89,7 @@ int findNumberOfLIS(const std::vector<int>& nums) {
         // else: j cannot beat the best length already recorded at i, skip.
       }
     }
-    max_length = std::max(max_length, length[i]);
+    max_length = max(max_length, length[i]);
   }
 
   int total = 0;
@@ -102,13 +105,13 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](const std::vector<int>& nums, int expected, const std::string& label) {
+  auto check = [&](const vector<int>& nums, int expected, const string& label) {
     int result = findNumberOfLIS(nums);
     if (result == expected) {
-      std::cout << "[PASS] " << label << " -> " << result << "\n";
+      cout << "[PASS] " << label << " -> " << result << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << " -> got " << result
+      cout << "[FAIL] " << label << " -> got " << result
                 << ", expected " << expected << "\n";
       ++fail_count;
     }
@@ -121,6 +124,6 @@ int main() {
   check({1, 1, 1, 2, 2, 2, 3, 3, 3}, 27,
         "[1,1,1,2,2,2,3,3,3] -> 3 choices per level, 3 levels -> 27");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

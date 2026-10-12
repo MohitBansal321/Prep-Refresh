@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
 // ----------------------------------------------------------------------------
 // Result bundle: the maximum sum AND the inclusive [start_index, end_index]
@@ -49,12 +50,12 @@ struct KadaneResult {
 // so that an all-negative array correctly returns its single least-negative
 // element instead of an incorrect 0 -- see README.md, "Common Mistakes".
 // ----------------------------------------------------------------------------
-KadaneResult maxSubarraySum(std::vector<int>& nums) {
+KadaneResult maxSubarraySum(vector<int>& nums) {
   if (nums.empty()) {
     // "The maximum sum subarray of nothing" is not a well-defined question.
     // Silently returning 0 here would be indistinguishable from a legitimate
     // all-negative-array answer of 0 -- reject it explicitly instead.
-    throw std::invalid_argument("maxSubarraySum: input array must not be empty");
+    throw invalid_argument("maxSubarraySum: input array must not be empty");
   }
 
   long long current_sum = nums[0];
@@ -94,76 +95,76 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- Typical mixed-sign array ---\n";
+  cout << "--- Typical mixed-sign array ---\n";
   {
-    std::vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+    vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
     auto result = maxSubarraySum(nums);
-    std::cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
+    cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
               << ", " << result.end_index << "] (expected sum=6, range=[3, 6])\n";
     check(result.max_sum == 6 && result.start_index == 3 && result.end_index == 6,
           "[-2,1,-3,4,-1,2,1,-5,4] -> sum 6, subarray [4,-1,2,1]");
   }
 
-  std::cout << "\n--- All-positive array (answer is the whole array) ---\n";
+  cout << "\n--- All-positive array (answer is the whole array) ---\n";
   {
-    std::vector<int> nums = {1, 2, 3, 4, 5};
+    vector<int> nums = {1, 2, 3, 4, 5};
     auto result = maxSubarraySum(nums);
-    std::cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
+    cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
               << ", " << result.end_index << "] (expected sum=15, range=[0, 4])\n";
     check(result.max_sum == 15 && result.start_index == 0 && result.end_index == 4,
           "[1,2,3,4,5] -> sum 15, whole array");
   }
 
-  std::cout << "\n--- All-negative array (edge case: must NOT return 0) ---\n";
+  cout << "\n--- All-negative array (edge case: must NOT return 0) ---\n";
   {
-    std::vector<int> nums = {-5, -3, -8, -1, -9};
+    vector<int> nums = {-5, -3, -8, -1, -9};
     auto result = maxSubarraySum(nums);
-    std::cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
+    cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
               << ", " << result.end_index << "] (expected sum=-1, range=[3, 3])\n";
     check(result.max_sum == -1 && result.start_index == 3 && result.end_index == 3,
           "[-5,-3,-8,-1,-9] -> sum -1 (least-negative single element), NOT 0");
   }
 
-  std::cout << "\n--- Single-element array ---\n";
+  cout << "\n--- Single-element array ---\n";
   {
-    std::vector<int> nums = {7};
+    vector<int> nums = {7};
     auto result = maxSubarraySum(nums);
     check(result.max_sum == 7 && result.start_index == 0 && result.end_index == 0,
           "[7] -> sum 7, range [0, 0]");
   }
 
-  std::cout << "\n--- Best subarray sits in the middle ---\n";
+  cout << "\n--- Best subarray sits in the middle ---\n";
   {
-    std::vector<int> nums = {-1, -2, 5, 6, -1, 7, -20};
+    vector<int> nums = {-1, -2, 5, 6, -1, 7, -20};
     auto result = maxSubarraySum(nums);
-    std::cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
+    cout << "  max_sum=" << result.max_sum << " range=[" << result.start_index
               << ", " << result.end_index << "] (expected sum=17, range=[2, 5])\n";
     check(result.max_sum == 17 && result.start_index == 2 && result.end_index == 5,
           "[-1,-2,5,6,-1,7,-20] -> sum 17, subarray [5,6,-1,7]");
   }
 
-  std::cout << "\n--- Empty array must throw ---\n";
+  cout << "\n--- Empty array must throw ---\n";
   {
-    std::vector<int> nums;
+    vector<int> nums;
     bool threw = false;
     try {
       maxSubarraySum(nums);
-    } catch (const std::invalid_argument&) {
+    } catch (const invalid_argument&) {
       threw = true;
     }
     check(threw, "empty array -> throws std::invalid_argument");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

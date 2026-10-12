@@ -5,7 +5,7 @@
 // PROBLEM (summary):
 //   Given the head of a singly linked list, reverse the list and return the
 //   new head. Do it in O(n) time and O(1) extra space — i.e. do NOT copy
-//   values into a std::vector and build a new list from it.
+//   values into a vector and build a new list from it.
 //
 // APPROACH (In-place Reversal, whole-list case):
 //   This is the pattern in its purest form. Walk the list exactly once with
@@ -25,7 +25,7 @@
 //   Time:  O(n) — every node is visited exactly once.
 //   Space: O(1) — three pointer variables, regardless of list length.
 //          Contrast with the brute-force approach of copying every value
-//          into a std::vector<int> and building a brand-new reversed list
+//          into a vector<int> and building a brand-new reversed list
 //          from it, which is O(n) time AND O(n) space.
 //
 // Compile:
@@ -35,13 +35,16 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 struct ListNode {
   int val;
   ListNode* next;
   ListNode(int x) : val(x), next(nullptr) {}
 };
 
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
   ListNode* head = new ListNode(values[0]);
   ListNode* tail = head;
@@ -60,8 +63,8 @@ void free_list(ListNode* head) {
   }
 }
 
-std::vector<int> to_vector(ListNode* head) {
-  std::vector<int> out;
+vector<int> to_vector(ListNode* head) {
+  vector<int> out;
   while (head != nullptr) {
     out.push_back(head->val);
     head = head->next;
@@ -89,22 +92,22 @@ ListNode* reverseList(ListNode* head) {
 // ----------------------------------------------------------------------------
 // Test harness.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, const std::vector<int>& actual,
-           const std::vector<int>& expected) {
+void check(const string& name, const vector<int>& actual,
+           const vector<int>& expected) {
   bool pass = (actual == expected);
-  std::cout << (pass ? "PASS" : "FAIL") << " — " << name << " (got [";
+  cout << (pass ? "PASS" : "FAIL") << " — " << name << " (got [";
   for (size_t i = 0; i < actual.size(); ++i) {
-    std::cout << actual[i] << (i + 1 < actual.size() ? "," : "");
+    cout << actual[i] << (i + 1 < actual.size() ? "," : "");
   }
-  std::cout << "], expected [";
+  cout << "], expected [";
   for (size_t i = 0; i < expected.size(); ++i) {
-    std::cout << expected[i] << (i + 1 < expected.size() ? "," : "");
+    cout << expected[i] << (i + 1 < expected.size() ? "," : "");
   }
-  std::cout << "])\n";
+  cout << "])\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 206: Reverse Linked List ===\n\n";
+  cout << "=== LeetCode 206: Reverse Linked List ===\n\n";
 
   // Case 1: typical multi-node list.
   {

@@ -70,10 +70,13 @@
 #include <tuple>
 #include <vector>
 
-using HeapEntry = std::tuple<int, int, int>;  // {value, list_index, element_index}
-using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>>;
+using namespace std;
 
-std::vector<int> smallestRange(const std::vector<std::vector<int>>& lists) {
+
+using HeapEntry = tuple<int, int, int>;  // {value, list_index, element_index}
+using MinHeap = priority_queue<HeapEntry, vector<HeapEntry>, greater<>>;
+
+vector<int> smallestRange(const vector<vector<int>>& lists) {
   MinHeap heap;
   int current_max = INT_MIN;
   const int k = static_cast<int>(lists.size());
@@ -89,7 +92,7 @@ std::vector<int> smallestRange(const std::vector<std::vector<int>>& lists) {
       return {};
     }
     heap.emplace(lists[list_index][0], list_index, 0);
-    current_max = std::max(current_max, lists[list_index][0]);
+    current_max = max(current_max, lists[list_index][0]);
   }
 
   int best_start = 0;
@@ -98,12 +101,12 @@ std::vector<int> smallestRange(const std::vector<std::vector<int>>& lists) {
                              // which overflows a 32-bit int (undefined behavior)
 
   while (true) {
-    // Unpack the tuple field by field with std::get<> rather than a C++17
+    // Unpack the tuple field by field with get<> rather than a C++17
     // structured binding, so this file compiles on older toolchains too.
     const HeapEntry top = heap.top();
-    const int smallest_value = std::get<0>(top);
-    const int list_index = std::get<1>(top);
-    const int element_index = std::get<2>(top);
+    const int smallest_value = get<0>(top);
+    const int list_index = get<1>(top);
+    const int element_index = get<2>(top);
     heap.pop();
 
     // Candidate range: [smallest_value, current_max] is guaranteed to touch
@@ -130,7 +133,7 @@ std::vector<int> smallestRange(const std::vector<std::vector<int>>& lists) {
 
     const int next_value = lists[list_index][next_index];
     heap.emplace(next_value, list_index, next_index);
-    current_max = std::max(current_max, next_value);
+    current_max = max(current_max, next_value);
   }
 
   return {best_start, best_end};
@@ -140,68 +143,68 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // ---- Test 1: the classic LeetCode example -----------------------------------
   {
-    std::vector<std::vector<int>> lists = {
+    vector<vector<int>> lists = {
         {4, 10, 15, 24, 26},
         {0, 9, 12, 20},
         {5, 18, 22, 30},
     };
     auto result = smallestRange(lists);
-    std::vector<int> expected = {20, 24};
+    vector<int> expected = {20, 24};
     check(result == expected, "classic example -> [20, 24]");
   }
 
   // ---- Test 2: single-element lists (the range must span all of them) --------
   {
-    std::vector<std::vector<int>> lists = {{1}, {100}, {50}};
+    vector<vector<int>> lists = {{1}, {100}, {50}};
     auto result = smallestRange(lists);
-    std::vector<int> expected = {1, 100};
+    vector<int> expected = {1, 100};
     check(result == expected, "single-element lists -> range spans min to max");
   }
 
   // ---- Test 3: all lists identical (a range of width 0 should be possible) ---
   {
-    std::vector<std::vector<int>> lists = {{5, 10}, {5, 10}, {5, 10}};
+    vector<vector<int>> lists = {{5, 10}, {5, 10}, {5, 10}};
     auto result = smallestRange(lists);
-    std::vector<int> expected = {5, 5};
+    vector<int> expected = {5, 5};
     check(result == expected, "identical lists -> range width 0 at the shared value");
   }
 
   // ---- Test 4: two lists, disjoint ranges of values ----------------------------
   {
-    std::vector<std::vector<int>> lists = {{1, 2, 3}, {100, 200, 300}};
+    vector<vector<int>> lists = {{1, 2, 3}, {100, 200, 300}};
     auto result = smallestRange(lists);
     // Best range must include one value from each: options are e.g.
     // [3,100] (width 97) is the narrowest since 3 is closest to 100.
-    std::vector<int> expected = {3, 100};
+    vector<int> expected = {3, 100};
     check(result == expected, "disjoint value ranges -> tightest bridging pair [3,100]");
   }
 
   // ---- Test 5: k = 1 (a single list; the range is a single point) -------------
   {
-    std::vector<std::vector<int>> lists = {{7, 15, 22}};
+    vector<vector<int>> lists = {{7, 15, 22}};
     auto result = smallestRange(lists);
     // With only one list, the smallest covering range is any single value
     // from it; the algorithm should report the first (smallest) element,
     // width 0, since it's the first candidate the heap pops.
-    std::vector<int> expected = {7, 7};
+    vector<int> expected = {7, 7};
     check(result == expected, "k=1 -> width-0 range at the list's smallest element");
   }
 
   // ---- Test 6: lists of uneven length, needing several advances ---------------
   {
-    std::vector<std::vector<int>> lists = {
+    vector<vector<int>> lists = {
         {1, 3, 5, 7, 9},
         {2, 4},
         {6, 8, 10, 12, 14, 16},
@@ -214,6 +217,6 @@ int main() {
           "uneven-length lists -> produces a valid, well-formed range");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

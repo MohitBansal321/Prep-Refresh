@@ -43,9 +43,12 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Correct: counts combinations. Coins outer, amount inner.
-long long coinChangeIICombinations(const std::vector<int>& coins, int amount) {
-    std::vector<long long> dp(amount + 1, 0);
+long long coinChangeIICombinations(const vector<int>& coins, int amount) {
+    vector<long long> dp(amount + 1, 0);
     dp[0] = 1; // base case: exactly one way to make amount 0 -- use no coins
 
     for (int c : coins) {
@@ -61,8 +64,8 @@ long long coinChangeIICombinations(const std::vector<int>& coins, int amount) {
 // every w regardless of which coins already contributed to dp[w - c]. Kept
 // here, and exercised in main(), purely to make the loop-order contrast
 // concrete rather than asserted in a comment.
-long long countPermutationsNotCombinations(const std::vector<int>& coins, int amount) {
-    std::vector<long long> dp(amount + 1, 0);
+long long countPermutationsNotCombinations(const vector<int>& coins, int amount) {
+    vector<long long> dp(amount + 1, 0);
     dp[0] = 1;
 
     for (int w = 1; w <= amount; ++w) {
@@ -79,12 +82,12 @@ namespace {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(const std::string& label, long long actual, long long expected) {
+void check(const string& label, long long actual, long long expected) {
     if (actual == expected) {
-        std::cout << "[PASS] " << label << " => " << actual << "\n";
+        cout << "[PASS] " << label << " => " << actual << "\n";
         ++g_pass;
     } else {
-        std::cout << "[FAIL] " << label << " => got " << actual
+        cout << "[FAIL] " << label << " => got " << actual
                    << ", expected " << expected << "\n";
         ++g_fail;
     }
@@ -114,12 +117,12 @@ int main() {
     long long combos = coinChangeIICombinations({1, 2}, 4);
     long long perms = countPermutationsNotCombinations({1, 2}, 4);
     check("combinations: coins=[1,2], amount=4", combos, 3);
-    std::cout << "[INFO] same coins/amount counted as permutations => "
+    cout << "[INFO] same coins/amount counted as permutations => "
               << perms << " (expected to DIFFER from combinations=" << combos
               << ", demonstrating why loop order matters)\n";
     check("permutations differ from combinations for coins=[1,2], amount=4",
           (perms != combos) ? 1 : 0, 1);
 
-    std::cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
+    cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
     return g_fail == 0 ? 0 : 1;
 }

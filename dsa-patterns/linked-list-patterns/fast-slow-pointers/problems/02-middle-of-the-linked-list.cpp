@@ -39,13 +39,16 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 struct ListNode {
   int val;
   ListNode* next;
   ListNode(int x) : val(x), next(nullptr) {}
 };
 
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
   ListNode* head = new ListNode(values[0]);
   ListNode* tail = head;
@@ -82,13 +85,13 @@ ListNode* middleNode(ListNode* head) {
 // ----------------------------------------------------------------------------
 // Test harness.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, int actual, int expected) {
-  std::cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
+void check(const string& name, int actual, int expected) {
+  cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
              << " (got " << actual << ", expected " << expected << ")\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 876: Middle of the Linked List ===\n\n";
+  cout << "=== LeetCode 876: Middle of the Linked List ===\n\n";
 
   // Case 1: odd length -> single exact middle.
   {

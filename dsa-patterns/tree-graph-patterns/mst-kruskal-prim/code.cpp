@@ -27,6 +27,9 @@
 #include <tuple>
 #include <vector>
 
+using namespace std;
+
+
 struct Edge {
   int u;
   int v;
@@ -42,7 +45,7 @@ struct Edge {
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
 
   int find(int x) {
@@ -56,15 +59,15 @@ class DisjointSet {
   bool unionSets(int x, int y) {
     int rootX = find(x), rootY = find(y);
     if (rootX == rootY) return false;
-    if (rank_[rootX] < rank_[rootY]) std::swap(rootX, rootY);
+    if (rank_[rootX] < rank_[rootY]) swap(rootX, rootY);
     parent_[rootY] = rootX;
     if (rank_[rootX] == rank_[rootY]) ++rank_[rootX];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
 // ----------------------------------------------------------------------------
@@ -85,11 +88,11 @@ class DisjointSet {
 // ----------------------------------------------------------------------------
 struct MSTResult {
   long long totalWeight;
-  std::vector<Edge> edgesUsed;
+  vector<Edge> edgesUsed;
 };
 
-MSTResult kruskalMST(int n, std::vector<Edge> edges) {
-  std::sort(edges.begin(), edges.end(),
+MSTResult kruskalMST(int n, vector<Edge> edges) {
+  sort(edges.begin(), edges.end(),
             [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
 
   DisjointSet dsu(n);
@@ -120,24 +123,24 @@ MSTResult kruskalMST(int n, std::vector<Edge> edges) {
 // Prim's chooses cheap edges LOCALLY, always adjacent to what has already
 // been grown.
 // ----------------------------------------------------------------------------
-MSTResult primMST(int n, const std::vector<std::vector<std::pair<int, int>>>& adj) {
-  std::vector<bool> inTree(n, false);
-  // Min-heap of {weight, from, to}. std::priority_queue is a MAX-heap by
-  // default, so std::greater<> is supplied to invert it into a min-heap.
-  using HeapEntry = std::tuple<int, int, int>;
-  std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>> pq;
+MSTResult primMST(int n, const vector<vector<pair<int, int>>>& adj) {
+  vector<bool> inTree(n, false);
+  // Min-heap of {weight, from, to}. priority_queue is a MAX-heap by
+  // default, so greater<> is supplied to invert it into a min-heap.
+  using HeapEntry = tuple<int, int, int>;
+  priority_queue<HeapEntry, vector<HeapEntry>, greater<>> pq;
 
   MSTResult result{0, {}};
   inTree[0] = true;
-  for (const std::pair<int, int>& edge : adj[0]) {
-    pq.push(std::make_tuple(edge.second, 0, edge.first));
+  for (const pair<int, int>& edge : adj[0]) {
+    pq.push(make_tuple(edge.second, 0, edge.first));
   }
 
   while (!pq.empty() && static_cast<int>(result.edgesUsed.size()) < n - 1) {
     const HeapEntry top = pq.top();
-    const int weight = std::get<0>(top);
-    const int from = std::get<1>(top);
-    const int to = std::get<2>(top);
+    const int weight = get<0>(top);
+    const int from = get<1>(top);
+    const int to = get<2>(top);
     pq.pop();
     if (inTree[to]) continue;  // stale entry: `to` was already added via a
                                 // cheaper edge found later in the heap
@@ -146,9 +149,9 @@ MSTResult primMST(int n, const std::vector<std::vector<std::pair<int, int>>>& ad
     result.totalWeight += weight;
     result.edgesUsed.push_back(Edge{from, to, weight});
 
-    for (const std::pair<int, int>& edge : adj[to]) {
+    for (const pair<int, int>& edge : adj[to]) {
       if (!inTree[edge.first]) {
-        pq.push(std::make_tuple(edge.second, to, edge.first));
+        pq.push(make_tuple(edge.second, to, edge.first));
       }
     }
   }
@@ -163,12 +166,12 @@ MSTResult primMST(int n, const std::vector<std::vector<std::pair<int, int>>>& ad
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -176,7 +179,7 @@ void check(bool condition, const std::string& label) {
 int main() {
   // A 5-node graph (classic textbook shape):
   //   0-1 (2), 0-3 (6), 1-2 (3), 1-3 (8), 1-4 (5), 2-4 (7), 3-4 (9)
-  std::vector<Edge> edges = {
+  vector<Edge> edges = {
       {0, 1, 2}, {0, 3, 6}, {1, 2, 3}, {1, 3, 8}, {1, 4, 5}, {2, 4, 7}, {3, 4, 9},
   };
 
@@ -188,7 +191,7 @@ int main() {
   }
 
   {
-    std::vector<std::vector<std::pair<int, int>>> adj(5);
+    vector<vector<pair<int, int>>> adj(5);
     for (const Edge& e : edges) {
       adj[e.u].push_back({e.v, e.weight});
       adj[e.v].push_back({e.u, e.weight});
@@ -203,7 +206,7 @@ int main() {
     // A graph with a cheaper alternative that must be preferred:
     // three nodes, a triangle 0-1 (1), 1-2 (1), 0-2 (10) -- the MST must
     // use the two cheap edges and skip the expensive one entirely.
-    std::vector<Edge> triangle = {{0, 1, 1}, {1, 2, 1}, {0, 2, 10}};
+    vector<Edge> triangle = {{0, 1, 1}, {1, 2, 1}, {0, 2, 10}};
     MSTResult result = kruskalMST(3, triangle);
     check(result.totalWeight == 2,
           "triangle graph: MST picks the two cheap edges (1+1), skips the "
@@ -213,7 +216,7 @@ int main() {
   {
     // A disconnected graph: no spanning tree exists. edgesUsed.size() must
     // be less than n-1, not a crash or a wrong total.
-    std::vector<Edge> disconnected = {{0, 1, 5}};  // node 2 is isolated
+    vector<Edge> disconnected = {{0, 1, 5}};  // node 2 is isolated
     MSTResult result = kruskalMST(3, disconnected);
     check(result.edgesUsed.size() == 1,
           "disconnected graph: only 1 edge used, not the full n-1 = 2 -- no "
@@ -225,7 +228,7 @@ int main() {
     // Kruskal's correctly skips an edge that would close a cycle even
     // when it looks locally tempting (a 4-node cycle where one edge must
     // be dropped).
-    std::vector<Edge> cycle = {
+    vector<Edge> cycle = {
         {0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 0, 1}};  // a 4-cycle, all weight 1
     MSTResult result = kruskalMST(4, cycle);
     check(result.totalWeight == 3,
@@ -241,6 +244,6 @@ int main() {
           "single node, no edges -> trivial MST, weight 0");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

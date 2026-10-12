@@ -44,7 +44,7 @@
 //    it is a valid nesting chain, and every valid nesting chain shows up
 //    as some increasing run of heights after this sort.
 //
-// 4. Run the O(n log n) patience-sorting LIS (std::lower_bound on a
+// 4. Run the O(n log n) patience-sorting LIS (lower_bound on a
 //    `tails` array of heights) over that height column.
 //
 // COMPLEXITY
@@ -60,14 +60,17 @@
 #include <string>
 #include <vector>
 
-int maxEnvelopes(std::vector<std::vector<int>> envelopes) {
+using namespace std;
+
+
+int maxEnvelopes(vector<vector<int>> envelopes) {
   if (envelopes.empty()) return 0;
 
   // Sort by width ascending; for ties on width, sort by height DESCENDING
   // so that same-width envelopes can never look like a valid "increasing
   // height" step in the LIS pass that follows.
-  std::sort(envelopes.begin(), envelopes.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
+  sort(envelopes.begin(), envelopes.end(),
+            [](const vector<int>& a, const vector<int>& b) {
               if (a[0] != b[0]) return a[0] < b[0];
               return a[1] > b[1];
             });
@@ -75,12 +78,12 @@ int maxEnvelopes(std::vector<std::vector<int>> envelopes) {
   // Now: find the length of the longest strictly increasing subsequence
   // of the height column — identical patience-sorting technique as
   // 01-longest-increasing-subsequence.cpp.
-  std::vector<int> tails;
+  vector<int> tails;
   tails.reserve(envelopes.size());
 
   for (const auto& envelope : envelopes) {
     int height = envelope[1];
-    auto it = std::lower_bound(tails.begin(), tails.end(), height);
+    auto it = lower_bound(tails.begin(), tails.end(), height);
     if (it == tails.end()) {
       tails.push_back(height);
     } else {
@@ -95,14 +98,14 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](std::vector<std::vector<int>> envelopes, int expected,
-                    const std::string& label) {
+  auto check = [&](vector<vector<int>> envelopes, int expected,
+                    const string& label) {
     int result = maxEnvelopes(envelopes);
     if (result == expected) {
-      std::cout << "[PASS] " << label << " -> " << result << "\n";
+      cout << "[PASS] " << label << " -> " << result << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << " -> got " << result
+      cout << "[FAIL] " << label << " -> got " << result
                 << ", expected " << expected << "\n";
       ++fail_count;
     }
@@ -124,6 +127,6 @@ int main() {
   check({{3, 4}, {14, 12}, {11, 11}, {2, 3}}, 4,
         "another mixed example -> [2,3]->[3,4]->[11,11]->[14,12] -> 4");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

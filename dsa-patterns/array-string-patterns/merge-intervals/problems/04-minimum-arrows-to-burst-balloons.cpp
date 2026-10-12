@@ -43,14 +43,17 @@
 #include <string>
 #include <vector>
 
-int findMinArrowShots(std::vector<std::vector<int>> points) {
+using namespace std;
+
+
+int findMinArrowShots(vector<vector<int>> points) {
   if (points.empty()) return 0;
 
   // Sort by end coordinate — the same "sort by end" idea as Non-overlapping
   // Intervals, for the same reason: it gives the tightest possible shared
   // firing point for the current group of overlapping balloons.
-  std::sort(points.begin(), points.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
+  sort(points.begin(), points.end(),
+            [](const vector<int>& a, const vector<int>& b) {
               return a[1] < b[1];
             });
 
@@ -80,9 +83,9 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](int actual, int expected, const std::string& label) {
+  auto check = [&](int actual, int expected, const string& label) {
     bool ok = (actual == expected);
-    std::cout << (ok ? "[PASS] " : "[FAIL] ") << label << " (got " << actual
+    cout << (ok ? "[PASS] " : "[FAIL] ") << label << " (got " << actual
                << ", expected " << expected << ")\n";
     ok ? ++pass_count : ++fail_count;
   };
@@ -104,6 +107,6 @@ int main() {
   check(findMinArrowShots({{1, 100000000}}), 1,
         "single wide balloon needs exactly one arrow, no overflow on large coordinates");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

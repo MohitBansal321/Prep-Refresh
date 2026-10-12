@@ -52,12 +52,13 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
 // Returns 1-indexed {index1, index2} with index1 < index2 such that
 // numbers[index1-1] + numbers[index2-1] == target.
-// Throws std::invalid_argument if no such pair exists (should not happen
+// Throws invalid_argument if no such pair exists (should not happen
 // per problem's guarantee, but we do not silently return garbage).
-std::vector<int> twoSum(const std::vector<int>& numbers, int target) {
+vector<int> twoSum(const vector<int>& numbers, int target) {
   int left = 0;
   int right = static_cast<int>(numbers.size()) - 1;
 
@@ -76,41 +77,41 @@ std::vector<int> twoSum(const std::vector<int>& numbers, int target) {
     }
   }
 
-  throw std::invalid_argument("No valid pair found for the given target.");
+  throw invalid_argument("No valid pair found for the given target.");
 }
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> numbers = {2, 7, 11, 15};
+    vector<int> numbers = {2, 7, 11, 15};
     auto result = twoSum(numbers, 9);
-    std::vector<int> expected = {1, 2};
+    vector<int> expected = {1, 2};
     check(result == expected, "[2,7,11,15], target 9 -> [1,2]");
   }
 
   {
-    std::vector<int> numbers = {2, 3, 4};
+    vector<int> numbers = {2, 3, 4};
     auto result = twoSum(numbers, 6);
-    std::vector<int> expected = {1, 3};
+    vector<int> expected = {1, 3};
     check(result == expected, "[2,3,4], target 6 -> [1,3]");
   }
 
   {
-    std::vector<int> numbers = {-1, 0};
+    vector<int> numbers = {-1, 0};
     auto result = twoSum(numbers, -1);
-    std::vector<int> expected = {1, 2};
+    vector<int> expected = {1, 2};
     check(result == expected, "[-1,0], target -1 -> [1,2]");
   }
 
@@ -118,23 +119,23 @@ int main() {
     // Requires several steps of both pointers moving before converging:
     // right retreats twice (15, 14 too large), then left advances three
     // times (1, 2, 3 too small) before landing on 4 + 9 = 13.
-    std::vector<int> numbers = {1, 2, 3, 4, 6, 8, 9, 14, 15};
+    vector<int> numbers = {1, 2, 3, 4, 6, 8, 9, 14, 15};
     auto result = twoSum(numbers, 13);
-    std::vector<int> expected = {4, 7};  // numbers[3]=4, numbers[6]=9 -> 13
+    vector<int> expected = {4, 7};  // numbers[3]=4, numbers[6]=9 -> 13
     check(result == expected, "longer array, multi-step convergence -> [4,7]");
   }
 
   {
     bool threw = false;
     try {
-      std::vector<int> numbers = {1, 2, 3};
+      vector<int> numbers = {1, 2, 3};
       twoSum(numbers, 100);
-    } catch (const std::invalid_argument&) {
+    } catch (const invalid_argument&) {
       threw = true;
     }
     check(threw, "no valid pair -> throws std::invalid_argument");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

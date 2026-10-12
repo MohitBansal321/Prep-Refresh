@@ -69,10 +69,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
 
   int find(int x) {
@@ -90,21 +93,21 @@ class DisjointSet {
     int root_y = find(y);
     if (root_x == root_y) return false;
 
-    if (rank_[root_x] < rank_[root_y]) std::swap(root_x, root_y);
+    if (rank_[root_x] < rank_[root_y]) swap(root_x, root_y);
     parent_[root_y] = root_x;
     if (rank_[root_x] == rank_[root_y]) ++rank_[root_x];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
-std::vector<int> numIslands2(int m, int n, const std::vector<std::vector<int>>& positions) {
+vector<int> numIslands2(int m, int n, const vector<vector<int>>& positions) {
   DisjointSet dsu(m * n);
-  std::vector<bool> is_land(m * n, false);
-  std::vector<int> result;
+  vector<bool> is_land(m * n, false);
+  vector<int> result;
   result.reserve(positions.size());
 
   int island_count = 0;
@@ -152,19 +155,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::vector<int>> positions = {{0, 0}, {0, 1}, {1, 2}, {2, 1}};
-    std::vector<int> expected = {1, 1, 2, 3};
+    vector<vector<int>> positions = {{0, 0}, {0, 1}, {1, 2}, {2, 1}};
+    vector<int> expected = {1, 1, 2, 3};
     check(numIslands2(3, 3, positions) == expected,
           "3x3 grid, classic example -> [1,1,2,3]");
   }
@@ -172,8 +175,8 @@ int main() {
   {
     // A single cell added, then another that merges with it diagonally is
     // NOT adjacent (diagonals don't count) -- both stay separate islands.
-    std::vector<std::vector<int>> positions = {{0, 0}, {1, 1}};
-    std::vector<int> expected = {1, 2};
+    vector<vector<int>> positions = {{0, 0}, {1, 1}};
+    vector<int> expected = {1, 2};
     check(numIslands2(2, 2, positions) == expected,
           "diagonal-only neighbors never merge -> [1,2]");
   }
@@ -181,8 +184,8 @@ int main() {
   {
     // A bridge cell connects two previously separate islands, testing the
     // "merge two existing islands" path (not just "extend one island").
-    std::vector<std::vector<int>> positions = {{0, 0}, {0, 2}, {0, 1}};
-    std::vector<int> expected = {1, 2, 1};
+    vector<vector<int>> positions = {{0, 0}, {0, 2}, {0, 1}};
+    vector<int> expected = {1, 2, 1};
     check(numIslands2(1, 3, positions) == expected,
           "bridge cell merges two separate islands into one -> [1,2,1]");
   }
@@ -190,8 +193,8 @@ int main() {
   {
     // Duplicate position: re-adding an already-land cell must not change
     // the island count or create a phantom new island.
-    std::vector<std::vector<int>> positions = {{0, 0}, {0, 0}, {0, 1}};
-    std::vector<int> expected = {1, 1, 1};
+    vector<vector<int>> positions = {{0, 0}, {0, 0}, {0, 1}};
+    vector<int> expected = {1, 1, 1};
     check(numIslands2(2, 2, positions) == expected,
           "duplicate position is a no-op -> [1,1,1]");
   }
@@ -205,13 +208,13 @@ int main() {
     // Add (0,0),(0,1),(0,2),(1,0),(1,2) forming a U, all one island already
     // via the top row; then add (1,1) which touches (0,1),(1,0),(1,2) --
     // all three of which are already the SAME component.
-    std::vector<std::vector<int>> positions = {
+    vector<vector<int>> positions = {
         {0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 2}, {1, 1}};
-    std::vector<int> expected = {1, 1, 1, 1, 1, 1};
+    vector<int> expected = {1, 1, 1, 1, 1, 1};
     check(numIslands2(2, 3, positions) == expected,
           "closing a U-shape touches 3 already-same-component neighbors -> stays 1 island");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

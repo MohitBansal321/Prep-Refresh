@@ -47,18 +47,21 @@
 #include <string>
 #include <vector>
 
-int longestCommonSubsequence(const std::string& text1, const std::string& text2) {
+using namespace std;
+
+
+int longestCommonSubsequence(const string& text1, const string& text2) {
   const size_t n = text1.size();
   const size_t m = text2.size();
 
-  std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+  vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
 
   for (size_t i = 1; i <= n; ++i) {
     for (size_t j = 1; j <= m; ++j) {
       if (text1[i - 1] == text2[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1] + 1;
       } else {
-        dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+        dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
       }
     }
   }
@@ -70,12 +73,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -89,6 +92,6 @@ int main() {
   check(longestCommonSubsequence("ezupkr", "ubmrapg") == 2,
         "\"ezupkr\", \"ubmrapg\" -> 2");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

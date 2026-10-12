@@ -54,34 +54,37 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the number of unique right/down paths from (0,0) to (m-1,n-1).
 int uniquePaths(int m, int n) {
   // Rolling row: dp[c] ends each pass holding "paths to (currentRow, c)".
-  std::vector<long long> dp(static_cast<std::size_t>(n), 1);
+  vector<long long> dp(static_cast<size_t>(n), 1);
 
   // Row 0 is pre-initialized to all 1s (the straight-line base case).
   for (int r = 1; r < m; ++r) {
     for (int c = 1; c < n; ++c) {
       // dp[c]   not yet overwritten this pass -> value from the row above.
       // dp[c-1] already overwritten this pass -> value from the left.
-      dp[static_cast<std::size_t>(c)] += dp[static_cast<std::size_t>(c - 1)];
+      dp[static_cast<size_t>(c)] += dp[static_cast<size_t>(c - 1)];
     }
     // Column 0 stays 1 forever: exactly one way to reach any (r, 0).
   }
 
-  return static_cast<int>(dp[static_cast<std::size_t>(n - 1)]);
+  return static_cast<int>(dp[static_cast<size_t>(n - 1)]);
 }
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -118,6 +121,6 @@ int main() {
     check(uniquePaths(10, 10) == 48620, "10x10 grid -> 48620 (= C(18,9))");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

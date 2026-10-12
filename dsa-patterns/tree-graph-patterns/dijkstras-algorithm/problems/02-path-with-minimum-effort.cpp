@@ -62,32 +62,35 @@
 #include <tuple>
 #include <vector>
 
-const int kInf = std::numeric_limits<int>::max();
+using namespace std;
 
-int minimumEffortPath(const std::vector<std::vector<int> >& grid) {
+
+const int kInf = numeric_limits<int>::max();
+
+int minimumEffortPath(const vector<vector<int> >& grid) {
   const int rows = static_cast<int>(grid.size());
   const int cols = static_cast<int>(grid[0].size());
 
   // effort[r][c] = smallest known value of "maximum step along a path"
   // from (0,0) to (r,c).
-  std::vector<std::vector<int> > effort(rows, std::vector<int>(cols, kInf));
+  vector<vector<int> > effort(rows, vector<int>(cols, kInf));
   effort[0][0] = 0;
 
   // Min-heap of {effortSoFar, row, col}; greater<> flips to min-heap,
   // and tuple comparison orders by effortSoFar first — exactly what we need.
-  std::priority_queue<std::tuple<int, int, int>,
-                      std::vector<std::tuple<int, int, int> >,
-                      std::greater<std::tuple<int, int, int> > >
+  priority_queue<tuple<int, int, int>,
+                      vector<tuple<int, int, int> >,
+                      greater<tuple<int, int, int> > >
       pq;
-  pq.push(std::make_tuple(0, 0, 0));
+  pq.push(make_tuple(0, 0, 0));
 
   const int dr[4] = {-1, 1, 0, 0};
   const int dc[4] = {0, 0, -1, 1};
 
   while (!pq.empty()) {
-    const int d = std::get<0>(pq.top());
-    const int r = std::get<1>(pq.top());
-    const int c = std::get<2>(pq.top());
+    const int d = get<0>(pq.top());
+    const int r = get<1>(pq.top());
+    const int c = get<2>(pq.top());
     pq.pop();
     if (d > effort[r][c]) continue;  // stale entry — a better one already won
 
@@ -102,12 +105,12 @@ int minimumEffortPath(const std::vector<std::vector<int> >& grid) {
       // The ONLY structural change vs sum-Dijkstra lives on these two lines:
       // a path's cost is max(previous path cost, this edge's weight), not a
       // running sum.
-      const int step = std::abs(grid[nr][nc] - grid[r][c]);
-      const int newEffort = std::max(d, step);
+      const int step = abs(grid[nr][nc] - grid[r][c]);
+      const int newEffort = max(d, step);
 
       if (newEffort < effort[nr][nc]) {
         effort[nr][nc] = newEffort;
-        pq.push(std::make_tuple(newEffort, nr, nc));
+        pq.push(make_tuple(newEffort, nr, nc));
       }
     }
   }
@@ -118,18 +121,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::vector<int> > grid;
+    vector<vector<int> > grid;
     grid.push_back({1, 2, 2});
     grid.push_back({3, 8, 2});
     grid.push_back({5, 3, 5});
@@ -141,7 +144,7 @@ int main() {
     // Must route around the tall 8: go right along the top row (steps
     // |1-2|=1, |2-3|=1), then down the right column (|3-4|=1, |4-5|=1).
     // Every step costs <= 1 -> optimal effort 1.
-    std::vector<std::vector<int> > grid;
+    vector<vector<int> > grid;
     grid.push_back({1, 2, 3});
     grid.push_back({3, 8, 4});
     grid.push_back({5, 3, 5});
@@ -151,7 +154,7 @@ int main() {
 
   {
     // Single cell: start IS the destination, zero effort, no moves at all.
-    std::vector<std::vector<int> > grid;
+    vector<vector<int> > grid;
     grid.push_back({7});
     check(minimumEffortPath(grid) == 0,
           "single cell grid -> 0");
@@ -159,7 +162,7 @@ int main() {
 
   {
     // Two cells with a huge cliff: no way around, forced single step.
-    std::vector<std::vector<int> > grid;
+    vector<vector<int> > grid;
     grid.push_back({1, 1000000});
     check(minimumEffortPath(grid) == 999999,
           "forced crossing of a large cliff");
@@ -167,13 +170,13 @@ int main() {
 
   {
     // Flat grid: every step costs 0 regardless of route shape.
-    std::vector<std::vector<int> > grid;
+    vector<vector<int> > grid;
     grid.push_back({4, 4, 4});
     grid.push_back({4, 4, 4});
     check(minimumEffortPath(grid) == 0,
           "flat grid -> 0 effort");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

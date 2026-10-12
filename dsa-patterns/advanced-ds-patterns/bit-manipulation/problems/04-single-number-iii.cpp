@@ -55,8 +55,11 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns {a, b} — the two values appearing exactly once, in arbitrary order.
-std::pair<int, int> singleNumber(const std::vector<int>& nums) {
+pair<int, int> singleNumber(const vector<int>& nums) {
   // Pass 1: cancel every duplicated pair. What remains is a ^ b.
   long long acc = 0;
   for (int n : nums) {
@@ -82,11 +85,11 @@ std::pair<int, int> singleNumber(const std::vector<int>& nums) {
     }
   }
 
-  return std::make_pair(first, second);
+  return make_pair(first, second);
 }
 
 // Order-independent comparison helper for the tests below.
-bool samePair(std::pair<int, int> p, int x, int y) {
+bool samePair(pair<int, int> p, int x, int y) {
   return (p.first == x && p.second == y) || (p.first == y && p.second == x);
 }
 
@@ -94,38 +97,38 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {1, 2, 1, 3, 2, 5};
+    vector<int> nums = {1, 2, 1, 3, 2, 5};
     check(samePair(singleNumber(nums), 3, 5),
           "[1,2,1,3,2,5] -> {3,5} (any order)");
   }
 
   {
     // Edge case: array of size 2 — both elements unique, no pairs at all.
-    std::vector<int> nums = {1, 2};
+    vector<int> nums = {1, 2};
     check(samePair(singleNumber(nums), 1, 2), "[1,2] -> {1,2}");
   }
 
   {
     // Edge case: negative numbers mixed with zero as one of the answers.
-    std::vector<int> nums = {-1, 0};
+    vector<int> nums = {-1, 0};
     check(samePair(singleNumber(nums), -1, 0), "[-1,0] -> {-1,0}");
   }
 
   {
     // Duplicates interleaved around negatives; also exercises a diff whose
     // set bits live in high/sign-bit positions.
-    std::vector<int> nums = {-4, 7, -4, 9, 7, 13};
+    vector<int> nums = {-4, 7, -4, 9, 7, 13};
     check(samePair(singleNumber(nums), 9, 13),
           "[-4,7,-4,9,7,13] -> {9,13} (interleaved)");
   }
@@ -134,18 +137,18 @@ int main() {
     // Edge case where the two uniques differ ONLY in the top bit: the
     // discriminator must be 0x80000000, which the signed-negation idiom
     // would mishandle (UB for INT_MIN); the unsigned form stays correct.
-    std::vector<int> nums = {2147483647, -2147483648};  // INT_MAX and INT_MIN
+    vector<int> nums = {2147483647, -2147483648};  // INT_MAX and INT_MIN
     check(samePair(singleNumber(nums), 2147483647, -2147483648),
           "{INT_MAX, INT_MIN} -> top-bit discriminator");
   }
 
   {
     // Larger case: many pairs surrounding both uniques.
-    std::vector<int> nums = {6, 6, 15, 15, 11, 4};
+    vector<int> nums = {6, 6, 15, 15, 11, 4};
     check(samePair(singleNumber(nums), 11, 4),
           "[6,6,15,15,11,4] -> {11,4} (any order)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

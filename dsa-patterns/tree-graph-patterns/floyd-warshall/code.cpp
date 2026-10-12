@@ -16,8 +16,11 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct FloydWarshallResult {
-  std::vector<std::vector<long long>> dist;
+  vector<vector<long long>> dist;
   bool hasNegativeCycle;
 };
 
@@ -43,9 +46,9 @@ struct FloydWarshallResult {
 // later in the same pass.
 // ----------------------------------------------------------------------------
 FloydWarshallResult floydWarshall(
-    int n, const std::vector<std::vector<int>>& edges) {
-  const long long kInf = std::numeric_limits<long long>::max() / 4;
-  std::vector<std::vector<long long>> dist(n, std::vector<long long>(n, kInf));
+    int n, const vector<vector<int>>& edges) {
+  const long long kInf = numeric_limits<long long>::max() / 4;
+  vector<vector<long long>> dist(n, vector<long long>(n, kInf));
 
   for (int i = 0; i < n; ++i) {
     dist[i][i] = 0;  // distance from a node to itself is 0
@@ -53,7 +56,7 @@ FloydWarshallResult floydWarshall(
   for (const auto& e : edges) {
     // Keep the cheapest edge if the input has parallel edges between the
     // same pair of nodes.
-    dist[e[0]][e[1]] = std::min(dist[e[0]][e[1]], static_cast<long long>(e[2]));
+    dist[e[0]][e[1]] = min(dist[e[0]][e[1]], static_cast<long long>(e[2]));
   }
 
   for (int k = 0; k < n; ++k) {
@@ -89,24 +92,24 @@ FloydWarshallResult floydWarshall(
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
 
 int main() {
-  const long long kInf = std::numeric_limits<long long>::max() / 4;
+  const long long kInf = numeric_limits<long long>::max() / 4;
 
   {
     // Classic 4-node example (CLRS-style), no negative cycle:
     //   0->1 (3), 0->3 (7), 1->0 (8), 1->2 (2),
     //   2->0 (5), 2->3 (1), 3->0 (2)
-    std::vector<std::vector<int>> edges = {
+    vector<vector<int>> edges = {
         {0, 1, 3}, {0, 3, 7}, {1, 0, 8}, {1, 2, 2},
         {2, 0, 5}, {2, 3, 1}, {3, 0, 2},
     };
@@ -123,7 +126,7 @@ int main() {
     // demonstrating Floyd-Warshall tolerates negative weights same as
     // Bellman-Ford.
     //   0->1 (1), 1->2 (-5), 0->2 (2)
-    std::vector<std::vector<int>> edges = {{0, 1, 1}, {1, 2, -5}, {0, 2, 2}};
+    vector<vector<int>> edges = {{0, 1, 1}, {1, 2, -5}, {0, 2, 2}};
     FloydWarshallResult result = floydWarshall(3, edges);
     check(!result.hasNegativeCycle, "negative edge, no cycle -> not flagged");
     check(result.dist[0][2] == -4, "dist[0][2] == -4 (via 0->1->2 beats the direct edge)");
@@ -132,14 +135,14 @@ int main() {
   {
     // A negative cycle: 0->1 (1), 1->2 (-1), 2->1 (-1) -- the cycle 1->2->1
     // has total weight -2.
-    std::vector<std::vector<int>> edges = {{0, 1, 1}, {1, 2, -1}, {2, 1, -1}};
+    vector<vector<int>> edges = {{0, 1, 1}, {1, 2, -1}, {2, 1, -1}};
     FloydWarshallResult result = floydWarshall(3, edges);
     check(result.hasNegativeCycle, "reachable negative cycle -> detected");
   }
 
   {
     // Disconnected pair: must stay at infinity, not crash or read garbage.
-    std::vector<std::vector<int>> edges = {{0, 1, 5}};
+    vector<vector<int>> edges = {{0, 1, 5}};
     FloydWarshallResult result = floydWarshall(3, edges);
     check(result.dist[0][2] == kInf, "no path 0->2 -> stays at infinity");
     check(result.dist[2][0] == kInf, "no path 2->0 -> stays at infinity");
@@ -147,7 +150,7 @@ int main() {
 
   {
     // Single-node graph, no edges at all.
-    std::vector<std::vector<int>> edges = {};
+    vector<vector<int>> edges = {};
     FloydWarshallResult result = floydWarshall(1, edges);
     check(result.dist[0][0] == 0, "single node graph: distance to itself is 0");
     check(!result.hasNegativeCycle, "no edges -> trivially no negative cycle");
@@ -155,11 +158,11 @@ int main() {
 
   {
     // Parallel edges between the same pair: the cheaper one must win.
-    std::vector<std::vector<int>> edges = {{0, 1, 10}, {0, 1, 3}};
+    vector<vector<int>> edges = {{0, 1, 10}, {0, 1, 3}};
     FloydWarshallResult result = floydWarshall(2, edges);
     check(result.dist[0][1] == 3, "parallel edges -> the cheaper one (3) wins");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

@@ -107,6 +107,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 namespace {
 
 const int ALPHABET = 26;
@@ -119,12 +122,12 @@ const int BLACK = 2;
 // letter reachable from it is finished. Returns false if a cycle is found.
 // ----------------------------------------------------------------------------
 bool dfs(int node,
-         const std::vector<std::vector<int> >& adj,
-         std::vector<int>& colour,
-         std::string& postOrder) {
+         const vector<vector<int> >& adj,
+         vector<int>& colour,
+         string& postOrder) {
   colour[static_cast<size_t>(node)] = GRAY;  // now on the recursion stack
 
-  const std::vector<int>& next = adj[static_cast<size_t>(node)];
+  const vector<int>& next = adj[static_cast<size_t>(node)];
   for (size_t i = 0; i < next.size(); ++i) {
     size_t child = static_cast<size_t>(next[i]);
     if (colour[child] == GRAY) {
@@ -153,11 +156,11 @@ bool dfs(int node,
 //
 // Returns a valid letter order, or "" if the input is inconsistent.
 // ----------------------------------------------------------------------------
-std::string alienOrder(const std::vector<std::string>& words) {
+string alienOrder(const vector<string>& words) {
   // ---- Step 1: discover the node set. Only letters that actually appear in
   // the input are part of the answer; the other letters of the 26 do not
   // exist in this language as far as we can tell.
-  std::vector<bool> present(ALPHABET, false);
+  vector<bool> present(ALPHABET, false);
   for (size_t w = 0; w < words.size(); ++w) {
     for (size_t c = 0; c < words[w].size(); ++c) {
       present[static_cast<size_t>(words[w][c] - 'a')] = true;
@@ -165,17 +168,17 @@ std::string alienOrder(const std::vector<std::string>& words) {
   }
 
   // ---- Step 2: derive the edges from adjacent word pairs.
-  // A std::set de-duplicates: the same "x before y" fact can be implied by
+  // A set de-duplicates: the same "x before y" fact can be implied by
   // many different word pairs, and letting it in twice would put the same
   // child twice in an adjacency list. Harmless for DFS (the second visit sees
   // BLACK and returns), but it would inflate in-degrees in a Kahn's-based
   // rewrite, so keeping the edge set clean keeps the two approaches
   // interchangeable.
-  std::set<std::pair<int, int> > edges;
+  set<pair<int, int> > edges;
 
   for (size_t i = 0; i + 1 < words.size(); ++i) {
-    const std::string& first = words[i];
-    const std::string& second = words[i + 1];
+    const string& first = words[i];
+    const string& second = words[i + 1];
 
     size_t limit = first.size() < second.size() ? first.size() : second.size();
     bool foundDifference = false;
@@ -184,7 +187,7 @@ std::string alienOrder(const std::vector<std::string>& words) {
       if (first[k] != second[k]) {
         // The FIRST mismatch is the whole story: first[k] sorts before
         // second[k]. Everything after index k is irrelevant, so stop.
-        edges.insert(std::pair<int, int>(static_cast<int>(first[k] - 'a'),
+        edges.insert(pair<int, int>(static_cast<int>(first[k] - 'a'),
                                         static_cast<int>(second[k] - 'a')));
         foundDifference = true;
         break;
@@ -200,15 +203,15 @@ std::string alienOrder(const std::vector<std::string>& words) {
     }
   }
 
-  std::vector<std::vector<int> > adj(ALPHABET);
-  std::set<std::pair<int, int> >::const_iterator it;
+  vector<vector<int> > adj(ALPHABET);
+  set<pair<int, int> >::const_iterator it;
   for (it = edges.begin(); it != edges.end(); ++it) {
     adj[static_cast<size_t>(it->first)].push_back(it->second);
   }
 
   // ---- Step 3: DFS every present letter, collecting post-order.
-  std::vector<int> colour(ALPHABET, WHITE);
-  std::string postOrder;
+  vector<int> colour(ALPHABET, WHITE);
+  string postOrder;
 
   for (int node = 0; node < ALPHABET; ++node) {
     if (!present[static_cast<size_t>(node)]) continue;
@@ -221,7 +224,7 @@ std::string alienOrder(const std::vector<std::string>& words) {
   // ---- Step 4: reverse. This is the step Kahn's algorithm does not need,
   // and forgetting it yields a string that is exactly backwards — which,
   // annoyingly, still passes a naive "does it contain every letter" test.
-  std::reverse(postOrder.begin(), postOrder.end());
+  reverse(postOrder.begin(), postOrder.end());
   return postOrder;
 }
 
@@ -231,21 +234,21 @@ std::string alienOrder(const std::vector<std::string>& words) {
 // actually defines a correct answer is: it contains exactly the distinct input
 // letters (each once), and every derived "x before y" constraint holds.
 // ----------------------------------------------------------------------------
-bool hasExactlyLetters(const std::string& result, const std::string& expectedSet) {
+bool hasExactlyLetters(const string& result, const string& expectedSet) {
   if (result.size() != expectedSet.size()) return false;
-  std::string a = result;
-  std::string b = expectedSet;
-  std::sort(a.begin(), a.end());
-  std::sort(b.begin(), b.end());
+  string a = result;
+  string b = expectedSet;
+  sort(a.begin(), a.end());
+  sort(b.begin(), b.end());
   return a == b;
 }
 
-bool respectsPairs(const std::string& result,
-                   const std::vector<std::pair<char, char> >& mustPrecede) {
+bool respectsPairs(const string& result,
+                   const vector<pair<char, char> >& mustPrecede) {
   for (size_t i = 0; i < mustPrecede.size(); ++i) {
     size_t posBefore = result.find(mustPrecede[i].first);
     size_t posAfter = result.find(mustPrecede[i].second);
-    if (posBefore == std::string::npos || posAfter == std::string::npos) return false;
+    if (posBefore == string::npos || posAfter == string::npos) return false;
     if (posBefore >= posAfter) return false;
   }
   return true;
@@ -255,18 +258,18 @@ int main() {
   int passCount = 0;
   int failCount = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++passCount;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++failCount;
     }
   };
 
-  typedef std::vector<std::string> Words;
-  typedef std::vector<std::pair<char, char> > Constraints;
+  typedef vector<string> Words;
+  typedef vector<pair<char, char> > Constraints;
 
   // --- LeetCode's own examples -------------------------------------------
   {
@@ -276,9 +279,9 @@ int main() {
     Words words;
     words.push_back("wrt"); words.push_back("wrf"); words.push_back("er");
     words.push_back("ett"); words.push_back("rftt");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     check(result == "wertf", "LC example 1: {wrt,wrf,er,ett,rftt} -> exactly \"wertf\"");
-    std::cout << "  computed order: " << result << "\n";
+    cout << "  computed order: " << result << "\n";
   }
   {
     Words words;
@@ -305,7 +308,7 @@ int main() {
     // no edge at all.
     Words words;
     words.push_back("ab"); words.push_back("abc");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     check(hasExactlyLetters(result, "abc"),
           "prefix first is legal: {ab,abc} -> all three letters, no constraint");
   }
@@ -323,9 +326,9 @@ int main() {
     // difference a->b you would invent a 2-cycle and wrongly return "".
     Words words;
     words.push_back("ba"); words.push_back("ab");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     Constraints c;
-    c.push_back(std::pair<char, char>('b', 'a'));
+    c.push_back(pair<char, char>('b', 'a'));
     check(result == "ba", "only the first mismatch counts: {ba,ab} -> \"ba\", not \"\"");
     check(respectsPairs(result, c), "{ba,ab}: b precedes a");
   }
@@ -335,18 +338,18 @@ int main() {
     // Single edge b->d; a and c are unconstrained, so many orders are valid.
     Words words;
     words.push_back("ab"); words.push_back("adc");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     Constraints c;
-    c.push_back(std::pair<char, char>('b', 'd'));
+    c.push_back(pair<char, char>('b', 'd'));
     check(hasExactlyLetters(result, "abcd"), "{ab,adc}: all four letters present exactly once");
     check(respectsPairs(result, c), "{ab,adc}: b precedes d");
-    std::cout << "  computed order: " << result << "\n";
+    cout << "  computed order: " << result << "\n";
   }
   {
     // A single word: every letter present, zero constraints.
     Words words;
     words.push_back("abc");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     check(hasExactlyLetters(result, "abc"), "single word -> its distinct letters, any order");
   }
   {
@@ -354,9 +357,9 @@ int main() {
     // never compared against itself, since the mismatch position differs).
     Words words;
     words.push_back("aa"); words.push_back("ab");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     Constraints c;
-    c.push_back(std::pair<char, char>('a', 'b'));
+    c.push_back(pair<char, char>('a', 'b'));
     check(hasExactlyLetters(result, "ab") && respectsPairs(result, c),
           "repeated letters: {aa,ab} -> a precedes b, no self-loop");
   }
@@ -387,15 +390,15 @@ int main() {
     Words words;
     words.push_back("x"); words.push_back("y");
     words.push_back("ya"); words.push_back("yb");
-    std::string result = alienOrder(words);
+    string result = alienOrder(words);
     Constraints c;
-    c.push_back(std::pair<char, char>('x', 'y'));
-    c.push_back(std::pair<char, char>('a', 'b'));
+    c.push_back(pair<char, char>('x', 'y'));
+    c.push_back(pair<char, char>('a', 'b'));
     check(hasExactlyLetters(result, "abxy") && respectsPairs(result, c),
           "two disconnected constraint components -> both respected");
-    std::cout << "  computed order: " << result << "\n";
+    cout << "  computed order: " << result << "\n";
   }
 
-  std::cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
+  cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
   return failCount == 0 ? 0 : 1;
 }

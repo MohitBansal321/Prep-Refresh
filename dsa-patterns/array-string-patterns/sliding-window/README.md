@@ -4,6 +4,7 @@
 > **In one line:** grow the window from the right; shrink it from the left only while it still satisfies the condition — every element is added once and removed once, so the whole scan is O(n) despite the nested loop.
 
 ```cpp
+using namespace std;
 int left = 0;
 long long windowSum = 0;
 int best = INT_MAX;
@@ -12,7 +13,7 @@ for (int right = 0; right < n; ++right) {
   windowSum += arr[right];                 // grow: bring the new element in
 
   while (windowSum >= target) {            // shrink while still valid — we want the SHORTEST
-    best = std::min(best, right - left + 1);
+    best = min(best, right - left + 1);
     windowSum -= arr[left];
     ++left;
   }

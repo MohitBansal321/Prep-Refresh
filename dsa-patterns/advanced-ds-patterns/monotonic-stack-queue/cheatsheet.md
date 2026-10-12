@@ -16,11 +16,12 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Next Greater Element for every position.
-std::vector<int> nextGreaterElement(const std::vector<int>& nums) {
+vector<int> nextGreaterElement(const vector<int>& nums) {
   int n = static_cast<int>(nums.size());
-  std::vector<int> result(n, -1);
-  std::vector<int> st;  // holds INDICES; values non-increasing bottom-to-top
+  vector<int> result(n, -1);
+  vector<int> st;  // holds INDICES; values non-increasing bottom-to-top
   for (int i = 0; i < n; ++i) {
     while (!st.empty() && nums[st.back()] < nums[i]) {
       result[st.back()] = nums[i];  // nums[i] is st.back()'s next greater
@@ -32,9 +33,9 @@ std::vector<int> nextGreaterElement(const std::vector<int>& nums) {
 }
 
 // Sliding Window Maximum (monotonic DEQUE variant).
-std::vector<int> maxSlidingWindow(const std::vector<int>& nums, int k) {
-  std::deque<int> dq;   // indices, values strictly decreasing front-to-back
-  std::vector<int> result;
+vector<int> maxSlidingWindow(const vector<int>& nums, int k) {
+  deque<int> dq;   // indices, values strictly decreasing front-to-back
+  vector<int> result;
   for (int i = 0; i < static_cast<int>(nums.size()); ++i) {
     while (!dq.empty() && nums[dq.back()] < nums[i]) dq.pop_back();
     dq.push_back(i);

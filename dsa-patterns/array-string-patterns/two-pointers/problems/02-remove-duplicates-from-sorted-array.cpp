@@ -45,7 +45,7 @@
 // Space: O(1) — no auxiliary array; compaction happens in place.
 //
 // Contrast with brute force (for each element, scan ahead to check for and
-// erase duplicates, e.g. via repeated std::vector::erase): O(n^2) time,
+// erase duplicates, e.g. via repeated vector::erase): O(n^2) time,
 // because each erase() shifts all subsequent elements down by one.
 // Contrast with "copy unique values into a new array via a hash set":
 // O(n) time but O(n) extra space — two pointers gets O(n) time in O(1)
@@ -56,9 +56,12 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Removes duplicates in place, keeping at most one copy of each value.
 // Returns k, the number of unique elements now occupying nums[0..k-1].
-int removeDuplicates(std::vector<int>& nums) {
+int removeDuplicates(vector<int>& nums) {
   if (nums.empty()) return 0;
 
   int write = 1;  // nums[0] is trivially unique; the written prefix starts at 1.
@@ -79,52 +82,52 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {1, 1, 2};
+    vector<int> nums = {1, 1, 2};
     int k = removeDuplicates(nums);
-    std::vector<int> prefix(nums.begin(), nums.begin() + k);
-    check(k == 2 && prefix == std::vector<int>({1, 2}),
+    vector<int> prefix(nums.begin(), nums.begin() + k);
+    check(k == 2 && prefix == vector<int>({1, 2}),
           "[1,1,2] -> k=2, prefix=[1,2]");
   }
 
   {
-    std::vector<int> nums = {0, 0, 1, 1, 1, 2, 2, 3, 3, 4};
+    vector<int> nums = {0, 0, 1, 1, 1, 2, 2, 3, 3, 4};
     int k = removeDuplicates(nums);
-    std::vector<int> prefix(nums.begin(), nums.begin() + k);
-    check(k == 5 && prefix == std::vector<int>({0, 1, 2, 3, 4}),
+    vector<int> prefix(nums.begin(), nums.begin() + k);
+    check(k == 5 && prefix == vector<int>({0, 1, 2, 3, 4}),
           "[0,0,1,1,1,2,2,3,3,4] -> k=5, prefix=[0,1,2,3,4]");
   }
 
   {
-    std::vector<int> nums = {1};
+    vector<int> nums = {1};
     int k = removeDuplicates(nums);
-    std::vector<int> prefix(nums.begin(), nums.begin() + k);
-    check(k == 1 && prefix == std::vector<int>({1}), "single element [1] -> k=1, prefix=[1]");
+    vector<int> prefix(nums.begin(), nums.begin() + k);
+    check(k == 1 && prefix == vector<int>({1}), "single element [1] -> k=1, prefix=[1]");
   }
 
   {
-    std::vector<int> nums = {7, 7, 7, 7, 7};
+    vector<int> nums = {7, 7, 7, 7, 7};
     int k = removeDuplicates(nums);
-    std::vector<int> prefix(nums.begin(), nums.begin() + k);
-    check(k == 1 && prefix == std::vector<int>({7}), "all duplicates [7,7,7,7,7] -> k=1, prefix=[7]");
+    vector<int> prefix(nums.begin(), nums.begin() + k);
+    check(k == 1 && prefix == vector<int>({7}), "all duplicates [7,7,7,7,7] -> k=1, prefix=[7]");
   }
 
   {
-    std::vector<int> nums = {};
+    vector<int> nums = {};
     int k = removeDuplicates(nums);
     check(k == 0, "empty array -> k=0");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

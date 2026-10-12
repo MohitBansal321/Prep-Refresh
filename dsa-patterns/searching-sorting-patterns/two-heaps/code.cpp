@@ -7,11 +7,11 @@
 // the core Two Heaps idea in its purest, most reusable form:
 //
 //   - A MAX-HEAP holds the "lower half" of everything inserted so far.
-//     std::priority_queue<int> is a max-heap by default in C++ — its top()
+//     priority_queue<int> is a max-heap by default in C++ — its top()
 //     is always the largest element currently stored.
 //
 //   - A MIN-HEAP holds the "upper half" of everything inserted so far.
-//     std::priority_queue<int, std::vector<int>, std::greater<int>> flips
+//     priority_queue<int, vector<int>, greater<int>> flips
 //     the default ordering, so its top() is always the smallest element
 //     currently stored.
 //
@@ -31,6 +31,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
 // ----------------------------------------------------------------------------
 // MedianFinder — maintains the running median of a stream of integers.
@@ -89,10 +90,10 @@ class MedianFinder {
   }
 
   // Returns the median of every number inserted so far in O(1).
-  // Throws std::logic_error if no numbers have been inserted yet.
+  // Throws logic_error if no numbers have been inserted yet.
   double findMedian() const {
     if (low_.empty() && high_.empty()) {
-      throw std::logic_error("findMedian() called with no numbers inserted.");
+      throw logic_error("findMedian() called with no numbers inserted.");
     }
 
     if (low_.size() == high_.size()) {
@@ -111,10 +112,10 @@ class MedianFinder {
 
  private:
   // Max-heap: top() is always the largest element of the lower half.
-  std::priority_queue<int> low_;
+  priority_queue<int> low_;
 
   // Min-heap: top() is always the smallest element of the upper half.
-  std::priority_queue<int, std::vector<int>, std::greater<int>> high_;
+  priority_queue<int, vector<int>, greater<int>> high_;
 };
 
 // ============================================================================
@@ -124,12 +125,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -138,7 +139,7 @@ int main() {
     return (a > b ? a - b : b - a) < 1e-9;
   };
 
-  std::cout << "--- Odd/even progression: 5, then 15, then 1 ---\n";
+  cout << "--- Odd/even progression: 5, then 15, then 1 ---\n";
   {
     MedianFinder mf;
     mf.addNum(5);
@@ -151,7 +152,7 @@ int main() {
     check(approx_equal(mf.findMedian(), 5.0), "after [5,15,1] -> median 5.0");
   }
 
-  std::cout << "\n--- Longer sequence requiring several rebalances ---\n";
+  cout << "\n--- Longer sequence requiring several rebalances ---\n";
   {
     // Stream: 5, 15, 1, 3, 8, 7, 9, 10
     // Sorted progressively: [5] [5,15] [1,5,15] [1,3,5,15] [1,3,5,8,15]
@@ -159,19 +160,19 @@ int main() {
     // Medians:                5    10      5       4         5
     //                         6       7        7.5
     MedianFinder mf;
-    std::vector<int> stream = {5, 15, 1, 3, 8, 7, 9, 10};
-    std::vector<double> expected_medians = {5.0, 10.0, 5.0, 4.0, 5.0, 6.0, 7.0, 7.5};
+    vector<int> stream = {5, 15, 1, 3, 8, 7, 9, 10};
+    vector<double> expected_medians = {5.0, 10.0, 5.0, 4.0, 5.0, 6.0, 7.0, 7.5};
 
     for (size_t i = 0; i < stream.size(); ++i) {
       mf.addNum(stream[i]);
       double median = mf.findMedian();
       check(approx_equal(median, expected_medians[i]),
-            "insert " + std::to_string(stream[i]) + " -> median " +
-                std::to_string(expected_medians[i]));
+            "insert " + to_string(stream[i]) + " -> median " +
+                to_string(expected_medians[i]));
     }
   }
 
-  std::cout << "\n--- Negative numbers and duplicates ---\n";
+  cout << "\n--- Negative numbers and duplicates ---\n";
   {
     MedianFinder mf;
     mf.addNum(-5);
@@ -186,7 +187,7 @@ int main() {
     check(approx_equal(mf.findMedian(), -5.0), "[-100,-5,-5,0,10] -> median -5.0");
   }
 
-  std::cout << "\n--- size() bookkeeping ---\n";
+  cout << "\n--- size() bookkeeping ---\n";
   {
     MedianFinder mf;
     check(mf.size() == 0, "fresh MedianFinder -> size 0");
@@ -196,18 +197,18 @@ int main() {
     check(mf.size() == 3, "after 3 inserts -> size 3");
   }
 
-  std::cout << "\n--- Calling findMedian() with nothing inserted throws ---\n";
+  cout << "\n--- Calling findMedian() with nothing inserted throws ---\n";
   {
     MedianFinder mf;
     bool threw = false;
     try {
       mf.findMedian();
-    } catch (const std::logic_error&) {
+    } catch (const logic_error&) {
       threw = true;
     }
     check(threw, "findMedian() on empty stream -> throws std::logic_error");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

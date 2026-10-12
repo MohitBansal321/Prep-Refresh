@@ -86,7 +86,7 @@
 // ----------
 // Let L be the total number of integers across all sequences, so the number of
 // candidate edges is O(L).
-// Time:  O(n + L log L) — the log factor comes from the std::set used to
+// Time:  O(n + L log L) — the log factor comes from the set used to
 //        de-duplicate edges; with a hash set it is O(n + L) expected.
 // Space: O(n + L) — the de-duplicated edge set, adjacency list, in-degree
 //        array, and queue.
@@ -99,18 +99,21 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // sequenceReconstruction — Kahn's algorithm with a per-step uniqueness check.
 // ----------------------------------------------------------------------------
-bool sequenceReconstruction(const std::vector<int>& nums,
-                            const std::vector<std::vector<int> >& sequences) {
+bool sequenceReconstruction(const vector<int>& nums,
+                            const vector<vector<int> >& sequences) {
   int n = static_cast<int>(nums.size());
   if (n == 0) return false;
 
   // Nodes are the values 1 .. n, stored at indices 1 .. n (index 0 unused) so
   // the array index and the value itself match — no off-by-one juggling.
-  std::vector<std::vector<int> > adj(static_cast<size_t>(n) + 1);
-  std::vector<int> inDegree(static_cast<size_t>(n) + 1, 0);
+  vector<vector<int> > adj(static_cast<size_t>(n) + 1);
+  vector<int> inDegree(static_cast<size_t>(n) + 1, 0);
 
   // De-duplicate edges first. The same ordered pair can legitimately appear in
   // several sequences (LeetCode's own example has 5 -> 2 in two of them).
@@ -124,9 +127,9 @@ bool sequenceReconstruction(const std::vector<int>& nums,
   // in-degrees from a set of predecessors while pushing raw pairs into adj),
   // which leaves nodes that can never reach 0. Building both from ONE
   // de-duplicated set removes the whole class of mistake.
-  std::set<std::pair<int, int> > edges;
+  set<pair<int, int> > edges;
   for (size_t s = 0; s < sequences.size(); ++s) {
-    const std::vector<int>& seq = sequences[s];
+    const vector<int>& seq = sequences[s];
     for (size_t i = 0; i + 1 < seq.size(); ++i) {
       int from = seq[i];
       int to = seq[i + 1];
@@ -134,17 +137,17 @@ bool sequenceReconstruction(const std::vector<int>& nums,
       // presence makes `nums` an impossible supersequence outright.
       if (from < 1 || from > n || to < 1 || to > n) return false;
       // CONSECUTIVE pairs only. seq[i] -> seq[i+2] is implied transitively.
-      edges.insert(std::pair<int, int>(from, to));
+      edges.insert(pair<int, int>(from, to));
     }
   }
 
-  std::set<std::pair<int, int> >::const_iterator it;
+  set<pair<int, int> >::const_iterator it;
   for (it = edges.begin(); it != edges.end(); ++it) {
     adj[static_cast<size_t>(it->first)].push_back(it->second);
     ++inDegree[static_cast<size_t>(it->second)];
   }
 
-  std::queue<int> ready;
+  queue<int> ready;
   for (int value = 1; value <= n; ++value) {
     if (inDegree[static_cast<size_t>(value)] == 0) {
       ready.push(value);
@@ -172,7 +175,7 @@ bool sequenceReconstruction(const std::vector<int>& nums,
     if (current != nums[static_cast<size_t>(index)]) return false;
     ++index;
 
-    const std::vector<int>& dependents = adj[static_cast<size_t>(current)];
+    const vector<int>& dependents = adj[static_cast<size_t>(current)];
     for (size_t i = 0; i < dependents.size(); ++i) {
       size_t next = static_cast<size_t>(dependents[i]);
       --inDegree[next];
@@ -190,18 +193,18 @@ int main() {
   int passCount = 0;
   int failCount = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++passCount;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++failCount;
     }
   };
 
-  typedef std::vector<int> Ints;
-  typedef std::vector<std::vector<int> > Seqs;
+  typedef vector<int> Ints;
+  typedef vector<vector<int> > Seqs;
 
   // --- LeetCode's own examples -------------------------------------------
   {
@@ -342,6 +345,6 @@ int main() {
           "nums reversed relative to the forced chain -> false");
   }
 
-  std::cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
+  cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
   return failCount == 0 ? 0 : 1;
 }

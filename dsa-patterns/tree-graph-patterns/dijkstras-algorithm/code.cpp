@@ -15,26 +15,29 @@
 #include <queue>
 #include <vector>
 
-std::vector<int> dijkstra(int n, int src,
-                           const std::vector<std::vector<std::pair<int, int>>>& adj) {
-  const int kInf = std::numeric_limits<int>::max();
-  std::vector<int> dist(n, kInf);
+using namespace std;
+
+
+vector<int> dijkstra(int n, int src,
+                           const vector<vector<pair<int, int>>>& adj) {
+  const int kInf = numeric_limits<int>::max();
+  vector<int> dist(n, kInf);
   dist[src] = 0;
 
-  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>,
-                       std::greater<>>
+  priority_queue<pair<int, int>, vector<pair<int, int>>,
+                       greater<>>
       pq;
   pq.push({0, src});
 
   while (!pq.empty()) {
     // (structured bindings would be tidier here, but need GCC 7+)
-    const std::pair<int, int> top = pq.top();
+    const pair<int, int> top = pq.top();
     const int d = top.first;   // tentative distance recorded when pushed
     const int u = top.second;  // the node that distance belongs to
     pq.pop();
     if (d > dist[u]) continue;
 
-    for (const std::pair<int, int>& edge : adj[u]) {
+    for (const pair<int, int>& edge : adj[u]) {
       const int v = edge.first;   // neighbour node
       const int w = edge.second;  // weight of the u -> v edge
       if (dist[u] != kInf && dist[u] + w < dist[v]) {
@@ -50,22 +53,22 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  const int kInf = std::numeric_limits<int>::max();
+  const int kInf = numeric_limits<int>::max();
 
   {
     // 0 -(4)-> 1, 0 -(1)-> 2, 2 -(2)-> 1, 1 -(1)-> 3, 2 -(5)-> 3
     // Cheapest 0->1 is via 2 (1+2=3), not the direct edge (4).
-    std::vector<std::vector<std::pair<int, int>>> adj(4);
+    vector<vector<pair<int, int>>> adj(4);
     adj[0] = {{1, 4}, {2, 1}};
     adj[2] = {{1, 2}, {3, 5}};
     adj[1] = {{3, 1}};
@@ -79,7 +82,7 @@ int main() {
 
   {
     // Disconnected node stays unreachable.
-    std::vector<std::vector<std::pair<int, int>>> adj(3);
+    vector<vector<pair<int, int>>> adj(3);
     adj[0] = {{1, 10}};
     auto dist = dijkstra(3, 0, adj);
     check(dist[1] == 10, "reachable node gets its cost");
@@ -88,11 +91,11 @@ int main() {
 
   {
     // Single node, no edges.
-    std::vector<std::vector<std::pair<int, int>>> adj(1);
+    vector<vector<pair<int, int>>> adj(1);
     auto dist = dijkstra(1, 0, adj);
     check(dist[0] == 0, "single node graph: source distance is 0");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

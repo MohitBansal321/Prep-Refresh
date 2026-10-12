@@ -74,24 +74,27 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 class AuthenticationManager {
  public:
   explicit AuthenticationManager(int timeToLive) : ttl_(timeToLive) {}
 
-  void generate(const std::string& tokenId, int currentTime) {
+  void generate(const string& tokenId, int currentTime) {
     int expiry = currentTime + ttl_;
     expiry_[tokenId] = expiry;
     // Min-heap ordered by expiry time: soonest death on top.
-    heap_.push(std::make_pair(expiry, tokenId));
+    heap_.push(make_pair(expiry, tokenId));
   }
 
-  void renew(const std::string& tokenId, int currentTime) {
-    std::unordered_map<std::string, int>::iterator it = expiry_.find(tokenId);
+  void renew(const string& tokenId, int currentTime) {
+    unordered_map<string, int>::iterator it = expiry_.find(tokenId);
     // Must exist AND strictly outlive currentTime (expiry == now means it
     // just died — boundary included, matching the problem's examples).
     if (it == expiry_.end() || it->second <= currentTime) return;
     it->second += ttl_;  // extends from the OLD expiry, not from now
-    heap_.push(std::make_pair(it->second, tokenId));
+    heap_.push(make_pair(it->second, tokenId));
   }
 
   int countUnexpiredTokens(int currentTime) {
@@ -105,9 +108,9 @@ class AuthenticationManager {
   // by a renew — skip it; its newer entry carries the truth.
   void prune(int currentTime) {
     while (!heap_.empty() && heap_.top().first <= currentTime) {
-      std::pair<int, std::string> top = heap_.top();
+      pair<int, string> top = heap_.top();
       heap_.pop();
-      std::unordered_map<std::string, int>::iterator it = expiry_.find(top.second);
+      unordered_map<string, int>::iterator it = expiry_.find(top.second);
       if (it != expiry_.end() && it->second == top.first) {
         expiry_.erase(it);  // genuinely dead token: remove its state
       }
@@ -115,12 +118,12 @@ class AuthenticationManager {
   }
 
   int ttl_;
-  std::unordered_map<std::string, int> expiry_;  // token -> absolute expiry
+  unordered_map<string, int> expiry_;  // token -> absolute expiry
   // (min-heap by expiry, then token string — the tiebreak is irrelevant to
   // correctness, only needed to make pair comparison well-formed)
-  std::priority_queue<std::pair<int, std::string>,
-                      std::vector<std::pair<int, std::string> >,
-                      std::greater<std::pair<int, std::string> > >
+  priority_queue<pair<int, string>,
+                      vector<pair<int, string> >,
+                      greater<pair<int, string> > >
       heap_;
 };
 
@@ -128,12 +131,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -190,6 +193,6 @@ int main() {
           "final expiry honoured despite multiple stale heap entries");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

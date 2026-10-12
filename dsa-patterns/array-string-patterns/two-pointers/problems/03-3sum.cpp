@@ -62,9 +62,12 @@
 #include <string>
 #include <vector>
 
-std::vector<std::vector<int>> threeSum(std::vector<int> nums) {
-  std::vector<std::vector<int>> result;
-  std::sort(nums.begin(), nums.end());
+using namespace std;
+
+
+vector<vector<int>> threeSum(vector<int> nums) {
+  vector<vector<int>> result;
+  sort(nums.begin(), nums.end());
   const int n = static_cast<int>(nums.size());
 
   for (int i = 0; i < n - 2; ++i) {
@@ -109,9 +112,9 @@ std::vector<std::vector<int>> threeSum(std::vector<int> nums) {
 // Order-insensitive comparison of two lists of triplets (each triplet's
 // internal order is already fixed by construction — ascending — so we only
 // need to compare the SET of triplets, ignoring the order they were found).
-bool sameTripletSet(std::vector<std::vector<int>> a, std::vector<std::vector<int>> b) {
-  std::sort(a.begin(), a.end());
-  std::sort(b.begin(), b.end());
+bool sameTripletSet(vector<vector<int>> a, vector<vector<int>> b) {
+  sort(a.begin(), a.end());
+  sort(b.begin(), b.end());
   return a == b;
 }
 
@@ -119,50 +122,50 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {-1, 0, 1, 2, -1, -4};
+    vector<int> nums = {-1, 0, 1, 2, -1, -4};
     auto result = threeSum(nums);
-    std::vector<std::vector<int>> expected = {{-1, -1, 2}, {-1, 0, 1}};
+    vector<vector<int>> expected = {{-1, -1, 2}, {-1, 0, 1}};
     check(sameTripletSet(result, expected), "[-1,0,1,2,-1,-4] -> {[-1,-1,2],[-1,0,1]}");
   }
 
   {
-    std::vector<int> nums = {0, 1, 1};
+    vector<int> nums = {0, 1, 1};
     auto result = threeSum(nums);
     check(result.empty(), "[0,1,1] -> no triplet sums to zero");
   }
 
   {
-    std::vector<int> nums = {0, 0, 0};
+    vector<int> nums = {0, 0, 0};
     auto result = threeSum(nums);
-    std::vector<std::vector<int>> expected = {{0, 0, 0}};
+    vector<vector<int>> expected = {{0, 0, 0}};
     check(sameTripletSet(result, expected), "[0,0,0] -> {[0,0,0]}");
   }
 
   {
     // Many duplicate values -> stresses the duplicate-skipping logic.
-    std::vector<int> nums = {-2, 0, 0, 2, 2};
+    vector<int> nums = {-2, 0, 0, 2, 2};
     auto result = threeSum(nums);
-    std::vector<std::vector<int>> expected = {{-2, 0, 2}};
+    vector<vector<int>> expected = {{-2, 0, 2}};
     check(sameTripletSet(result, expected), "[-2,0,0,2,2] -> {[-2,0,2]} (no repeats)");
   }
 
   {
-    std::vector<int> nums = {1, 2, -2, -1};
+    vector<int> nums = {1, 2, -2, -1};
     auto result = threeSum(nums);
     check(result.empty(), "[1,2,-2,-1] -> no valid triplet (fewer than 3 usable combos)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

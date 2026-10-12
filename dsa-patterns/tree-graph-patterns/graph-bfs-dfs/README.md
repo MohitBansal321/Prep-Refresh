@@ -4,8 +4,9 @@
 > **In one line:** Tree BFS's exact queue-and-frontier mechanic, now guarding against revisiting a node — mark a node visited the moment it's *enqueued*, not when it's popped, since a graph (unlike a tree) can offer more than one path to the same node.
 
 ```cpp
-std::vector<int> dist(n, -1);           // -1 means "not yet reached"
-std::queue<int> frontier;
+using namespace std;
+vector<int> dist(n, -1);           // -1 means "not yet reached"
+queue<int> frontier;
 dist[src] = 0;                          // mark visited THE MOMENT we enqueue
 frontier.push(src);
 

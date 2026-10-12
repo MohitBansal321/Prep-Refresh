@@ -65,11 +65,14 @@
 #include <tuple>
 #include <vector>
 
-const int kInf = std::numeric_limits<int>::max();
+using namespace std;
 
-typedef std::vector<std::vector<std::pair<int, int> > > AdjList;
 
-int findCheapestPrice(int n, const std::vector<std::vector<int> >& flights,
+const int kInf = numeric_limits<int>::max();
+
+typedef vector<vector<pair<int, int> > > AdjList;
+
+int findCheapestPrice(int n, const vector<vector<int> >& flights,
                       int src, int dst, int k) {
   // Build adjacency: adj[u] = list of {v, price} for each flight u -> v.
   AdjList adj(n);
@@ -77,28 +80,28 @@ int findCheapestPrice(int n, const std::vector<std::vector<int> >& flights,
     const int u = flights[i][0];
     const int v = flights[i][1];
     const int w = flights[i][2];
-    adj[u].push_back(std::make_pair(v, w));
+    adj[u].push_back(make_pair(v, w));
   }
 
   // Layered distances: dist[node][stops] = cheapest cost reaching `node`
   // using exactly `stops` edges. At most k+1 edges are allowed (k stops in
   // between), so layers run 0..k+1.
   const int maxStops = k + 1;
-  std::vector<std::vector<int> > dist(n, std::vector<int>(maxStops + 1, kInf));
+  vector<vector<int> > dist(n, vector<int>(maxStops + 1, kInf));
   dist[src][0] = 0;
 
   // Min-heap of {cost, node, stopsUsed}; greater<> makes it a min-heap keyed
   // on cost first — cost order is what preserves Dijkstra's correctness.
-  std::priority_queue<std::tuple<int, int, int>,
-                      std::vector<std::tuple<int, int, int> >,
-                      std::greater<std::tuple<int, int, int> > >
+  priority_queue<tuple<int, int, int>,
+                      vector<tuple<int, int, int> >,
+                      greater<tuple<int, int, int> > >
       pq;
-  pq.push(std::make_tuple(0, src, 0));
+  pq.push(make_tuple(0, src, 0));
 
   while (!pq.empty()) {
-    const int d = std::get<0>(pq.top());
-    const int u = std::get<1>(pq.top());
-    const int s = std::get<2>(pq.top());
+    const int d = get<0>(pq.top());
+    const int u = get<1>(pq.top());
+    const int s = get<2>(pq.top());
     pq.pop();
     // Stale-entry check, same as always: dist[][] only ever improves, so
     // popping a cost above dist[u][s] means a better entry already ran.
@@ -118,7 +121,7 @@ int findCheapestPrice(int n, const std::vector<std::vector<int> >& flights,
       const int nd = d + w;
       if (nd < dist[v][s + 1]) {
         dist[v][s + 1] = nd;
-        pq.push(std::make_tuple(nd, v, s + 1));
+        pq.push(make_tuple(nd, v, s + 1));
       }
     }
   }
@@ -129,12 +132,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -142,7 +145,7 @@ int main() {
   {
     // Classic example: 2-hop route (cost 200) beats direct (cost 500),
     // and k=1 permits exactly one intermediate stop.
-    std::vector<std::vector<int> > flights;
+    vector<vector<int> > flights;
     flights.push_back({0, 1, 100});
     flights.push_back({1, 2, 100});
     flights.push_back({0, 2, 500});
@@ -154,7 +157,7 @@ int main() {
     // Same graph, k=0: the two-hop route is now FORBIDDEN even though it is
     // cheaper — this is precisely where plain Dijkstra gives 200 (wrong);
     // state augmentation correctly returns 500.
-    std::vector<std::vector<int> > flights;
+    vector<vector<int> > flights;
     flights.push_back({0, 1, 100});
     flights.push_back({1, 2, 100});
     flights.push_back({0, 2, 500});
@@ -166,7 +169,7 @@ int main() {
     // The motivating counterexample from the APPROACH section: plain
     // Dijkstra would finalize node 2 at cost 10 via the 0-edge direct
     // flight; the true answer uses the budget on 0->1->2.
-    std::vector<std::vector<int> > flights;
+    vector<vector<int> > flights;
     flights.push_back({0, 2, 10});
     flights.push_back({0, 1, 1});
     flights.push_back({1, 2, 1});
@@ -178,7 +181,7 @@ int main() {
 
   {
     // Destination unreachable within budget: -1.
-    std::vector<std::vector<int> > flights;
+    vector<vector<int> > flights;
     flights.push_back({0, 1, 5});
     check(findCheapestPrice(3, flights, 0, 2, 3) == -1,
           "no route at all -> -1");
@@ -186,11 +189,11 @@ int main() {
 
   {
     // Single city: src == dst with zero flights — trivially cost 0.
-    std::vector<std::vector<int> > flights;
+    vector<vector<int> > flights;
     check(findCheapestPrice(1, flights, 0, 0, 0) == 0,
           "single city, already there -> 0");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

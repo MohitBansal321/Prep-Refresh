@@ -4,8 +4,9 @@
 > **In one line:** seed a min-heap with the first element of every list; repeatedly pop the smallest, and push the next element from that *same* source list.
 
 ```cpp
-using HeapEntry = std::tuple<int, int, int>;   // {value, list_index, element_index}
-using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>>;
+using namespace std;
+using HeapEntry = tuple<int, int, int>;   // {value, list_index, element_index}
+using MinHeap = priority_queue<HeapEntry, vector<HeapEntry>, greater<>>;
 
 MinHeap heap;
 for (int i = 0; i < k; ++i) {
@@ -14,7 +15,7 @@ for (int i = 0; i < k; ++i) {
 
 while (!heap.empty()) {
   const HeapEntry top = heap.top(); heap.pop();
-  const int value = std::get<0>(top), list_index = std::get<1>(top), element_index = std::get<2>(top);
+  const int value = get<0>(top), list_index = get<1>(top), element_index = get<2>(top);
   result.push_back(value);
 
   int next_index = element_index + 1;

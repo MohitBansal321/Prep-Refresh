@@ -60,25 +60,28 @@
 #include <string>
 #include <vector>
 
-std::string shortestCommonSupersequence(const std::string& str1, const std::string& str2) {
+using namespace std;
+
+
+string shortestCommonSupersequence(const string& str1, const string& str2) {
   const size_t n = str1.size();
   const size_t m = str2.size();
 
   // Step 1: build the standard LCS table (identical to ../code.cpp).
-  std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+  vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
   for (size_t i = 1; i <= n; ++i) {
     for (size_t j = 1; j <= m; ++j) {
       if (str1[i - 1] == str2[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1] + 1;
       } else {
-        dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+        dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
       }
     }
   }
 
   // Step 2: walk the table backwards, weaving both strings together and
   // writing shared (LCS) characters only once.
-  std::string result;
+  string result;
   size_t i = n;
   size_t j = m;
   while (i > 0 && j > 0) {
@@ -106,14 +109,14 @@ std::string shortestCommonSupersequence(const std::string& str1, const std::stri
     --j;
   }
 
-  std::reverse(result.begin(), result.end());
+  reverse(result.begin(), result.end());
   return result;
 }
 
 // Validates that `candidate` truly contains `sub` as a subsequence (not
 // necessarily contiguous) — used by main() to verify correctness even when
 // multiple valid shortest supersequences exist for the same input.
-bool isSubsequence(const std::string& sub, const std::string& candidate) {
+bool isSubsequence(const string& sub, const string& candidate) {
   size_t k = 0;
   for (char c : candidate) {
     if (k < sub.size() && sub[k] == c) ++k;
@@ -125,47 +128,47 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::string str1 = "abac", str2 = "cab";
-    std::string result = shortestCommonSupersequence(str1, str2);
+    string str1 = "abac", str2 = "cab";
+    string result = shortestCommonSupersequence(str1, str2);
     check(result.size() == 5, "\"abac\"/\"cab\" -> supersequence length 5");
     check(isSubsequence(str1, result), "result contains \"abac\" as a subsequence");
     check(isSubsequence(str2, result), "result contains \"cab\" as a subsequence");
   }
 
   {
-    std::string str1 = "aaaaaaaa", str2 = "aaaaaaaa";
-    std::string result = shortestCommonSupersequence(str1, str2);
+    string str1 = "aaaaaaaa", str2 = "aaaaaaaa";
+    string result = shortestCommonSupersequence(str1, str2);
     check(result == "aaaaaaaa", "identical strings -> supersequence is the string itself");
   }
 
   {
-    std::string str1 = "abc", str2 = "def";
-    std::string result = shortestCommonSupersequence(str1, str2);
+    string str1 = "abc", str2 = "def";
+    string result = shortestCommonSupersequence(str1, str2);
     check(result.size() == 6, "no shared characters -> supersequence is the full concatenation length");
     check(isSubsequence(str1, result) && isSubsequence(str2, result),
           "disjoint strings -> result still contains both as subsequences");
   }
 
   {
-    std::string str1 = "bbbaaaba", str2 = "bbababbb";
-    std::string result = shortestCommonSupersequence(str1, str2);
+    string str1 = "bbbaaaba", str2 = "bbababbb";
+    string result = shortestCommonSupersequence(str1, str2);
     // LCS length here is 5, so shortest supersequence length = 8 + 8 - 5 = 11.
     check(result.size() == 11, "\"bbbaaaba\"/\"bbababbb\" -> supersequence length 11");
     check(isSubsequence(str1, result) && isSubsequence(str2, result),
           "result contains both inputs as subsequences");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

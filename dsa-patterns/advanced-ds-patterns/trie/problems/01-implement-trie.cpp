@@ -54,13 +54,16 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
+
 class Trie {
  public:
   Trie() : root_(new Node()) {}
 
   ~Trie() { destroy(root_); }
 
-  void insert(const std::string& word) {
+  void insert(const string& word) {
     Node* cur = root_;
     for (char c : word) {
       int idx = c - 'a';
@@ -73,21 +76,21 @@ class Trie {
     cur->isWord = true;
   }
 
-  bool search(const std::string& word) const {
+  bool search(const string& word) const {
     Node* node = findNode(word);
     // Two separate conditions: (1) the full character path exists,
     // (2) a complete word ends there — not just a longer word's prefix.
     return node != nullptr && node->isWord;
   }
 
-  bool startsWith(const std::string& prefix) const {
+  bool startsWith(const string& prefix) const {
     // Mere path existence is enough for a prefix query.
     return findNode(prefix) != nullptr;
   }
 
  private:
   struct Node {
-    std::array<Node*, 26> children{};  // value-init: all nullptr
+    array<Node*, 26> children{};  // value-init: all nullptr
     bool isWord = false;
   };
 
@@ -95,7 +98,7 @@ class Trie {
 
   // Walks the character path for `s`. Returns the final node, or nullptr
   // if the path breaks at any point (string/prefix not present).
-  Node* findNode(const std::string& s) const {
+  Node* findNode(const string& s) const {
     Node* cur = root_;
     for (char c : s) {
       int idx = c - 'a';
@@ -118,12 +121,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -185,6 +188,6 @@ int main() {
     check(trie.startsWith("worl") == true, "startsWith(\"worl\") -> true");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -4,6 +4,7 @@
 > **In one line:** track the best sum of a subarray *ending exactly at* index i, restarting the running sum whenever it goes negative — a negative prefix can only drag down whatever follows it.
 
 ```cpp
+using namespace std;
 long long current_sum = nums[0];
 long long best_sum = nums[0];
 
@@ -15,7 +16,7 @@ for (size_t i = 1; i < nums.size(); ++i) {
   } else {
     current_sum = nums[i];
   }
-  best_sum = std::max(best_sum, current_sum);   // checked every iteration, not just on restart
+  best_sum = max(best_sum, current_sum);   // checked every iteration, not just on restart
 }
 ```
 

@@ -46,10 +46,13 @@
 #include <string>
 #include <vector>
 
-std::vector<int> dailyTemperatures(const std::vector<int>& temperatures) {
+using namespace std;
+
+
+vector<int> dailyTemperatures(const vector<int>& temperatures) {
   int n = static_cast<int>(temperatures.size());
-  std::vector<int> answer(n, 0);   // 0 = "no warmer day ever" (the sentinel)
-  std::vector<int> waiting;        // holds INDICES; temps non-increasing
+  vector<int> answer(n, 0);   // 0 = "no warmer day ever" (the sentinel)
+  vector<int> waiting;        // holds INDICES; temps non-increasing
   waiting.reserve(n);
 
   for (int i = 0; i < n; ++i) {
@@ -71,27 +74,27 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> temps = {73, 74, 75, 71, 69, 72, 76, 73};
-    std::vector<int> expected = {1, 1, 4, 2, 1, 1, 0, 0};
+    vector<int> temps = {73, 74, 75, 71, 69, 72, 76, 73};
+    vector<int> expected = {1, 1, 4, 2, 1, 1, 0, 0};
     check(dailyTemperatures(temps) == expected,
           "classic example -> [1,1,4,2,1,1,0,0]");
   }
 
   {
     // All same temperature: strict '>' means nothing ever pops -> all zeros.
-    std::vector<int> temps = {30, 30, 30, 30};
-    std::vector<int> expected = {0, 0, 0, 0};
+    vector<int> temps = {30, 30, 30, 30};
+    vector<int> expected = {0, 0, 0, 0};
     check(dailyTemperatures(temps) == expected,
           "all equal -> all zeros (equal never counts as warmer)");
   }
@@ -99,28 +102,28 @@ int main() {
   {
     // Non-increasing sequence: worst case, no pops, everything stays on the
     // stack, all answers zero.
-    std::vector<int> temps = {80, 79, 78, 60};
-    std::vector<int> expected = {0, 0, 0, 0};
+    vector<int> temps = {80, 79, 78, 60};
+    vector<int> expected = {0, 0, 0, 0};
     check(dailyTemperatures(temps) == expected,
           "non-increasing -> all zeros");
   }
 
   {
     // Single element: no future day exists.
-    std::vector<int> temps = {42};
-    std::vector<int> expected = {0};
+    vector<int> temps = {42};
+    vector<int> expected = {0};
     check(dailyTemperatures(temps) == expected, "single day -> [0]");
   }
 
   {
     // One cold dip in the middle must wait for the global max far ahead;
     // exercises a multi-pop step resolving several days at once.
-    std::vector<int> temps = {70, 71, 65, 66, 90};
-    std::vector<int> expected = {1, 3, 1, 1, 0};
+    vector<int> temps = {70, 71, 65, 66, 90};
+    vector<int> expected = {1, 3, 1, 1, 0};
     check(dailyTemperatures(temps) == expected,
           "dip waits for spike; multi-pop resolves batch -> [1,3,1,1,0]");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

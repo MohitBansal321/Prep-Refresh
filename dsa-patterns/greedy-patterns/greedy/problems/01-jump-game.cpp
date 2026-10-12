@@ -46,8 +46,11 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns true if the last index of `nums` is reachable from index 0.
-bool canJump(const std::vector<int>& nums) {
+bool canJump(const vector<int>& nums) {
   // `farthest` = highest index reachable so far. Starts at 0 because we begin
   // standing on index 0 without needing any jump.
   int farthest = 0;
@@ -60,7 +63,7 @@ bool canJump(const std::vector<int>& nums) {
     }
     // Standing on i is legal, so its jump extends (or fails to extend) the
     // frontier. Irrevocable local commitment -- we never reconsider it.
-    farthest = std::max(farthest, static_cast<int>(i) + nums[i]);
+    farthest = max(farthest, static_cast<int>(i) + nums[i]);
   }
 
   // The loop finished without the cursor ever overtaking the frontier, so the
@@ -72,12 +75,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -143,6 +146,6 @@ int main() {
     check(canJump({1, 1, 1, 0, 1}) == false, "[1,1,1,0,1] -> staircase blocked");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

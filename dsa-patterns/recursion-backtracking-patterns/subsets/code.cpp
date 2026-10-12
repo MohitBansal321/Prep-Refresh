@@ -18,6 +18,9 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // subsetsIterative
 //
@@ -26,15 +29,15 @@
 // those duplicates to the result set. After processing all n elements, the
 // result holds all 2^n subsets.
 // ----------------------------------------------------------------------------
-std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
-  std::vector<std::vector<int>> result = {{}};
+vector<vector<int>> subsetsIterative(const vector<int>& nums) {
+  vector<vector<int>> result = {{}};
 
   for (int num : nums) {
     size_t existing_count = result.size();
     for (size_t i = 0; i < existing_count; ++i) {
-      std::vector<int> extended = result[i];
+      vector<int> extended = result[i];
       extended.push_back(num);
-      result.push_back(std::move(extended));
+      result.push_back(move(extended));
     }
   }
 
@@ -48,9 +51,9 @@ std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
 // nums[index] in the current subset, one that excludes it. When index
 // reaches nums.size(), the current subset is complete and recorded.
 // ----------------------------------------------------------------------------
-void subsetsRecursiveHelper(const std::vector<int>& nums, size_t index,
-                             std::vector<int>& current,
-                             std::vector<std::vector<int>>& result) {
+void subsetsRecursiveHelper(const vector<int>& nums, size_t index,
+                             vector<int>& current,
+                             vector<vector<int>>& result) {
   if (index == nums.size()) {
     result.push_back(current);
     return;
@@ -65,9 +68,9 @@ void subsetsRecursiveHelper(const std::vector<int>& nums, size_t index,
   current.pop_back();
 }
 
-std::vector<std::vector<int>> subsetsRecursive(const std::vector<int>& nums) {
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+vector<vector<int>> subsetsRecursive(const vector<int>& nums) {
+  vector<vector<int>> result;
+  vector<int> current;
   subsetsRecursiveHelper(nums, 0, current, result);
   return result;
 }
@@ -80,9 +83,9 @@ std::vector<std::vector<int>> subsetsRecursive(const std::vector<int>& nums) {
 // instead of an include/exclude branch, since every element must appear
 // exactly once in every permutation.
 // ----------------------------------------------------------------------------
-void permutationsHelper(const std::vector<int>& nums, std::vector<bool>& used,
-                         std::vector<int>& current,
-                         std::vector<std::vector<int>>& result) {
+void permutationsHelper(const vector<int>& nums, vector<bool>& used,
+                         vector<int>& current,
+                         vector<vector<int>>& result) {
   if (current.size() == nums.size()) {
     result.push_back(current);
     return;
@@ -98,10 +101,10 @@ void permutationsHelper(const std::vector<int>& nums, std::vector<bool>& used,
   }
 }
 
-std::vector<std::vector<int>> permutations(const std::vector<int>& nums) {
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
-  std::vector<bool> used(nums.size(), false);
+vector<vector<int>> permutations(const vector<int>& nums) {
+  vector<vector<int>> result;
+  vector<int> current;
+  vector<bool> used(nums.size(), false);
   permutationsHelper(nums, used, current, result);
   return result;
 }
@@ -113,23 +116,23 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto sortedCopy = [](std::vector<std::vector<int>> v) {
-    for (auto& inner : v) std::sort(inner.begin(), inner.end());
-    std::sort(v.begin(), v.end());
+  auto sortedCopy = [](vector<vector<int>> v) {
+    for (auto& inner : v) sort(inner.begin(), inner.end());
+    sort(v.begin(), v.end());
     return v;
   };
 
-  std::vector<int> nums = {1, 2, 3};
+  vector<int> nums = {1, 2, 3};
 
   auto iterative = subsetsIterative(nums);
   auto recursive = subsetsRecursive(nums);
@@ -152,6 +155,6 @@ int main() {
   }
   check(all_have_three_elements, "every permutation uses all 3 elements exactly once");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

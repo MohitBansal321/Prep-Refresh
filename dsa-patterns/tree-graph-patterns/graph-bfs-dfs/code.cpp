@@ -41,6 +41,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // bfsShortestPath — BFS from `src`, returning distance (in edges/hops) to
 // every node reachable from `src`. Unreachable nodes are left at -1.
@@ -68,15 +71,15 @@
 // calculation. See the README's Common Mistakes section for the bug this
 // avoids.
 // ----------------------------------------------------------------------------
-std::vector<int> bfsShortestPath(const std::vector<std::vector<int>>& adj, int src) {
+vector<int> bfsShortestPath(const vector<vector<int>>& adj, int src) {
   int n = static_cast<int>(adj.size());
-  std::vector<int> dist(n, -1);  // -1 means "not yet reached / unreachable".
+  vector<int> dist(n, -1);  // -1 means "not yet reached / unreachable".
 
   if (src < 0 || src >= n) {
     return dist;  // Out-of-range source: nothing is reachable.
   }
 
-  std::queue<int> frontier;
+  queue<int> frontier;
   dist[src] = 0;       // Mark visited THE MOMENT we enqueue, not on pop.
   frontier.push(src);
 
@@ -113,10 +116,10 @@ std::vector<int> bfsShortestPath(const std::vector<std::vector<int>>& adj, int s
 // deliberate robustness choice so callers do not need to remember which
 // convention their adjacency list follows.
 // ----------------------------------------------------------------------------
-int dfsConnectedComponents(const std::vector<std::vector<int>>& adj) {
+int dfsConnectedComponents(const vector<vector<int>>& adj) {
   int n = static_cast<int>(adj.size());
 
-  std::vector<std::vector<int>> undirected(n);
+  vector<vector<int>> undirected(n);
   for (int u = 0; u < n; ++u) {
     for (int v : adj[u]) {
       undirected[u].push_back(v);
@@ -124,13 +127,13 @@ int dfsConnectedComponents(const std::vector<std::vector<int>>& adj) {
     }
   }
 
-  std::vector<bool> visited(n, false);
+  vector<bool> visited(n, false);
   int components = 0;
 
   // Recursive DFS. Marks `node` visited the instant it is entered — the DFS
   // analogue of "mark on discovery," which prevents the same node from
   // being explored twice through two different paths.
-  std::function<void(int)> dfs = [&](int node) {
+  function<void(int)> dfs = [&](int node) {
     visited[node] = true;
     for (int neighbor : undirected[node]) {
       if (!visited[neighbor]) {
@@ -168,11 +171,11 @@ int dfsConnectedComponents(const std::vector<std::vector<int>>& adj) {
 // PATH (state 1) proves a cycle. This distinction is the entire reason the
 // recursion-stack marker exists.
 // ----------------------------------------------------------------------------
-bool hasCycleDirected(const std::vector<std::vector<int>>& adj) {
+bool hasCycleDirected(const vector<vector<int>>& adj) {
   int n = static_cast<int>(adj.size());
-  std::vector<int> state(n, 0);  // 0 = unvisited, 1 = in progress, 2 = done.
+  vector<int> state(n, 0);  // 0 = unvisited, 1 = in progress, 2 = done.
 
-  std::function<bool(int)> dfs = [&](int node) -> bool {
+  function<bool(int)> dfs = [&](int node) -> bool {
     state[node] = 1;  // Push onto the conceptual recursion stack.
 
     for (int neighbor : adj[node]) {
@@ -208,23 +211,23 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- bfsShortestPath ---\n";
+  cout << "--- bfsShortestPath ---\n";
   {
     // Undirected graph, built symmetrically (edge u-v added both ways):
     //   0-1, 1-2, 2-3, 3-0 (a 4-cycle), plus a separate 4-5 edge,
     //   plus an isolated node 6.
     int n = 7;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     auto add_undirected_edge = [&](int u, int v) {
       adj[u].push_back(v);
       adj[v].push_back(u);
@@ -235,8 +238,8 @@ int main() {
     add_undirected_edge(3, 0);
     add_undirected_edge(4, 5);
 
-    std::vector<int> dist = bfsShortestPath(adj, 0);
-    std::vector<int> expected = {0, 1, 2, 1, -1, -1, -1};
+    vector<int> dist = bfsShortestPath(adj, 0);
+    vector<int> expected = {0, 1, 2, 1, -1, -1, -1};
     check(dist == expected,
           "BFS from node 0 on a 4-cycle + disjoint component -> correct hop counts, -1 for unreachable");
 
@@ -246,13 +249,13 @@ int main() {
     check(dist[2] == 2, "shortest hop count through a cycle is still correct (2, not looping forever)");
   }
 
-  std::cout << "\n--- dfsConnectedComponents ---\n";
+  cout << "\n--- dfsConnectedComponents ---\n";
   {
     // Same graph as above (built as DIRECTED edges this time, to prove the
     // function still treats it as undirected internally): 3 components ->
     // {0,1,2,3}, {4,5}, {6}.
     int n = 7;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     adj[0].push_back(1);
     adj[1].push_back(2);
     adj[2].push_back(3);
@@ -266,7 +269,7 @@ int main() {
   {
     // Fully connected graph -> exactly 1 component.
     int n = 4;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     auto add_undirected_edge = [&](int u, int v) {
       adj[u].push_back(v);
       adj[v].push_back(u);
@@ -279,15 +282,15 @@ int main() {
   {
     // No edges at all -> every node is its own component.
     int n = 5;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     check(dfsConnectedComponents(adj) == 5, "5 isolated nodes -> 5 components");
   }
 
-  std::cout << "\n--- hasCycleDirected ---\n";
+  cout << "\n--- hasCycleDirected ---\n";
   {
     // 0 -> 1 -> 2 -> 0 : a directed cycle.
     int n = 3;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     adj[0].push_back(1);
     adj[1].push_back(2);
     adj[2].push_back(0);
@@ -297,7 +300,7 @@ int main() {
     // 0 -> 1, 0 -> 2, 1 -> 3, 2 -> 3 : a DAG (diamond shape, node 3 has two
     // parents but that is NOT a cycle).
     int n = 4;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     adj[0].push_back(1);
     adj[0].push_back(2);
     adj[1].push_back(3);
@@ -308,7 +311,7 @@ int main() {
     // Disconnected graph where only the SECOND component has a cycle --
     // proves the outer loop over all start nodes is required.
     int n = 5;
-    std::vector<std::vector<int>> adj(n);
+    vector<vector<int>> adj(n);
     adj[0].push_back(1);  // component A: 0 -> 1, no cycle.
     adj[2].push_back(3);
     adj[3].push_back(4);
@@ -316,6 +319,6 @@ int main() {
     check(hasCycleDirected(adj), "cycle hidden in a second, otherwise-unreached component -> still detected");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -19,9 +19,12 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class NumArray {
  public:
-  explicit NumArray(std::vector<int>& nums) {
+  explicit NumArray(vector<int>& nums) {
     prefix_.assign(nums.size() + 1, 0LL);
     for (size_t i = 1; i <= nums.size(); ++i) {
       prefix_[i] = prefix_[i - 1] + nums[i - 1];
@@ -33,33 +36,33 @@ class NumArray {
   }
 
  private:
-  std::vector<long long> prefix_;
+  vector<long long> prefix_;
 };
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::vector<int> nums = {-2, 0, 3, -5, 2, -1};
+  vector<int> nums = {-2, 0, 3, -5, 2, -1};
   NumArray numArray(nums);
 
   check(numArray.sumRange(0, 2) == 1, "sumRange(0,2) -> 1");
   check(numArray.sumRange(2, 5) == -1, "sumRange(2,5) -> -1");
   check(numArray.sumRange(0, 5) == -3, "sumRange(0,5) -> -3");
 
-  std::vector<int> single = {7};
+  vector<int> single = {7};
   NumArray na2(single);
   check(na2.sumRange(0, 0) == 7, "single-element array sumRange(0,0) -> 7");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -31,6 +31,9 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Template 1: FIXED-SIZE WINDOW
 // ----------------------------------------------------------------------------
@@ -47,7 +50,7 @@
 // This shape generalizes to: max/min sum of size k, average of every window
 // of size k, first negative number in every window of size k, etc. Only the
 // "what does the aggregate track" part changes.
-long long maxSumSubarrayFixedWindow(const std::vector<int>& arr, int k) {
+long long maxSumSubarrayFixedWindow(const vector<int>& arr, int k) {
     int n = static_cast<int>(arr.size());
     if (n == 0 || k <= 0 || k > n) {
         return 0;  // invalid input for this template; caller should validate
@@ -65,7 +68,7 @@ long long maxSumSubarrayFixedWindow(const std::vector<int>& arr, int k) {
     for (int right = k; right < n; ++right) {
         windowSum += arr[right];           // element entering the window
         windowSum -= arr[right - k];       // element leaving the window
-        best = std::max(best, windowSum);
+        best = max(best, windowSum);
     }
 
     return best;
@@ -90,7 +93,7 @@ long long maxSumSubarrayFixedWindow(const std::vector<int>& arr, int k) {
 //   - Every element is added to the running sum exactly once (by right) and
 //     removed exactly once (by left), so the total work across the whole
 //     scan is O(n), not O(n) per window.
-int shortestSubarrayWithSumAtLeast(const std::vector<int>& arr, int target) {
+int shortestSubarrayWithSumAtLeast(const vector<int>& arr, int target) {
     int n = static_cast<int>(arr.size());
     long long windowSum = 0;
     int left = 0;
@@ -102,7 +105,7 @@ int shortestSubarrayWithSumAtLeast(const std::vector<int>& arr, int target) {
         // Shrink while the window already satisfies the condition — we are
         // looking for the *shortest* valid window, so keep trying to shrink.
         while (windowSum >= target) {
-            best = std::min(best, right - left + 1);
+            best = min(best, right - left + 1);
             windowSum -= arr[left];  // leaving element must update the aggregate
             ++left;
         }
@@ -129,10 +132,10 @@ int shortestSubarrayWithSumAtLeast(const std::vector<int>& arr, int target) {
 //     Common Mistakes in README.md).
 //   - After the shrink loop, the window is guaranteed valid again, so record
 //     its length as a candidate for the best answer.
-int longestSubstringWithAtMostKDistinct(const std::string& s, int k) {
+int longestSubstringWithAtMostKDistinct(const string& s, int k) {
     if (k <= 0) return 0;
 
-    std::unordered_map<char, int> freq;
+    unordered_map<char, int> freq;
     int left = 0;
     int best = 0;
 
@@ -153,7 +156,7 @@ int longestSubstringWithAtMostKDistinct(const std::string& s, int k) {
             ++left;
         }
 
-        best = std::max(best, right - left + 1);
+        best = max(best, right - left + 1);
     }
 
     return best;
@@ -162,72 +165,72 @@ int longestSubstringWithAtMostKDistinct(const std::string& s, int k) {
 // ----------------------------------------------------------------------------
 // Small self-checks so this file proves itself end-to-end when run.
 // ----------------------------------------------------------------------------
-static void expectEqual(long long actual, long long expected, const std::string& label) {
-    std::cout << label << ": " << actual
-              << (actual == expected ? "  [PASS]" : "  [FAIL, expected " + std::to_string(expected) + "]")
+static void expectEqual(long long actual, long long expected, const string& label) {
+    cout << label << ": " << actual
+              << (actual == expected ? "  [PASS]" : "  [FAIL, expected " + to_string(expected) + "]")
               << '\n';
 }
 
 int main() {
-    std::cout << "=== Sliding Window generic templates ===\n\n";
+    cout << "=== Sliding Window generic templates ===\n\n";
 
     // --- Template 1: fixed-size window ---
     {
-        std::vector<int> arr{2, 1, 5, 1, 3, 2};
+        vector<int> arr{2, 1, 5, 1, 3, 2};
         int k = 3;
         long long result = maxSumSubarrayFixedWindow(arr, k);
         // Windows of size 3: (2,1,5)=8 (1,5,1)=7 (5,1,3)=9 (1,3,2)=6 -> max 9
         expectEqual(result, 9, "maxSumSubarrayFixedWindow([2,1,5,1,3,2], k=3)");
     }
     {
-        std::vector<int> arr{2, 3, 4, 1, 5};
+        vector<int> arr{2, 3, 4, 1, 5};
         int k = 2;
         long long result = maxSumSubarrayFixedWindow(arr, k);
         // Windows of size 2: 5,7,5,6 -> max 7
         expectEqual(result, 7, "maxSumSubarrayFixedWindow([2,3,4,1,5], k=2)");
     }
 
-    std::cout << '\n';
+    cout << '\n';
 
     // --- Template 2: variable-size window, shortest valid window ---
     {
-        std::vector<int> arr{2, 3, 1, 2, 4, 3};
+        vector<int> arr{2, 3, 1, 2, 4, 3};
         int target = 7;
         int result = shortestSubarrayWithSumAtLeast(arr, target);
         // [4,3] sums to 7, length 2 is the shortest
         expectEqual(result, 2, "shortestSubarrayWithSumAtLeast([2,3,1,2,4,3], target=7)");
     }
     {
-        std::vector<int> arr{1, 4, 4};
+        vector<int> arr{1, 4, 4};
         int target = 4;
         int result = shortestSubarrayWithSumAtLeast(arr, target);
         expectEqual(result, 1, "shortestSubarrayWithSumAtLeast([1,4,4], target=4)");
     }
     {
-        std::vector<int> arr{1, 1, 1, 1};
+        vector<int> arr{1, 1, 1, 1};
         int target = 11;
         int result = shortestSubarrayWithSumAtLeast(arr, target);
         expectEqual(result, 0, "shortestSubarrayWithSumAtLeast([1,1,1,1], target=11) - no valid window");
     }
 
-    std::cout << '\n';
+    cout << '\n';
 
     // --- Template 3: variable-size window, longest valid window ---
     {
-        std::string s = "eceba";
+        string s = "eceba";
         int k = 2;
         int result = longestSubstringWithAtMostKDistinct(s, k);
         // "ece" has 2 distinct chars, length 3
         expectEqual(result, 3, "longestSubstringWithAtMostKDistinct(\"eceba\", k=2)");
     }
     {
-        std::string s = "aa";
+        string s = "aa";
         int k = 1;
         int result = longestSubstringWithAtMostKDistinct(s, k);
         expectEqual(result, 2, "longestSubstringWithAtMostKDistinct(\"aa\", k=1)");
     }
     {
-        std::string s = "abcabcbb";
+        string s = "abcabcbb";
         int k = 1;
         int result = longestSubstringWithAtMostKDistinct(s, k);
         // With only 1 distinct char allowed, the longest run of one repeated
@@ -235,7 +238,7 @@ int main() {
         expectEqual(result, 2, "longestSubstringWithAtMostKDistinct(\"abcabcbb\", k=1)");
     }
 
-    std::cout << "\nAll templates exercised. See problems/ for four fully worked,\n"
+    cout << "\nAll templates exercised. See problems/ for four fully worked,\n"
                  "standalone LeetCode-style solutions built on these same ideas.\n";
 
     return 0;

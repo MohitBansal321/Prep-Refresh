@@ -16,9 +16,10 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // BFS shortest hops (unweighted) — mark on ENQUEUE, never on pop
-std::vector<int> dist(n, -1);
-std::queue<int> frontier;
+vector<int> dist(n, -1);
+queue<int> frontier;
 dist[src] = 0;
 frontier.push(src);
 while (!frontier.empty()) {
@@ -33,8 +34,8 @@ while (!frontier.empty()) {
 }
 
 // DFS connected components — outer loop over ALL nodes (disconnected graphs!)
-std::vector<bool> visited(n, false);
-std::function<void(int)> dfs = [&](int node) {
+vector<bool> visited(n, false);
+function<void(int)> dfs = [&](int node) {
     visited[node] = true;                    // mark on entry
     for (int neighbor : adj[node])
         if (!visited[neighbor]) dfs(neighbor);

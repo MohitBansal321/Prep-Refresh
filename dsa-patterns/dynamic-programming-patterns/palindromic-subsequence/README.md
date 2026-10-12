@@ -21,8 +21,9 @@ The problem asks about palindromes within ONE string — longest palindromic sub
 ## Template
 
 ```cpp
+using namespace std;
 // Expand around center -- longest palindromic SUBSTRING.
-std::string longestPalindromicSubstring(const std::string& s) {
+string longestPalindromicSubstring(const string& s) {
   if (s.empty()) return "";
   int start = 0, maxLen = 1;
   auto expand = [&](int left, int right) {
@@ -38,14 +39,14 @@ std::string longestPalindromicSubstring(const std::string& s) {
 }
 
 // Interval DP -- longest palindromic SUBSEQUENCE (gaps allowed).
-int longestPalindromicSubsequenceLength(const std::string& s) {
+int longestPalindromicSubsequenceLength(const string& s) {
   int n = s.size();
-  std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
+  vector<vector<int>> dp(n, vector<int>(n, 0));
   for (int i = n - 1; i >= 0; --i) {
     dp[i][i] = 1;
     for (int j = i + 1; j < n; ++j) {
       dp[i][j] = (s[i] == s[j]) ? dp[i + 1][j - 1] + 2
-                                 : std::max(dp[i + 1][j], dp[i][j - 1]);
+                                 : max(dp[i + 1][j], dp[i][j - 1]);
     }
   }
   return dp[0][n - 1];

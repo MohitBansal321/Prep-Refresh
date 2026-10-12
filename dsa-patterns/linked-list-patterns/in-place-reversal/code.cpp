@@ -28,6 +28,9 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // The node type shared by every example in this file. Deliberately minimal:
 // one payload (`val`) and one link (`next`) — the only two things a singly
@@ -42,9 +45,9 @@ struct ListNode {
 
 // ----------------------------------------------------------------------------
 // Helper: build a singly linked, nullptr-terminated list from a
-// std::vector<int>. Returns the head pointer (nullptr for an empty vector).
+// vector<int>. Returns the head pointer (nullptr for an empty vector).
 // ----------------------------------------------------------------------------
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
 
   ListNode* head = new ListNode(values[0]);
@@ -73,12 +76,12 @@ void free_list(ListNode* head) {
 void print_list(ListNode* head, int max_nodes = 50) {
   int count = 0;
   while (head != nullptr && count < max_nodes) {
-    std::cout << head->val;
+    cout << head->val;
     head = head->next;
-    if (head != nullptr && count + 1 < max_nodes) std::cout << " -> ";
+    if (head != nullptr && count + 1 < max_nodes) cout << " -> ";
     ++count;
   }
-  std::cout << (count == max_nodes ? " -> ... (truncated)" : "") << "\n";
+  cout << (count == max_nodes ? " -> ... (truncated)" : "") << "\n";
 }
 
 // ----------------------------------------------------------------------------
@@ -211,116 +214,116 @@ ListNode* reverseKGroup(ListNode* head, int k) {
 }
 
 int main() {
-  std::cout << "=== In-place Reversal: generic template demo ===\n\n";
+  cout << "=== In-place Reversal: generic template demo ===\n\n";
 
   // ---- Test 1: reverse the whole list ---------------------------------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5});
-    std::cout << "Test 1 (reverseList on [1,2,3,4,5]):\n";
-    std::cout << "  Before: ";
+    cout << "Test 1 (reverseList on [1,2,3,4,5]):\n";
+    cout << "  Before: ";
     print_list(head);
     head = reverseList(head);
-    std::cout << "  After:  ";
+    cout << "  After:  ";
     print_list(head);
-    std::cout << "  (expected: 5 -> 4 -> 3 -> 2 -> 1)\n\n";
+    cout << "  (expected: 5 -> 4 -> 3 -> 2 -> 1)\n\n";
     free_list(head);
   }
 
   // ---- Test 2: reverse the whole list, single node ----------------------
   {
     ListNode* head = build_list({42});
-    std::cout << "Test 2 (reverseList on a single node [42]):\n";
+    cout << "Test 2 (reverseList on a single node [42]):\n";
     head = reverseList(head);
-    std::cout << "  After: ";
+    cout << "  After: ";
     print_list(head);
-    std::cout << "  (expected: 42)\n\n";
+    cout << "  (expected: 42)\n\n";
     free_list(head);
   }
 
   // ---- Test 3: reverse the whole list, empty list -----------------------
   {
     ListNode* head = build_list({});
-    std::cout << "Test 3 (reverseList on an empty list):\n";
+    cout << "Test 3 (reverseList on an empty list):\n";
     head = reverseList(head);
-    std::cout << "  After: " << (head == nullptr ? "null (empty)" : "not null")
+    cout << "  After: " << (head == nullptr ? "null (empty)" : "not null")
                << " (expected: null)\n\n";
   }
 
   // ---- Test 4: reverse a sub-range that INCLUDES the true head ----------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5});
-    std::cout << "Test 4 (reverseBetween([1,2,3,4,5], left=1, right=3)):\n";
-    std::cout << "  Before: ";
+    cout << "Test 4 (reverseBetween([1,2,3,4,5], left=1, right=3)):\n";
+    cout << "  Before: ";
     print_list(head);
     head = reverseBetween(head, 1, 3);
-    std::cout << "  After:  ";
+    cout << "  After:  ";
     print_list(head);
-    std::cout << "  (expected: 3 -> 2 -> 1 -> 4 -> 5)\n\n";
+    cout << "  (expected: 3 -> 2 -> 1 -> 4 -> 5)\n\n";
     free_list(head);
   }
 
   // ---- Test 5: reverse a sub-range strictly inside the list -------------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5});
-    std::cout << "Test 5 (reverseBetween([1,2,3,4,5], left=2, right=4)):\n";
-    std::cout << "  Before: ";
+    cout << "Test 5 (reverseBetween([1,2,3,4,5], left=2, right=4)):\n";
+    cout << "  Before: ";
     print_list(head);
     head = reverseBetween(head, 2, 4);
-    std::cout << "  After:  ";
+    cout << "  After:  ";
     print_list(head);
-    std::cout << "  (expected: 1 -> 4 -> 3 -> 2 -> 5)\n\n";
+    cout << "  (expected: 1 -> 4 -> 3 -> 2 -> 5)\n\n";
     free_list(head);
   }
 
   // ---- Test 6: reverse a sub-range of length 1 (left == right, no-op) ---
   {
     ListNode* head = build_list({1, 2, 3});
-    std::cout << "Test 6 (reverseBetween([1,2,3], left=2, right=2)):\n";
+    cout << "Test 6 (reverseBetween([1,2,3], left=2, right=2)):\n";
     head = reverseBetween(head, 2, 2);
-    std::cout << "  After: ";
+    cout << "  After: ";
     print_list(head);
-    std::cout << "  (expected: 1 -> 2 -> 3, unchanged)\n\n";
+    cout << "  (expected: 1 -> 2 -> 3, unchanged)\n\n";
     free_list(head);
   }
 
   // ---- Test 7: reverse in groups of k, list length a multiple of k ------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5, 6});
-    std::cout << "Test 7 (reverseKGroup([1,2,3,4,5,6], k=2)):\n";
-    std::cout << "  Before: ";
+    cout << "Test 7 (reverseKGroup([1,2,3,4,5,6], k=2)):\n";
+    cout << "  Before: ";
     print_list(head);
     head = reverseKGroup(head, 2);
-    std::cout << "  After:  ";
+    cout << "  After:  ";
     print_list(head);
-    std::cout << "  (expected: 2 -> 1 -> 4 -> 3 -> 6 -> 5)\n\n";
+    cout << "  (expected: 2 -> 1 -> 4 -> 3 -> 6 -> 5)\n\n";
     free_list(head);
   }
 
   // ---- Test 8: reverse in groups of k, trailing short group untouched ---
   {
     ListNode* head = build_list({1, 2, 3, 4, 5});
-    std::cout << "Test 8 (reverseKGroup([1,2,3,4,5], k=3)):\n";
-    std::cout << "  Before: ";
+    cout << "Test 8 (reverseKGroup([1,2,3,4,5], k=3)):\n";
+    cout << "  Before: ";
     print_list(head);
     head = reverseKGroup(head, 3);
-    std::cout << "  After:  ";
+    cout << "  After:  ";
     print_list(head);
-    std::cout << "  (expected: 3 -> 2 -> 1 -> 4 -> 5, last 2 nodes untouched)\n\n";
+    cout << "  (expected: 3 -> 2 -> 1 -> 4 -> 5, last 2 nodes untouched)\n\n";
     free_list(head);
   }
 
   // ---- Test 9: reverse in groups of k, k larger than the whole list -----
   {
     ListNode* head = build_list({1, 2, 3});
-    std::cout << "Test 9 (reverseKGroup([1,2,3], k=5)):\n";
+    cout << "Test 9 (reverseKGroup([1,2,3], k=5)):\n";
     head = reverseKGroup(head, 5);
-    std::cout << "  After: ";
+    cout << "  After: ";
     print_list(head);
-    std::cout << "  (expected: 1 -> 2 -> 3, unchanged — fewer than k nodes)\n\n";
+    cout << "  (expected: 1 -> 2 -> 3, unchanged — fewer than k nodes)\n\n";
     free_list(head);
   }
 
-  std::cout << "All demo cases printed above. Compare each result against\n"
+  cout << "All demo cases printed above. Compare each result against\n"
                "its \"expected\" comment to confirm the template behaves.\n";
 
   return 0;

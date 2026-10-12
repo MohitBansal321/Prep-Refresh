@@ -31,7 +31,7 @@
 //   Time:  O(n) — one pass: walk to `left`, reverse the slice, done.
 //   Space: O(1) — a dummy node plus a fixed number of pointers.
 //          The brute-force alternative (copy the whole list into a
-//          std::vector<int>, reverse the slice with std::reverse, rebuild
+//          vector<int>, reverse the slice with reverse, rebuild
 //          the list) is O(n) space and touches the data twice as much.
 //
 // Compile:
@@ -41,13 +41,16 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 struct ListNode {
   int val;
   ListNode* next;
   ListNode(int x) : val(x), next(nullptr) {}
 };
 
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
   ListNode* head = new ListNode(values[0]);
   ListNode* tail = head;
@@ -66,8 +69,8 @@ void free_list(ListNode* head) {
   }
 }
 
-std::vector<int> to_vector(ListNode* head) {
-  std::vector<int> out;
+vector<int> to_vector(ListNode* head) {
+  vector<int> out;
   while (head != nullptr) {
     out.push_back(head->val);
     head = head->next;
@@ -110,22 +113,22 @@ ListNode* reverseBetween(ListNode* head, int left, int right) {
 // ----------------------------------------------------------------------------
 // Test harness.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, const std::vector<int>& actual,
-           const std::vector<int>& expected) {
+void check(const string& name, const vector<int>& actual,
+           const vector<int>& expected) {
   bool pass = (actual == expected);
-  std::cout << (pass ? "PASS" : "FAIL") << " — " << name << " (got [";
+  cout << (pass ? "PASS" : "FAIL") << " — " << name << " (got [";
   for (size_t i = 0; i < actual.size(); ++i) {
-    std::cout << actual[i] << (i + 1 < actual.size() ? "," : "");
+    cout << actual[i] << (i + 1 < actual.size() ? "," : "");
   }
-  std::cout << "], expected [";
+  cout << "], expected [";
   for (size_t i = 0; i < expected.size(); ++i) {
-    std::cout << expected[i] << (i + 1 < expected.size() ? "," : "");
+    cout << expected[i] << (i + 1 < expected.size() ? "," : "");
   }
-  std::cout << "])\n";
+  cout << "])\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 92: Reverse Linked List II ===\n\n";
+  cout << "=== LeetCode 92: Reverse Linked List II ===\n\n";
 
   // Case 1: the canonical LeetCode example.
   {

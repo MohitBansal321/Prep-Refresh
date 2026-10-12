@@ -18,7 +18,7 @@
 // pattern module is named after. We maintain a `tails` array where
 // `tails[k]` is the smallest tail value seen so far among all increasing
 // subsequences of length k+1. For each new number x:
-//   - binary search `tails` for the first entry >= x (std::lower_bound,
+//   - binary search `tails` for the first entry >= x (lower_bound,
 //     because we need STRICT increase — see the README's Common Mistakes
 //     section on lower_bound vs upper_bound);
 //   - if every entry is smaller than x, x extends the longest run found so
@@ -49,12 +49,15 @@
 #include <string>
 #include <vector>
 
-int lengthOfLIS(const std::vector<int>& nums) {
-  std::vector<int> tails;
+using namespace std;
+
+
+int lengthOfLIS(const vector<int>& nums) {
+  vector<int> tails;
   tails.reserve(nums.size());
 
   for (int x : nums) {
-    auto it = std::lower_bound(tails.begin(), tails.end(), x);
+    auto it = lower_bound(tails.begin(), tails.end(), x);
     if (it == tails.end()) {
       tails.push_back(x);
     } else {
@@ -69,13 +72,13 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](const std::vector<int>& nums, int expected, const std::string& label) {
+  auto check = [&](const vector<int>& nums, int expected, const string& label) {
     int result = lengthOfLIS(nums);
     if (result == expected) {
-      std::cout << "[PASS] " << label << " -> " << result << "\n";
+      cout << "[PASS] " << label << " -> " << result << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << " -> got " << result
+      cout << "[FAIL] " << label << " -> got " << result
                 << ", expected " << expected << "\n";
       ++fail_count;
     }
@@ -89,6 +92,6 @@ int main() {
   check({4, 10, 4, 3, 8, 9}, 3, "[4,10,4,3,8,9]");
   check({1, 3, 6, 7, 9, 4, 10, 5, 6}, 6, "[1,3,6,7,9,4,10,5,6]");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

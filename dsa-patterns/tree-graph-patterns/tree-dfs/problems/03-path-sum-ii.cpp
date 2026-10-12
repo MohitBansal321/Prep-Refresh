@@ -57,6 +57,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct TreeNode {
   int val;
   TreeNode* left;
@@ -64,8 +67,8 @@ struct TreeNode {
   TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
 };
 
-void findPaths(TreeNode* node, int remaining, std::vector<int>& currentPath,
-               std::vector<std::vector<int>>& results) {
+void findPaths(TreeNode* node, int remaining, vector<int>& currentPath,
+               vector<vector<int>>& results) {
   if (!node) return;  // Base case: no node, nothing to add or recurse into.
 
   // --- "Go down": commit this node to the shared path. ---
@@ -90,9 +93,9 @@ void findPaths(TreeNode* node, int remaining, std::vector<int>& currentPath,
   currentPath.pop_back();
 }
 
-std::vector<std::vector<int>> pathSum(TreeNode* root, int targetSum) {
-  std::vector<std::vector<int>> results;
-  std::vector<int> currentPath;
+vector<vector<int>> pathSum(TreeNode* root, int targetSum) {
+  vector<vector<int>> results;
+  vector<int> currentPath;
   findPaths(root, targetSum, currentPath, results);
   return results;
 }
@@ -135,27 +138,27 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     TreeNode* root = buildExampleTree();
-    std::vector<std::vector<int>> paths = pathSum(root, 22);
-    std::vector<std::vector<int>> expected = {{5, 4, 11, 2}, {5, 8, 4, 5}};
+    vector<vector<int>> paths = pathSum(root, 22);
+    vector<vector<int>> expected = {{5, 4, 11, 2}, {5, 8, 4, 5}};
     check(paths == expected, "example tree, target 22 -> [[5,4,11,2],[5,8,4,5]]");
     deleteTree(root);
   }
 
   {
     TreeNode* root = buildExampleTree();
-    std::vector<std::vector<int>> paths = pathSum(root, 1000);
+    vector<vector<int>> paths = pathSum(root, 1000);
     check(paths.empty(), "example tree, unreachable target -> no paths");
     deleteTree(root);
   }
@@ -168,25 +171,25 @@ int main() {
     // findPaths's balance of push/pop would still show up as a wrong-length
     // or wrong-content path within a single run).
     TreeNode* root = buildExampleTree();
-    std::vector<std::vector<int>> first = pathSum(root, 22);
-    std::vector<std::vector<int>> second = pathSum(root, 22);
+    vector<vector<int>> first = pathSum(root, 22);
+    vector<vector<int>> second = pathSum(root, 22);
     check(first == second, "repeated calls on the same tree are deterministic (no state leak)");
     deleteTree(root);
   }
 
   {
     TreeNode* single = new TreeNode(5);
-    std::vector<std::vector<int>> paths = pathSum(single, 5);
-    std::vector<std::vector<int>> expected = {{5}};
+    vector<vector<int>> paths = pathSum(single, 5);
+    vector<vector<int>> expected = {{5}};
     check(paths == expected, "single node equal to target -> [[5]]");
     deleteTree(single);
   }
 
   {
-    std::vector<std::vector<int>> paths = pathSum(nullptr, 0);
+    vector<vector<int>> paths = pathSum(nullptr, 0);
     check(paths.empty(), "empty tree -> no paths");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

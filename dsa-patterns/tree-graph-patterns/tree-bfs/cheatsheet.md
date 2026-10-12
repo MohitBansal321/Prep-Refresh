@@ -16,12 +16,13 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // A. LEVEL ORDER — the size snapshot is the entire trick.
-std::vector<std::vector<int>> levelOrder(TreeNode* root) {
-    std::vector<std::vector<int>> levels;
+vector<vector<int>> levelOrder(TreeNode* root) {
+    vector<vector<int>> levels;
     if (!root) return levels;                 // empty tree: not an error, just no levels
 
-    std::queue<TreeNode*> q;
+    queue<TreeNode*> q;
     q.push(root);
 
     while (!q.empty()) {
@@ -29,7 +30,7 @@ std::vector<std::vector<int>> levelOrder(TreeNode* root) {
                                               // Everything in the queue right now is
                                               // exactly one level; children pushed below
                                               // belong to the NEXT level.
-        std::vector<int> currentLevel;
+        vector<int> currentLevel;
         for (int i = 0; i < levelSize; ++i) { // fixed count — q.size() grows in here
             TreeNode* node = q.front(); q.pop();
             currentLevel.push_back(node->val);
@@ -47,7 +48,7 @@ std::vector<std::vector<int>> levelOrder(TreeNode* root) {
 int minDepth(TreeNode* root) {
     if (!root) return 0;
 
-    std::queue<TreeNode*> q;
+    queue<TreeNode*> q;
     q.push(root);
     int depth = 1;
 

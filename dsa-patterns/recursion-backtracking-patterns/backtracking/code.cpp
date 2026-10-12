@@ -29,6 +29,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 namespace {
 
 // The partial-solution state for N-Queens is deliberately compact: one
@@ -42,13 +45,13 @@ namespace {
 // section. We only need to check column and both diagonals -- never the row
 // itself -- because the recursion places exactly one queen per row, so two
 // placed queens can never already share a row.
-bool isSafe(const std::vector<int>& colOfRow, int row, int col) {
+bool isSafe(const vector<int>& colOfRow, int row, int col) {
   for (int prevRow = 0; prevRow < row; ++prevRow) {
     int prevCol = colOfRow[prevRow];
     if (prevCol == col) {
       return false;  // Same column -> queens attack along the column.
     }
-    if (std::abs(prevCol - col) == std::abs(prevRow - row)) {
+    if (abs(prevCol - col) == abs(prevRow - row)) {
       return false;  // Same diagonal -> queens attack along a diagonal.
     }
   }
@@ -58,8 +61,8 @@ bool isSafe(const std::vector<int>& colOfRow, int row, int col) {
 // Converts the compact colOfRow representation into the board-of-strings
 // format LeetCode (and most textbook presentations) expect: n strings of
 // length n, 'Q' for an occupied square and '.' for empty.
-std::vector<std::string> buildBoard(const std::vector<int>& colOfRow, int n) {
-  std::vector<std::string> board(n, std::string(n, '.'));
+vector<string> buildBoard(const vector<int>& colOfRow, int n) {
+  vector<string> board(n, string(n, '.'));
   for (int row = 0; row < n; ++row) {
     board[row][colOfRow[row]] = 'Q';
   }
@@ -69,8 +72,8 @@ std::vector<std::string> buildBoard(const std::vector<int>& colOfRow, int n) {
 // The recursive engine. `row` is the decision slot we are currently filling:
 // "which column gets the queen in this row?" Every row from 0..n-1 must get
 // exactly one queen for a solution to be complete.
-void backtrack(int n, int row, std::vector<int>& colOfRow,
-               std::vector<std::vector<std::string>>& solutions) {
+void backtrack(int n, int row, vector<int>& colOfRow,
+               vector<vector<string>>& solutions) {
   if (row == n) {
     // Base case: every row has a queen placed with zero conflicts (every
     // placement along the way already passed isSafe()), so this is a
@@ -111,11 +114,11 @@ void backtrack(int n, int row, std::vector<int>& colOfRow,
 // Public API: returns every distinct way to place n non-attacking queens on
 // an n x n board. Each solution is n strings of length n ('Q' for a queen,
 // '.' for empty), matching LeetCode 51's expected output shape.
-std::vector<std::vector<std::string>> solveNQueens(int n) {
-  std::vector<std::vector<std::string>> solutions;
+vector<vector<string>> solveNQueens(int n) {
+  vector<vector<string>> solutions;
   if (n <= 0) return solutions;
 
-  std::vector<int> colOfRow(n, -1);
+  vector<int> colOfRow(n, -1);
   backtrack(n, 0, colOfRow, solutions);
   return solutions;
 }
@@ -127,43 +130,43 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- n = 1 ---\n";
+  cout << "--- n = 1 ---\n";
   {
     auto solutions = solveNQueens(1);
     check(solutions.size() == 1, "n=1 has exactly 1 solution (trivial single square)");
   }
 
-  std::cout << "\n--- n = 2 and n = 3 (no solution exists) ---\n";
+  cout << "\n--- n = 2 and n = 3 (no solution exists) ---\n";
   {
     check(solveNQueens(2).empty(), "n=2 has 0 solutions");
     check(solveNQueens(3).empty(), "n=3 has 0 solutions");
   }
 
-  std::cout << "\n--- n = 4 (classic textbook case) ---\n";
+  cout << "\n--- n = 4 (classic textbook case) ---\n";
   {
     auto solutions = solveNQueens(4);
     check(solutions.size() == 2, "n=4 has exactly 2 solutions");
 
     for (size_t i = 0; i < solutions.size(); ++i) {
-      std::cout << "Solution " << (i + 1) << ":\n";
+      cout << "Solution " << (i + 1) << ":\n";
       for (const auto& line : solutions[i]) {
-        std::cout << "  " << line << "\n";
+        cout << "  " << line << "\n";
       }
     }
 
     // Known solution set for n=4 (order may vary by column-scan direction,
     // so we check membership rather than exact vector equality).
-    std::vector<std::vector<std::string>> expected = {
+    vector<vector<string>> expected = {
         {".Q..", "...Q", "Q...", "..Q."},
         {"..Q.", "Q...", "...Q", ".Q.."},
     };
@@ -181,12 +184,12 @@ int main() {
     check(all_expected_present, "n=4 solutions match the known board layouts");
   }
 
-  std::cout << "\n--- n = 8 (standard 8-queens count) ---\n";
+  cout << "\n--- n = 8 (standard 8-queens count) ---\n";
   {
     auto solutions = solveNQueens(8);
     check(solutions.size() == 92, "n=8 has exactly 92 solutions");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

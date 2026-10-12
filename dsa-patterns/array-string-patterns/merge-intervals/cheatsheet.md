@@ -17,15 +17,16 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Merge (sort by START, build the merged output)
-std::sort(intervals.begin(), intervals.end(),
+sort(intervals.begin(), intervals.end(),
           [](auto& a, auto& b) { return a.first < b.first; });
 
-std::vector<std::pair<int,int>> merged;
+vector<pair<int,int>> merged;
 auto current = intervals[0];
 for (size_t i = 1; i < intervals.size(); ++i) {
     if (intervals[i].first <= current.second) {
-        current.second = std::max(current.second, intervals[i].second);  // extend
+        current.second = max(current.second, intervals[i].second);  // extend
     } else {
         merged.push_back(current);   // flush
         current = intervals[i];
@@ -34,7 +35,7 @@ for (size_t i = 1; i < intervals.size(); ++i) {
 merged.push_back(current);  // flush the final running interval — easy to forget!
 
 // Count groups / minimum removals (sort by END)
-std::sort(intervals.begin(), intervals.end(),
+sort(intervals.begin(), intervals.end(),
           [](auto& a, auto& b) { return a.second < b.second; });
 
 int groups = 1;

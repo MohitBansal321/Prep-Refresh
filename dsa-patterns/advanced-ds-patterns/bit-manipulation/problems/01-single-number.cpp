@@ -52,10 +52,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the element appearing exactly once; every other element appears
 // exactly twice. (Precondition per problem statement — see banner notes for
 // why this precondition is not optional.)
-int singleNumber(const std::vector<int>& nums) {
+int singleNumber(const vector<int>& nums) {
   int result = 0;
 
   // Order-independence means we do not need to sort or partition first:
@@ -71,54 +74,54 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {2, 2, 1};
+    vector<int> nums = {2, 2, 1};
     check(singleNumber(nums) == 1, "[2,2,1] -> 1");
   }
 
   {
     // The canonical example: the answer (4) appears FIRST, before its
     // would-be partners — order-independence is what makes this work.
-    std::vector<int> nums = {4, 1, 2, 1, 2};
+    vector<int> nums = {4, 1, 2, 1, 2};
     check(singleNumber(nums) == 4, "[4,1,2,1,2] -> 4");
   }
 
   {
     // Edge case: array of size 1 — no cancellation needed at all.
-    std::vector<int> nums = {7};
+    vector<int> nums = {7};
     check(singleNumber(nums) == 7, "[7] -> 7 (single element)");
   }
 
   {
     // Edge case: negative numbers. XOR operates on the two's-complement bit
     // pattern, so sign is handled automatically (-3 ^ -3 == 0 just as well).
-    std::vector<int> nums = {-3, -1, -3};
+    vector<int> nums = {-3, -1, -3};
     check(singleNumber(nums) == -1, "[-3,-1,-3] -> -1 (negatives)");
   }
 
   {
     // Edge case: interleaved pairs around a large-magnitude unique value.
-    std::vector<int> nums = {1000000, 5, 5, 1000000, 42};
+    vector<int> nums = {1000000, 5, 5, 1000000, 42};
     check(singleNumber(nums) == 42, "interleaved pairs -> 42");
   }
 
   {
     // Edge case: the unique value is 0 itself. A broken implementation that
     // initializes the accumulator wrong (or skips zeros) fails here.
-    std::vector<int> nums = {9, 9, 0};
+    vector<int> nums = {9, 9, 0};
     check(singleNumber(nums) == 0, "[9,9,0] -> 0 (unique value is zero)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -42,7 +42,7 @@
 //          purposes this is treated as O(1) per step / fast overall.
 //   Space: O(1) — two integer variables, no hash set needed. Contrast
 //          with the alternative solution that stores every seen value in
-//          a std::unordered_set<int>, which is O(k) space for k = number
+//          a unordered_set<int>, which is O(k) space for k = number
 //          of distinct values visited before a repeat.
 //
 // Compile:
@@ -50,6 +50,9 @@
 // ============================================================================
 
 #include <iostream>
+
+using namespace std;
+
 
 // ----------------------------------------------------------------------------
 // The "next" function: sum of squares of decimal digits. This plays the
@@ -87,14 +90,14 @@ bool isHappy(int n) {
 // ----------------------------------------------------------------------------
 // Test harness.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, bool actual, bool expected) {
-  std::cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
-             << " (got " << std::boolalpha << actual << ", expected "
+void check(const string& name, bool actual, bool expected) {
+  cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
+             << " (got " << boolalpha << actual << ", expected "
              << expected << ")\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 202: Happy Number ===\n\n";
+  cout << "=== LeetCode 202: Happy Number ===\n\n";
 
   // 19 -> 1^2+9^2=82 -> 8^2+2^2=68 -> 36+64=100 -> 1+0+0=1. Happy.
   check("19 is happy", isHappy(19), true);

@@ -83,21 +83,24 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // findTargetSumWays — 1D counting knapsack, capacity swept BACKWARD.
 // ----------------------------------------------------------------------------
-int findTargetSumWays(const std::vector<int>& nums, int target) {
+int findTargetSumWays(const vector<int>& nums, int target) {
   int total = 0;
   for (size_t k = 0; k < nums.size(); ++k) total += nums[k];
 
   // Guard (1a): target is out of reach no matter how the signs fall.
-  if (std::abs(target) > total) return 0;
+  if (abs(target) > total) return 0;
   // Guard (1b): sum(P) would have to be a non-integer.
   if ((total + target) % 2 != 0) return 0;
 
   int positiveSum = (total + target) / 2;  // Guaranteed >= 0 by the guards.
 
-  std::vector<int> dp(positiveSum + 1, 0);
+  vector<int> dp(positiveSum + 1, 0);
   dp[0] = 1;  // Exactly one way to reach a sum of 0: pick nothing.
 
   for (size_t k = 0; k < nums.size(); ++k) {
@@ -127,7 +130,7 @@ int findTargetSumWays(const std::vector<int>& nums, int target) {
 // small inputs; this is the enumeration whose exponential cost is the entire
 // motivation for the table (see ../README.md, "Why Not Other Approaches?").
 // ----------------------------------------------------------------------------
-int findTargetSumWaysBruteForce(const std::vector<int>& nums, int target) {
+int findTargetSumWaysBruteForce(const vector<int>& nums, int target) {
   int n = static_cast<int>(nums.size());
   if (n > 20) return -1;  // Refuse rather than hang.
 
@@ -154,33 +157,33 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // Runs the DP and the brute-force oracle on the same input and requires
   // both to equal the hand-computed expectation.
-  auto checkBoth = [&](const std::vector<int>& nums, int target, int expected,
-                       const std::string& label) {
+  auto checkBoth = [&](const vector<int>& nums, int target, int expected,
+                       const string& label) {
     check(findTargetSumWays(nums, target) == expected, "dp   : " + label);
     check(findTargetSumWaysBruteForce(nums, target) == expected, "brute: " + label);
   };
 
   {
     // LeetCode's own example.
-    std::vector<int> nums;
+    vector<int> nums;
     for (int k = 0; k < 5; ++k) nums.push_back(1);
     checkBoth(nums, 3, 5, "[1,1,1,1,1], target 3 -> 5");
   }
 
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     checkBoth(nums, 1, 1, "[1], target 1 -> 1 (single element, +1)");
   }
@@ -188,14 +191,14 @@ int main() {
   {
     // NEGATIVE target is perfectly legal and must not break the arithmetic:
     // total = 1, (1 + -1) / 2 = 0, count subsets summing to 0 -> 1 (empty).
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     checkBoth(nums, -1, 1, "[1], target -1 -> 1 (negative target, -1)");
   }
 
   {
     // Unreachable: |target| > total, caught by guard (1a) before allocating.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     checkBoth(nums, 2, 0, "[1], target 2 -> 0 (|target| exceeds total)");
   }
@@ -204,21 +207,21 @@ int main() {
     // Far out of range in the NEGATIVE direction -- this is the case that
     // would compute a negative capacity and blow up vector allocation if the
     // abs(target) > total guard were missing.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(2);
     checkBoth(nums, -100, 0, "[1,2], target -100 -> 0 (guard prevents negative capacity)");
   }
 
   {
     // Parity rejection: total = 3, target = 2, total + target = 5 is odd.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(2);
     checkBoth(nums, 2, 0, "[1,2], target 2 -> 0 (total+target is odd)");
   }
 
   {
     // Two distinct assignments: +1+2-3 and -1-2+3.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(2); nums.push_back(3);
     checkBoth(nums, 0, 2, "[1,2,3], target 0 -> 2 (+1+2-3 and -1-2+3)");
   }
@@ -228,7 +231,7 @@ int main() {
     // {1,1} -- giving +1+1-2 and -1-1+2. Equal VALUES at different positions
     // are still distinct choices, so the count is over positions, never over
     // multisets of values.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(1); nums.push_back(2);
     checkBoth(nums, 0, 2, "[1,1,2], target 0 -> 2 (duplicates count by position)");
   }
@@ -237,7 +240,7 @@ int main() {
     // ALL ZEROS: every zero doubles the count, so the answer is 2^5 = 32.
     // The single most instructive test in this file -- it is what breaks if
     // you "optimize" zeros out of the loop.
-    std::vector<int> nums;
+    vector<int> nums;
     for (int k = 0; k < 5; ++k) nums.push_back(0);
     checkBoth(nums, 0, 32, "[0,0,0,0,0], target 0 -> 32 (each zero DOUBLES the count)");
   }
@@ -245,7 +248,7 @@ int main() {
   {
     // Zeros mixed with real numbers: the single zero doubles the two ways
     // that [1,2,3] has of reaching 0.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(0); nums.push_back(1); nums.push_back(2); nums.push_back(3);
     checkBoth(nums, 0, 4, "[0,1,2,3], target 0 -> 4 (one zero doubles the 2 ways)");
   }
@@ -254,7 +257,7 @@ int main() {
     // Even total, in-range target, correct parity -- but no subset reaches
     // the required positive sum. total = 100, positiveSum = 50, and 50 is
     // simply not a sum of any subset of [100].
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(100);
     checkBoth(nums, 0, 0, "[100], target 0 -> 0 (parity fine, sum 50 unreachable)");
   }
@@ -262,10 +265,10 @@ int main() {
   {
     // Empty array: total 0, target 0, positiveSum 0, dp[0] = 1 -- there is
     // exactly one empty expression and it evaluates to 0.
-    std::vector<int> nums;
+    vector<int> nums;
     checkBoth(nums, 0, 1, "[], target 0 -> 1 (the empty expression evaluates to 0)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -17,12 +17,13 @@ Represent "which elements have been used" as an `n`-bit integer `mask`, where bi
 ## Template
 
 ```cpp
+using namespace std;
 // Traveling-salesman-style: dp[mask][last] = min cost to have visited
 // exactly the set `mask` of cities, currently standing at city `last`.
-int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
+int minHamiltonianCost(const vector<vector<int>>& cost) {
   int n = static_cast<int>(cost.size());
-  const int kInf = std::numeric_limits<int>::max() / 2;
-  std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, kInf));
+  const int kInf = numeric_limits<int>::max() / 2;
+  vector<vector<int>> dp(1 << n, vector<int>(n, kInf));
 
   dp[1][0] = 0;  // start at city 0, having visited only {0}
 
@@ -33,7 +34,7 @@ int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
       for (int next = 0; next < n; ++next) {
         if (mask & (1 << next)) continue;  // already visited
         int nextMask = mask | (1 << next);
-        dp[nextMask][next] = std::min(dp[nextMask][next],
+        dp[nextMask][next] = min(dp[nextMask][next],
                                        dp[mask][last] + cost[last][next]);
       }
     }
@@ -43,7 +44,7 @@ int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
   int best = kInf;
   for (int last = 0; last < n; ++last) {
     if (dp[full][last] < kInf) {
-      best = std::min(best, dp[full][last] + cost[last][0]);  // return to start
+      best = min(best, dp[full][last] + cost[last][0]);  // return to start
     }
   }
   return best;

@@ -52,6 +52,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Standard Fenwick Tree storing occurrence counts. Positions are RANKS in
 // [0, m-1] externally (0-indexed), 1-indexed internally.
 class FenwickCount {
@@ -70,22 +73,22 @@ class FenwickCount {
   }
 
  private:
-  std::vector<int> tree_;
+  vector<int> tree_;
   int n_;
 };
 
-std::vector<int> countSmaller(const std::vector<int>& nums) {
+vector<int> countSmaller(const vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   if (n == 0) return {};
 
   // ---- Coordinate compression ------------------------------------------
   // sorted distinct values; rank(v) = index in this vector preserves order.
-  std::vector<long long> keys(nums.begin(), nums.end());
-  std::sort(keys.begin(), keys.end());
-  keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+  vector<long long> keys(nums.begin(), nums.end());
+  sort(keys.begin(), keys.end());
+  keys.erase(unique(keys.begin(), keys.end()), keys.end());
   const int m = static_cast<int>(keys.size());
 
-  std::vector<int> counts(n);
+  vector<int> counts(n);
   FenwickCount ft(m);
 
   // ---- Right-to-left scan ----------------------------------------------
@@ -93,7 +96,7 @@ std::vector<int> countSmaller(const std::vector<int>& nums) {
     // Rank of nums[i]: first key >= nums[i]. Since nums[i] IS a key, this is
     // exact (not merely a lower bound).
     int rank =
-        static_cast<int>(std::lower_bound(keys.begin(), keys.end(),
+        static_cast<int>(lower_bound(keys.begin(), keys.end(),
                                           static_cast<long long>(nums[i])) -
                          keys.begin());
     // Strictly smaller values = occurrences at ranks strictly below mine.
@@ -105,9 +108,9 @@ std::vector<int> countSmaller(const std::vector<int>& nums) {
 }
 
 // O(n^2) reference implementation used only to cross-check the Fenwick result.
-std::vector<int> countSmallerBrute(const std::vector<int>& nums) {
+vector<int> countSmallerBrute(const vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
-  std::vector<int> counts(n, 0);
+  vector<int> counts(n, 0);
   for (int i = 0; i < n; ++i) {
     int c = 0;
     for (int j = i + 1; j < n; ++j) {
@@ -122,18 +125,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto expect = [&](const std::vector<int>& got,
-                    const std::vector<int>& want, const std::string& label) {
+  auto expect = [&](const vector<int>& got,
+                    const vector<int>& want, const string& label) {
     check(got == want, label);
   };
 
@@ -174,7 +177,7 @@ int main() {
   {
     // Randomized-style fixed battery: cross-check against brute force on
     // assorted arrays (values include negatives and duplicates).
-    std::vector<std::vector<int>> batteries = {
+    vector<vector<int>> batteries = {
         {9, 1, 8, 2, 7, 3},
         {-100000, 100000, -50000, 0, 99999},
         {3, 3, 1, 1, 2, 2},
@@ -190,6 +193,6 @@ int main() {
     check(all_match, "battery of 6 arrays matches O(n^2) brute force");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

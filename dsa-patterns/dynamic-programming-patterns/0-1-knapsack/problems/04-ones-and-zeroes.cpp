@@ -68,14 +68,17 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // countDigits — turn one binary string into its (zeros, ones) "weight" pair.
 //
-// Written with an explicit std::pair<int,int> return type rather than relying
+// Written with an explicit pair<int,int> return type rather than relying
 // on class template argument deduction, and unpacked with .first/.second
 // rather than structured bindings, so this compiles under older toolchains.
 // ----------------------------------------------------------------------------
-static std::pair<int, int> countDigits(const std::string& s) {
+static pair<int, int> countDigits(const string& s) {
   int zeros = 0;
   int ones = 0;
   for (size_t k = 0; k < s.size(); ++k) {
@@ -85,7 +88,7 @@ static std::pair<int, int> countDigits(const std::string& s) {
       ++ones;
     }
   }
-  return std::pair<int, int>(zeros, ones);
+  return pair<int, int>(zeros, ones);
 }
 
 // ----------------------------------------------------------------------------
@@ -98,11 +101,11 @@ static std::pair<int, int> countDigits(const std::string& s) {
 // strings -- the same "dp[0][*] = 0" base row as the 2D table in ../code.cpp,
 // here spread across a plane instead of a row.
 // ----------------------------------------------------------------------------
-int findMaxForm(const std::vector<std::string>& strs, int m, int n) {
-  std::vector<std::vector<int> > dp(m + 1, std::vector<int>(n + 1, 0));
+int findMaxForm(const vector<string>& strs, int m, int n) {
+  vector<vector<int> > dp(m + 1, vector<int>(n + 1, 0));
 
   for (size_t k = 0; k < strs.size(); ++k) {
-    std::pair<int, int> cost = countDigits(strs[k]);
+    pair<int, int> cost = countDigits(strs[k]);
     int zeros = cost.first;
     int ones = cost.second;
 
@@ -120,7 +123,7 @@ int findMaxForm(const std::vector<std::string>& strs, int m, int n) {
         // Choice 1 (implicit): skip strs[k] -- dp[i][j] keeps its value.
         // Choice 2: take strs[k], paying (zeros, ones) from the budget and
         //           gaining exactly 1 toward the subset size.
-        dp[i][j] = std::max(dp[i][j], dp[i - zeros][j - ones] + 1);
+        dp[i][j] = max(dp[i][j], dp[i - zeros][j - ones] + 1);
       }
     }
   }
@@ -135,11 +138,11 @@ int findMaxForm(const std::vector<std::string>& strs, int m, int n) {
 // that fits both budgets. Included so the tests validate the DP against an
 // independent implementation rather than only against hand-computed numbers.
 // ----------------------------------------------------------------------------
-int findMaxFormBruteForce(const std::vector<std::string>& strs, int m, int n) {
+int findMaxFormBruteForce(const vector<string>& strs, int m, int n) {
   int k = static_cast<int>(strs.size());
   if (k > 18) return -1;  // Refuse rather than hang.
 
-  std::vector<std::pair<int, int> > costs;
+  vector<pair<int, int> > costs;
   for (int idx = 0; idx < k; ++idx) {
     costs.push_back(countDigits(strs[idx]));
   }
@@ -158,7 +161,7 @@ int findMaxFormBruteForce(const std::vector<std::string>& strs, int m, int n) {
       }
     }
     if (zeros <= m && ones <= n) {
-      best = std::max(best, size);
+      best = max(best, size);
     }
   }
   return best;
@@ -171,18 +174,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto checkBoth = [&](const std::vector<std::string>& strs, int m, int n,
-                       int expected, const std::string& label) {
+  auto checkBoth = [&](const vector<string>& strs, int m, int n,
+                       int expected, const string& label) {
     check(findMaxForm(strs, m, n) == expected, "dp   : " + label);
     check(findMaxFormBruteForce(strs, m, n) == expected, "brute: " + label);
   };
@@ -190,7 +193,7 @@ int main() {
   {
     // LeetCode's first example. The winning subset uses the budget EXACTLY
     // (5 zeros, 3 ones), which is why the loop bounds must be inclusive.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("10"); strs.push_back("0001"); strs.push_back("111001");
     strs.push_back("1"); strs.push_back("0");
     checkBoth(strs, 5, 3, 4, "[\"10\",\"0001\",\"111001\",\"1\",\"0\"], m=5 n=3 -> 4");
@@ -201,28 +204,28 @@ int main() {
     // for a subset of size 1, while "0" + "1" costs (1,1) total for size 2.
     // Greedily taking the first string that fits would answer 1 -- the DP
     // considers skipping it and answers 2.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("10"); strs.push_back("0"); strs.push_back("1");
     checkBoth(strs, 1, 1, 2, "[\"10\",\"0\",\"1\"], m=1 n=1 -> 2 (skipping \"10\" wins)");
   }
 
   {
     // Single string, exact fit on both axes.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("10");
     checkBoth(strs, 1, 1, 1, "[\"10\"], m=1 n=1 -> 1 (single string, exact fit)");
   }
 
   {
     // Single string, one axis short: zero budget for the '0' it needs.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("10");
     checkBoth(strs, 0, 1, 0, "[\"10\"], m=0 n=1 -> 0 (out of zeros, not ones)");
   }
 
   {
     // Both budgets zero and every string costs something -> nothing fits.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("0"); strs.push_back("1");
     checkBoth(strs, 0, 0, 0, "[\"0\",\"1\"], m=0 n=0 -> 0 (no budget at all)");
   }
@@ -232,7 +235,7 @@ int main() {
     // items competing for the same budget. Three "0"s with 2 zeros of budget
     // buys 2 of them, and the reverse sweep must not let one "0" be counted
     // twice to claim 2 from a budget of 1.
-    std::vector<std::string> strs;
+    vector<string> strs;
     for (int k = 0; k < 3; ++k) strs.push_back("0");
     checkBoth(strs, 2, 0, 2, "[\"0\",\"0\",\"0\"], m=2 n=0 -> 2 (duplicates are distinct items)");
   }
@@ -241,21 +244,21 @@ int main() {
     // The single most important reuse test: ONE string, a budget large enough
     // to hold it three times over. A forward sweep on either axis would
     // report 3. The correct 0/1 answer is 1 -- the string exists once.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("1");
     checkBoth(strs, 0, 3, 1, "[\"1\"], m=0 n=3 -> 1 (budget fits it 3x; it exists ONCE)");
   }
 
   {
     // All-same values again, on the other axis, with a spare budget.
-    std::vector<std::string> strs;
+    vector<string> strs;
     for (int k = 0; k < 3; ++k) strs.push_back("1");
     checkBoth(strs, 0, 2, 2, "[\"1\",\"1\",\"1\"], m=0 n=2 -> 2 (all-same, budget caps at 2)");
   }
 
   {
     // Only the cheaper of two overlapping strings fits.
-    std::vector<std::string> strs;
+    vector<string> strs;
     strs.push_back("111"); strs.push_back("1111");
     checkBoth(strs, 0, 4, 1, "[\"111\",\"1111\"], m=0 n=4 -> 1 (either one, never both)");
   }
@@ -265,17 +268,17 @@ int main() {
     // belong in the optimal subset even with a zero budget. The reverse
     // sweep handles a (0,0) weight without a special case: each cell is
     // visited once per string and incremented by 1.
-    std::vector<std::string> strs;
+    vector<string> strs;
     for (int k = 0; k < 3; ++k) strs.push_back("");
     checkBoth(strs, 0, 0, 3, "[\"\",\"\",\"\"], m=0 n=0 -> 3 (zero-cost items are all free)");
   }
 
   {
     // Empty input: no strings, so the largest subset is the empty one.
-    std::vector<std::string> strs;
+    vector<string> strs;
     checkBoth(strs, 5, 5, 0, "[], m=5 n=5 -> 0 (no strings to choose from)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

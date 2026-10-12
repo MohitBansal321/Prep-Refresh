@@ -97,6 +97,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // cyclic_sort
 //
@@ -104,7 +107,7 @@
 // file stays standalone. [1..n] convention: value v's home index is v - 1, and
 // the expected value at index i is i + 1.
 // ----------------------------------------------------------------------------
-void cyclic_sort(std::vector<int>& nums) {
+void cyclic_sort(vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   int i = 0;
 
@@ -123,7 +126,7 @@ void cyclic_sort(std::vector<int>& nums) {
       // the two reads are the same slot), and duplicate-whose-home-is-taken
       // (a different slot already holding this exact value).
       if (nums[i] != nums[correct_index]) {
-        std::swap(nums[i], nums[correct_index]);
+        swap(nums[i], nums[correct_index]);
         continue;  // Do NOT advance: re-examine whatever just landed at i.
       }
     }
@@ -140,10 +143,10 @@ void cyclic_sort(std::vector<int>& nums) {
 // claim is about not allocating a structure proportional to n, and holds for
 // a by-reference call.
 // ----------------------------------------------------------------------------
-std::vector<int> findDisappearedNumbers(std::vector<int> nums) {
+vector<int> findDisappearedNumbers(vector<int> nums) {
   cyclic_sort(nums);
 
-  std::vector<int> missing;
+  vector<int> missing;
   const int n = static_cast<int>(nums.size());
 
   // Verification pass: index j should hold j + 1. If it does not, then j + 1
@@ -163,11 +166,11 @@ std::vector<int> findDisappearedNumbers(std::vector<int> nums) {
 // ============================================================================
 // Test scaffolding
 // ============================================================================
-std::string to_string(const std::vector<int>& v) {
-  std::string out = "[";
+string to_string(const vector<int>& v) {
+  string out = "[";
   for (size_t i = 0; i < v.size(); ++i) {
     if (i) out += ",";
-    out += std::to_string(v[i]);
+    out += to_string(v[i]);
   }
   out += "]";
   return out;
@@ -177,19 +180,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto check_result = [&](std::vector<int> input, std::vector<int> expected,
-                          const std::string& note) {
-    const std::string label =
+  auto check_result = [&](vector<int> input, vector<int> expected,
+                          const string& note) {
+    const string label =
         to_string(input) + " -> " + to_string(expected) + "  (" + note + ")";
     check(findDisappearedNumbers(input) == expected, label);
   };
@@ -233,17 +236,17 @@ int main() {
 
   // --- The sorting pass itself, inspected directly -----------------------
   {
-    std::vector<int> nums = {4, 3, 2, 7, 8, 2, 3, 1};
+    vector<int> nums = {4, 3, 2, 7, 8, 2, 3, 1};
     cyclic_sort(nums);
     // 1..4 and 7,8 all reach their homes. The two surplus copies (a second 2
     // and a second 3) are stalled and end up parked in the two homes nobody
     // claimed: index 4 (wants 5) and index 5 (wants 6).
-    std::vector<int> expected = {1, 2, 3, 4, 3, 2, 7, 8};
+    vector<int> expected = {1, 2, 3, 4, 3, 2, 7, 8};
     check(nums == expected,
           "sorting pass: [4,3,2,7,8,2,3,1] -> " + to_string(expected) +
               " (stalled duplicates park in the unfillable homes)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

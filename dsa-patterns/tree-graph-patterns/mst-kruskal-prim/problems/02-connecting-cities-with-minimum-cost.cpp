@@ -29,10 +29,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
   int find(int x) {
     if (parent_[x] != x) parent_[x] = find(parent_[x]);
@@ -41,20 +44,20 @@ class DisjointSet {
   bool unionSets(int x, int y) {
     int rootX = find(x), rootY = find(y);
     if (rootX == rootY) return false;
-    if (rank_[rootX] < rank_[rootY]) std::swap(rootX, rootY);
+    if (rank_[rootX] < rank_[rootY]) swap(rootX, rootY);
     parent_[rootY] = rootX;
     if (rank_[rootX] == rank_[rootY]) ++rank_[rootX];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
-int minimumCost(int n, std::vector<std::vector<int>> connections) {
-  std::sort(connections.begin(), connections.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
+int minimumCost(int n, vector<vector<int>> connections) {
+  sort(connections.begin(), connections.end(),
+            [](const vector<int>& a, const vector<int>& b) {
               return a[2] < b[2];
             });
 
@@ -82,12 +85,12 @@ int minimumCost(int n, std::vector<std::vector<int>> connections) {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -97,7 +100,7 @@ int main() {
     // n=3, connections=[[1,2,5],[1,3,6],[2,3,1]] -- the cheap edge 2-3 (1)
     // plus either 1-2 (5) or 1-3 (6); Kruskal's picks the cheaper of the
     // two remaining options.
-    std::vector<std::vector<int>> connections = {{1, 2, 5}, {1, 3, 6}, {2, 3, 1}};
+    vector<vector<int>> connections = {{1, 2, 5}, {1, 3, 6}, {2, 3, 1}};
     check(minimumCost(3, connections) == 6,
           "3 cities -> MST picks edges 2-3 (1) and 1-2 (5), total 6");
   }
@@ -105,7 +108,7 @@ int main() {
   {
     // n=4, connections=[[1,2,3],[3,4,4]] -- two disjoint pairs, no edge
     // connects {1,2} to {3,4} at all. Must return -1, not a partial total.
-    std::vector<std::vector<int>> connections = {{1, 2, 3}, {3, 4, 4}};
+    vector<vector<int>> connections = {{1, 2, 3}, {3, 4, 4}};
     check(minimumCost(4, connections) == -1,
           "connections leave two components disconnected -> -1");
   }
@@ -113,7 +116,7 @@ int main() {
   {
     // Single city, no connections needed at all: n-1=0 edges required,
     // trivially satisfied, cost 0.
-    std::vector<std::vector<int>> connections = {};
+    vector<vector<int>> connections = {};
     check(minimumCost(1, connections) == 0, "single city -> 0, nothing to connect");
   }
 
@@ -121,11 +124,11 @@ int main() {
     // A cycle where one edge is strictly redundant: n=3, a triangle with
     // weights 1, 1, 100 -- the MST must use the two cheap edges and skip
     // the expensive one, exactly as in code.cpp's own triangle test.
-    std::vector<std::vector<int>> connections = {{1, 2, 1}, {2, 3, 1}, {1, 3, 100}};
+    vector<vector<int>> connections = {{1, 2, 1}, {2, 3, 1}, {1, 3, 100}};
     check(minimumCost(3, connections) == 2,
           "triangle with one expensive redundant edge -> MST skips it, total 2");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

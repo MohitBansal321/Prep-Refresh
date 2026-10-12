@@ -52,14 +52,17 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the number of right/down paths avoiding all obstacle cells
 // (grid[r][c] == 1). Returns 0 if start or destination is blocked.
-int uniquePathsWithObstacles(const std::vector<std::vector<int>>& grid) {
+int uniquePathsWithObstacles(const vector<vector<int>>& grid) {
   int rows = static_cast<int>(grid.size());
   int cols = static_cast<int>(grid[0].size());
 
   // Rolling row of path counts; everything starts unreachable (0).
-  std::vector<long long> row(static_cast<std::size_t>(cols), 0);
+  vector<long long> row(static_cast<size_t>(cols), 0);
 
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
@@ -67,7 +70,7 @@ int uniquePathsWithObstacles(const std::vector<std::vector<int>>& grid) {
         // Obstacle: force zero BEFORE any other logic — including the start
         // cell's seed below on iteration (0,0). A blocked start means the
         // whole table stays zero, which is exactly the correct answer.
-        row[static_cast<std::size_t>(c)] = 0;
+        row[static_cast<size_t>(c)] = 0;
         continue;
       }
 
@@ -83,26 +86,26 @@ int uniquePathsWithObstacles(const std::vector<std::vector<int>>& grid) {
       //          (skipped entirely at c == 0: column 0 has no left neighbor,
       //          so its only predecessor is the cell above).
       if (c > 0) {
-        row[static_cast<std::size_t>(c)] += row[static_cast<std::size_t>(c - 1)];
+        row[static_cast<size_t>(c)] += row[static_cast<size_t>(c - 1)];
       }
     }
     // Note we do NOT re-pin column 0 to 1 each row: an obstacle anywhere in
     // column 0 must zero out this and every later row's column 0 too.
   }
 
-  return static_cast<int>(row[static_cast<std::size_t>(cols - 1)]);
+  return static_cast<int>(row[static_cast<size_t>(cols - 1)]);
 }
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -110,20 +113,20 @@ int main() {
   {
     // Classic example: central obstacle kills the two "through the middle"
     // walks of the 3x3 grid, leaving the two that hug opposite edges.
-    std::vector<std::vector<int>> grid = {{0, 0, 0}, {0, 1, 0}, {0, 0, 0}};
+    vector<vector<int>> grid = {{0, 0, 0}, {0, 1, 0}, {0, 0, 0}};
     check(uniquePathsWithObstacles(grid) == 2,
           "3x3 grid, central obstacle -> 2");
   }
 
   {
     // Degenerate single open cell: start == destination, unobstructed.
-    std::vector<std::vector<int>> grid = {{0}};
+    vector<vector<int>> grid = {{0}};
     check(uniquePathsWithObstacles(grid) == 1, "1x1 open grid -> 1");
   }
 
   {
     // Degenerate single BLOCKED cell: the start is an obstacle -> no paths.
-    std::vector<std::vector<int>> grid = {{1}};
+    vector<vector<int>> grid = {{1}};
     check(uniquePathsWithObstacles(grid) == 0,
           "1x1 blocked grid -> 0 (blocked start)");
   }
@@ -131,7 +134,7 @@ int main() {
   {
     // Blocked DESTINATION: paths exist up to the last step but none end
     // legally — answer must be 0, not a crash or a stale count.
-    std::vector<std::vector<int>> grid = {{0, 0}, {0, 1}};
+    vector<vector<int>> grid = {{0, 0}, {0, 1}};
     check(uniquePathsWithObstacles(grid) == 0,
           "blocked bottom-right -> 0");
   }
@@ -139,7 +142,7 @@ int main() {
   {
     // Obstacle on the top row severs the entire remainder of that row:
     // every route is forced through the left column first.
-    std::vector<std::vector<int>> grid = {{0, 1, 0}, {0, 0, 0}};
+    vector<vector<int>> grid = {{0, 1, 0}, {0, 0, 0}};
     // Only path family: D,R,R (down first, since (0,1) is a wall) -> 1 way.
     check(uniquePathsWithObstacles(grid) == 1,
           "top-row obstacle forces the single lower route -> 1");
@@ -148,7 +151,7 @@ int main() {
   {
     // Obstacle in the left column: verifies we did NOT hard-code column 0
     // to 1 on every row (a classic bug in rolling-row implementations).
-    std::vector<std::vector<int>> grid = {{0, 0}, {1, 0}};
+    vector<vector<int>> grid = {{0, 0}, {1, 0}};
     // Only route: R,D (right along the top, then down) -> 1 way.
     check(uniquePathsWithObstacles(grid) == 1,
           "left-column obstacle handled by rolling row -> 1");
@@ -156,11 +159,11 @@ int main() {
 
   {
     // Fully walled corridor: both routes into the bottom-right are cut.
-    std::vector<std::vector<int>> grid = {{0, 1}, {1, 0}};
+    vector<vector<int>> grid = {{0, 1}, {1, 0}};
     check(uniquePathsWithObstacles(grid) == 0,
           "both approaches walled off -> 0");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

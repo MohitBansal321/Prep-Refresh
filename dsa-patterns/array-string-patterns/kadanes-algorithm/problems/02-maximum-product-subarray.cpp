@@ -51,7 +51,10 @@
 #include <string>
 #include <vector>
 
-int maxProduct(const std::vector<int>& nums) {
+using namespace std;
+
+
+int maxProduct(const vector<int>& nums) {
   long long current_max = nums[0];
   long long current_min = nums[0];
   long long best = nums[0];
@@ -62,14 +65,14 @@ int maxProduct(const std::vector<int>& nums) {
     // A negative value flips which running tracker is "the bigger risk" --
     // swap before combining so the formulas below stay symmetric.
     if (value < 0) {
-      std::swap(current_max, current_min);
+      swap(current_max, current_min);
     }
 
     // Extend (multiply into the previous run) or restart at value alone.
-    current_max = std::max(value, current_max * value);
-    current_min = std::min(value, current_min * value);
+    current_max = max(value, current_max * value);
+    current_min = min(value, current_min * value);
 
-    best = std::max(best, current_max);
+    best = max(best, current_max);
   }
 
   return static_cast<int>(best);
@@ -79,23 +82,23 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {2, 3, -2, 4};
+    vector<int> nums = {2, 3, -2, 4};
     check(maxProduct(nums) == 6, "[2,3,-2,4] -> 6");
   }
   {
     // Two negatives cancel into the largest product, spanning the whole array.
-    std::vector<int> nums = {-2, 3, -4};
+    vector<int> nums = {-2, 3, -4};
     check(maxProduct(nums) == 24, "[-2,3,-4] -> 24 (whole array, signs cancel)");
   }
   {
@@ -103,22 +106,22 @@ int main() {
     // [-1]. The middle segment's best subarray is [4] alone (product 4) --
     // taking all three ([2,-3,4] = -24) is a large-magnitude negative, and
     // there is no further negative number after it to flip the sign back.
-    std::vector<int> nums = {0, 2, -3, 4, 0, -1};
+    vector<int> nums = {0, 2, -3, 4, 0, -1};
     check(maxProduct(nums) == 4, "[0,2,-3,4,0,-1] -> 4 (best is [4] alone)");
   }
   {
-    std::vector<int> nums = {-1, -2, -3, 0};
+    vector<int> nums = {-1, -2, -3, 0};
     check(maxProduct(nums) == 6, "[-1,-2,-3,0] -> 6 ([-1,-2] or [-2,-3] both give 6)");
   }
   {
-    std::vector<int> nums = {-2};
+    vector<int> nums = {-2};
     check(maxProduct(nums) == -2, "[-2] -> -2 (single element)");
   }
   {
-    std::vector<int> nums = {-2, 0, -1};
+    vector<int> nums = {-2, 0, -1};
     check(maxProduct(nums) == 0, "[-2,0,-1] -> 0 (zero beats any single negative)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

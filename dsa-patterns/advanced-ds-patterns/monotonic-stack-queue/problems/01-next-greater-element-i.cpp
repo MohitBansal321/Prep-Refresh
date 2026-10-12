@@ -53,17 +53,20 @@
 #include <unordered_map>
 #include <vector>
 
-std::vector<int> nextGreaterElement(const std::vector<int>& nums1,
-                                    const std::vector<int>& nums2) {
+using namespace std;
+
+
+vector<int> nextGreaterElement(const vector<int>& nums1,
+                                    const vector<int>& nums2) {
   // Map: element value in nums2 -> its next greater value (-1 if none).
-  std::unordered_map<int, int> next_greater;
+  unordered_map<int, int> next_greater;
   next_greater.reserve(nums2.size() * 2);
 
   // Stack holds VALUES from nums2 that are still waiting for their next
   // greater element. Values are non-increasing bottom-to-top. (Storing values
   // instead of indices is fine here because we only ever need the value as
   // the map key — no position-dependent work happens at pop time.)
-  std::vector<int> waiting;
+  vector<int> waiting;
   waiting.reserve(nums2.size());
 
   for (int v : nums2) {
@@ -80,7 +83,7 @@ std::vector<int> nextGreaterElement(const std::vector<int>& nums1,
   // than recording -1 for each explicitly, we rely on the map's default: use
   // count()/find() or pre-fill. We choose explicit clarity below via find().
 
-  std::vector<int> result;
+  vector<int> result;
   result.reserve(nums1.size());
   for (int q : nums1) {
     auto it = next_greater.find(q);
@@ -93,37 +96,37 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums1 = {4, 1, 2};
-    std::vector<int> nums2 = {1, 3, 4, 2};
-    std::vector<int> expected = {-1, 3, -1};
+    vector<int> nums1 = {4, 1, 2};
+    vector<int> nums2 = {1, 3, 4, 2};
+    vector<int> expected = {-1, 3, -1};
     check(nextGreaterElement(nums1, nums2) == expected,
           "[4,1,2] in [1,3,4,2] -> [-1,3,-1]");
   }
 
   {
-    std::vector<int> nums1 = {2, 4};
-    std::vector<int> nums2 = {1, 2, 3, 4};
-    std::vector<int> expected = {3, -1};
+    vector<int> nums1 = {2, 4};
+    vector<int> nums2 = {1, 2, 3, 4};
+    vector<int> expected = {3, -1};
     check(nextGreaterElement(nums1, nums2) == expected,
           "[2,4] in [1,2,3,4] -> [3,-1]");
   }
 
   {
     // Single element: no right neighbor exists at all.
-    std::vector<int> nums1 = {7};
-    std::vector<int> nums2 = {7};
-    std::vector<int> expected = {-1};
+    vector<int> nums1 = {7};
+    vector<int> nums2 = {7};
+    vector<int> expected = {-1};
     check(nextGreaterElement(nums1, nums2) == expected,
           "single element -> [-1]");
   }
@@ -131,9 +134,9 @@ int main() {
   {
     // Strictly decreasing nums2: nothing ever pops; every query is -1.
     // This is also the worst case for stack space (all n entries pile up).
-    std::vector<int> nums1 = {5, 4, 3};
-    std::vector<int> nums2 = {5, 4, 3, 2, 1};
-    std::vector<int> expected = {-1, -1, -1};
+    vector<int> nums1 = {5, 4, 3};
+    vector<int> nums2 = {5, 4, 3, 2, 1};
+    vector<int> expected = {-1, -1, -1};
     check(nextGreaterElement(nums1, nums2) == expected,
           "strictly decreasing nums2 -> all -1");
   }
@@ -141,9 +144,9 @@ int main() {
   {
     // Strictly increasing nums2: each new element pops exactly one previous;
     // only the last element gets -1.
-    std::vector<int> nums1 = {1, 4};
-    std::vector<int> nums2 = {1, 2, 3, 4};
-    std::vector<int> expected = {2, -1};
+    vector<int> nums1 = {1, 4};
+    vector<int> nums2 = {1, 2, 3, 4};
+    vector<int> expected = {2, -1};
     check(nextGreaterElement(nums1, nums2) == expected,
           "increasing chain resolves stepwise -> [2,-1]");
   }
@@ -151,13 +154,13 @@ int main() {
   {
     // Duplicates in nums2: equal values coexist on the stack (strict '<'
     // comparison); both copies resolve together when a larger value arrives.
-    std::vector<int> nums1 = {2, 3};
-    std::vector<int> nums2 = {2, 2, 3};
-    std::vector<int> expected = {3, -1};
+    vector<int> nums1 = {2, 3};
+    vector<int> nums2 = {2, 2, 3};
+    vector<int> expected = {3, -1};
     check(nextGreaterElement(nums1, nums2) == expected,
           "duplicates resolve together -> [3,-1]");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

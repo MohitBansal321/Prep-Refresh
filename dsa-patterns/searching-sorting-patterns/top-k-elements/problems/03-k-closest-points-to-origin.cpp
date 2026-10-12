@@ -27,7 +27,10 @@
 #include <utility>
 #include <vector>
 
-using Point = std::pair<int, int>;  // (x, y)
+using namespace std;
+
+
+using Point = pair<int, int>;  // (x, y)
 
 long long squaredDistance(const Point& p) {
     long long dx = p.first;
@@ -35,11 +38,11 @@ long long squaredDistance(const Point& p) {
     return dx * dx + dy * dy;
 }
 
-std::vector<Point> kClosest(const std::vector<Point>& points, int k) {
+vector<Point> kClosest(const vector<Point>& points, int k) {
     // Max-heap of (squaredDistance, point), ordered by distance descending so the
     // farthest point currently held is always the cheap-to-evict top element.
-    using DistPoint = std::pair<long long, Point>;
-    std::priority_queue<DistPoint> maxHeap;  // default comparator: largest distance on top
+    using DistPoint = pair<long long, Point>;
+    priority_queue<DistPoint> maxHeap;  // default comparator: largest distance on top
 
     for (const Point& p : points) {
         maxHeap.push({squaredDistance(p), p});
@@ -48,7 +51,7 @@ std::vector<Point> kClosest(const std::vector<Point>& points, int k) {
         }
     }
 
-    std::vector<Point> result;
+    vector<Point> result;
     result.reserve(maxHeap.size());
     while (!maxHeap.empty()) {
         result.push_back(maxHeap.top().second);
@@ -59,14 +62,14 @@ std::vector<Point> kClosest(const std::vector<Point>& points, int k) {
 
 namespace {
 
-bool samePointSet(std::vector<Point> a, std::vector<Point> b) {
-    std::sort(a.begin(), a.end());
-    std::sort(b.begin(), b.end());
+bool samePointSet(vector<Point> a, vector<Point> b) {
+    sort(a.begin(), a.end());
+    sort(b.begin(), b.end());
     return a == b;
 }
 
-void check(bool condition, const std::string& label) {
-    std::cout << (condition ? "[PASS] " : "[FAIL] ") << label << '\n';
+void check(bool condition, const string& label) {
+    cout << (condition ? "[PASS] " : "[FAIL] ") << label << '\n';
 }
 
 }  // namespace
@@ -87,6 +90,6 @@ int main() {
     check(kClosest({{1, 1}, {2, 2}, {3, 3}}, 3).size() == 3,
           "k == n returns every point");
 
-    std::cout << "\nAll kClosest checks executed.\n";
+    cout << "\nAll kClosest checks executed.\n";
     return 0;
 }

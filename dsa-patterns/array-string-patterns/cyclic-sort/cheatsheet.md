@@ -17,12 +17,13 @@
 
 ### Skeleton
 ```cpp
-void cyclic_sort(std::vector<int>& nums) {
+using namespace std;
+void cyclic_sort(vector<int>& nums) {
   int n = nums.size(), i = 0;
   while (i < n) {
     int correct_index = nums[i] - 1;  // adjust formula per problem's range convention
     if (nums[i] >= 1 && nums[i] <= n && nums[i] != nums[correct_index]) {
-      std::swap(nums[i], nums[correct_index]);   // do NOT advance i here
+      swap(nums[i], nums[correct_index]);   // do NOT advance i here
     } else {
       ++i;
     }

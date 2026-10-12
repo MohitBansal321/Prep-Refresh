@@ -59,9 +59,12 @@
 #include <string>
 #include <vector>
 
-long long largestRectangleArea(const std::vector<int>& heights) {
+using namespace std;
+
+
+long long largestRectangleArea(const vector<int>& heights) {
   int n = static_cast<int>(heights.size());
-  std::vector<int> st;  // INDICES; heights non-decreasing bottom-to-top
+  vector<int> st;  // INDICES; heights non-decreasing bottom-to-top
   long long best = 0;
 
   // Iterate one step PAST the end: i == n acts as the virtual zero-height
@@ -96,18 +99,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> h = {2, 1, 5, 6, 2, 3};
+    vector<int> h = {2, 1, 5, 6, 2, 3};
     check(largestRectangleArea(h) == 10,
           "[2,1,5,6,2,3] -> 10");
   }
@@ -115,7 +118,7 @@ int main() {
   {
     // Strictly increasing: no pops until the sentinel; the widest low bar
     // wins (height 1 across the full width).
-    std::vector<int> h = {1, 2, 3, 4, 5};
+    vector<int> h = {1, 2, 3, 4, 5};
     check(largestRectangleArea(h) == 9,
           "[1,2,3,4,5] -> 9 (1x9 full-width beats 3x3)");
   }
@@ -123,7 +126,7 @@ int main() {
   {
     // Strictly decreasing: every new bar pops the previous immediately;
     // answer is max single-bar-area products.
-    std::vector<int> h = {5, 4, 3, 2, 1};
+    vector<int> h = {5, 4, 3, 2, 1};
     check(largestRectangleArea(h) == 9,
           "[5,4,3,2,1] -> 9 (3x3)");
   }
@@ -131,37 +134,37 @@ int main() {
   {
     // All equal heights: '>=' pops let each bar compute a partial width, but
     // the LAST equal bar inherits the full width -> n * height.
-    std::vector<int> h = {4, 4, 4};
+    vector<int> h = {4, 4, 4};
     check(largestRectangleArea(h) == 12,
           "[4,4,4] -> 12 (duplicates still get full-span credit)");
   }
 
   {
-    std::vector<int> h = {2};
+    vector<int> h = {2};
     check(largestRectangleArea(h) == 2, "single bar -> its own area");
   }
 
   {
     // Zero-height bar splits the histogram; rectangles cannot cross it.
-    std::vector<int> h = {2, 0, 2};
+    vector<int> h = {2, 0, 2};
     check(largestRectangleArea(h) == 2,
           "[2,0,2] -> 2 (zero bar blocks crossing)");
   }
 
   {
     // Classic plateau-then-spike shape requiring a multi-pop resolution.
-    std::vector<int> h = {2, 1, 2};
+    vector<int> h = {2, 1, 2};
     check(largestRectangleArea(h) == 3,
           "[2,1,2] -> 3 (two 1-wide 2-high bars, not one 3-wide)");
   }
 
   {
     // Overflow-sensitive case: tall bar x wide span exceeds int range.
-    std::vector<int> h(10, 100000);
+    vector<int> h(10, 100000);
     check(largestRectangleArea(h) == 1000000LL,
           "10 bars of 100000 -> 1000000 (long long guards overflow)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

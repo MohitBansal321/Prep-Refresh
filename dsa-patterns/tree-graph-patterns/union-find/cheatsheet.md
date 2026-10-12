@@ -16,6 +16,7 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent(n), rank_(n, 0) {
@@ -34,7 +35,7 @@ class DisjointSet {
     int rootX = find(x), rootY = find(y);
     if (rootX == rootY) return false;
 
-    if (rank_[rootX] < rank_[rootY]) std::swap(rootX, rootY);
+    if (rank_[rootX] < rank_[rootY]) swap(rootX, rootY);
     parent[rootY] = rootX;                        // UNION BY RANK: shorter under taller
     if (rank_[rootX] == rank_[rootY]) ++rank_[rootX];
     return true;
@@ -43,8 +44,8 @@ class DisjointSet {
   bool connected(int x, int y) { return find(x) == find(y); }
 
  private:
-  std::vector<int> parent;
-  std::vector<int> rank_;
+  vector<int> parent;
+  vector<int> rank_;
 };
 ```
 

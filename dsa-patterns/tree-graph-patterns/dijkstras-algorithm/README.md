@@ -17,17 +17,18 @@ BFS explores strictly in ring order because every edge costs 1, so the first tim
 ## Template
 
 ```cpp
+using namespace std;
 // adj[u] = list of {v, weight} for each edge u -> v
-std::vector<int> dijkstra(int n, int src,
-                           const std::vector<std::vector<std::pair<int,int>>>& adj) {
-  const int INF = std::numeric_limits<int>::max();
-  std::vector<int> dist(n, INF);
+vector<int> dijkstra(int n, int src,
+                           const vector<vector<pair<int,int>>>& adj) {
+  const int INF = numeric_limits<int>::max();
+  vector<int> dist(n, INF);
   dist[src] = 0;
 
-  // min-heap of {distance, node}; std::priority_queue is a max-heap by
+  // min-heap of {distance, node}; priority_queue is a max-heap by
   // default, so `greater<>` flips it to a min-heap.
-  std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>,
-                       std::greater<>> pq;
+  priority_queue<pair<int,int>, vector<pair<int,int>>,
+                       greater<>> pq;
   pq.push({0, src});
 
   while (!pq.empty()) {

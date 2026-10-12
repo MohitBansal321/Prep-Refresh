@@ -28,6 +28,9 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // The node type shared by every example in this file. Deliberately minimal:
 // one payload (`val`) and one link (`next`) — the only two things a singly
@@ -40,7 +43,7 @@ struct ListNode {
 };
 
 // ----------------------------------------------------------------------------
-// Helper: build a singly linked list from a std::vector<int>.
+// Helper: build a singly linked list from a vector<int>.
 //
 // If `cycle_pos` is provided (>= 0), the last node's `next` is rewired to
 // point back at the node at index `cycle_pos` (0-indexed), turning the list
@@ -54,7 +57,7 @@ struct ListNode {
 // main() anyway — see the note on cyclic lists in the README's Common
 // Mistakes section).
 // ----------------------------------------------------------------------------
-ListNode* build_list(const std::vector<int>& values, int cycle_pos = -1) {
+ListNode* build_list(const vector<int>& values, int cycle_pos = -1) {
   if (values.empty()) return nullptr;
 
   ListNode* head = new ListNode(values[0]);
@@ -187,28 +190,28 @@ Node* find_middle(Node* head) {
 void print_list(ListNode* head, int max_nodes = 20) {
   int count = 0;
   while (head != nullptr && count < max_nodes) {
-    std::cout << head->val;
+    cout << head->val;
     head = head->next;
-    if (head != nullptr && count + 1 < max_nodes) std::cout << " -> ";
+    if (head != nullptr && count + 1 < max_nodes) cout << " -> ";
     ++count;
   }
-  std::cout << (count == max_nodes ? " -> ... (truncated, likely cyclic)" : "");
-  std::cout << "\n";
+  cout << (count == max_nodes ? " -> ... (truncated, likely cyclic)" : "");
+  cout << "\n";
 }
 
 int main() {
-  std::cout << "=== Fast & Slow Pointers: generic template demo ===\n\n";
+  cout << "=== Fast & Slow Pointers: generic template demo ===\n\n";
 
   // ---- Test 1: cycle detection on a list WITH a cycle ----------------------
   // 1 -> 2 -> 3 -> 4 -> 5 -> back to node holding 3 (index 2)
   {
     ListNode* head = build_list({1, 2, 3, 4, 5}, /*cycle_pos=*/2);
-    std::cout << "Test 1 (cyclic list, tail points back to value 3):\n";
-    std::cout << "  has_cycle(head) = " << std::boolalpha << has_cycle(head)
+    cout << "Test 1 (cyclic list, tail points back to value 3):\n";
+    cout << "  has_cycle(head) = " << boolalpha << has_cycle(head)
                << " (expected: true)\n";
     ListNode* start = find_cycle_start(head);
-    std::cout << "  find_cycle_start(head)->val = "
-               << (start != nullptr ? std::to_string(start->val) : "null")
+    cout << "  find_cycle_start(head)->val = "
+               << (start != nullptr ? to_string(start->val) : "null")
                << " (expected: 3)\n\n";
     // Not freeing: this list is cyclic, see free_list()'s doc comment.
   }
@@ -216,14 +219,14 @@ int main() {
   // ---- Test 2: cycle detection on a list WITHOUT a cycle --------------------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5});
-    std::cout << "Test 2 (plain list, no cycle):\n";
-    std::cout << "  List: ";
+    cout << "Test 2 (plain list, no cycle):\n";
+    cout << "  List: ";
     print_list(head);
-    std::cout << "  has_cycle(head) = " << std::boolalpha << has_cycle(head)
+    cout << "  has_cycle(head) = " << boolalpha << has_cycle(head)
                << " (expected: false)\n";
     ListNode* start = find_cycle_start(head);
-    std::cout << "  find_cycle_start(head) = "
-               << (start != nullptr ? std::to_string(start->val) : "null")
+    cout << "  find_cycle_start(head) = "
+               << (start != nullptr ? to_string(start->val) : "null")
                << " (expected: null)\n\n";
     free_list(head);
   }
@@ -231,11 +234,11 @@ int main() {
   // ---- Test 3: middle of an ODD-length list ---------------------------------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5});
-    std::cout << "Test 3 (odd-length list [1,2,3,4,5]):\n";
-    std::cout << "  List: ";
+    cout << "Test 3 (odd-length list [1,2,3,4,5]):\n";
+    cout << "  List: ";
     print_list(head);
     ListNode* mid = find_middle(head);
-    std::cout << "  find_middle(head)->val = " << mid->val
+    cout << "  find_middle(head)->val = " << mid->val
                << " (expected: 3)\n\n";
     free_list(head);
   }
@@ -243,11 +246,11 @@ int main() {
   // ---- Test 4: middle of an EVEN-length list --------------------------------
   {
     ListNode* head = build_list({1, 2, 3, 4, 5, 6});
-    std::cout << "Test 4 (even-length list [1,2,3,4,5,6]):\n";
-    std::cout << "  List: ";
+    cout << "Test 4 (even-length list [1,2,3,4,5,6]):\n";
+    cout << "  List: ";
     print_list(head);
     ListNode* mid = find_middle(head);
-    std::cout << "  find_middle(head)->val = " << mid->val
+    cout << "  find_middle(head)->val = " << mid->val
                << " (expected: 4, the SECOND of the two middle nodes)\n\n";
     free_list(head);
   }
@@ -255,24 +258,24 @@ int main() {
   // ---- Test 5: single-node and empty-list edge cases -------------------------
   {
     ListNode* single = build_list({42});
-    std::cout << "Test 5a (single node [42]):\n";
-    std::cout << "  has_cycle = " << std::boolalpha << has_cycle(single)
+    cout << "Test 5a (single node [42]):\n";
+    cout << "  has_cycle = " << boolalpha << has_cycle(single)
                << " (expected: false)\n";
-    std::cout << "  find_middle->val = " << find_middle(single)->val
+    cout << "  find_middle->val = " << find_middle(single)->val
                << " (expected: 42)\n";
     free_list(single);
 
     ListNode* empty = build_list({});
-    std::cout << "Test 5b (empty list):\n";
-    std::cout << "  has_cycle = " << std::boolalpha << has_cycle(empty)
+    cout << "Test 5b (empty list):\n";
+    cout << "  has_cycle = " << boolalpha << has_cycle(empty)
                << " (expected: false)\n";
-    std::cout << "  find_middle = "
+    cout << "  find_middle = "
                << (find_middle(empty) == nullptr ? "null" : "not null")
                << " (expected: null)\n";
     // Nothing allocated for an empty list — nothing to free.
   }
 
-  std::cout << "\nAll demo cases printed above. Compare each result against\n"
+  cout << "\nAll demo cases printed above. Compare each result against\n"
                "its \"expected\" comment to confirm the template behaves.\n";
 
   return 0;

@@ -91,6 +91,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // cyclic_sort_zero_based
 //
@@ -101,7 +104,7 @@
 // Kept as its own function to preserve the module's two-pass framing: this
 // function only rearranges, it does not answer anything.
 // ----------------------------------------------------------------------------
-void cyclic_sort_zero_based(std::vector<int>& nums) {
+void cyclic_sort_zero_based(vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   int i = 0;
 
@@ -120,7 +123,7 @@ void cyclic_sort_zero_based(std::vector<int>& nums) {
       // the problem guarantees distinct values — but the guard costs nothing
       // and keeps this loop identical in shape to the general template.
       if (nums[i] != nums[correct_index]) {
-        std::swap(nums[i], nums[correct_index]);
+        swap(nums[i], nums[correct_index]);
         continue;  // Do NOT advance: re-examine whatever just landed at i.
       }
     }
@@ -137,7 +140,7 @@ void cyclic_sort_zero_based(std::vector<int>& nums) {
 // test vectors stay readable; pass by reference in production if the mutation
 // is acceptable, which is the whole point of the O(1)-space claim).
 // ----------------------------------------------------------------------------
-int missingNumber(std::vector<int> nums) {
+int missingNumber(vector<int> nums) {
   const int n = static_cast<int>(nums.size());
 
   cyclic_sort_zero_based(nums);
@@ -162,61 +165,61 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // --- LeetCode's own examples -------------------------------------------
-  check(missingNumber(std::vector<int>{3, 0, 1}) == 2,
+  check(missingNumber(vector<int>{3, 0, 1}) == 2,
         "[3,0,1] -> 2 (mid-range gap)");
-  check(missingNumber(std::vector<int>{0, 1}) == 2,
+  check(missingNumber(vector<int>{0, 1}) == 2,
         "[0,1] -> 2 (missing value is n, no slot existed for it)");
-  check(missingNumber(std::vector<int>{9, 6, 4, 2, 3, 5, 7, 0, 1}) == 8,
+  check(missingNumber(vector<int>{9, 6, 4, 2, 3, 5, 7, 0, 1}) == 8,
         "[9,6,4,2,3,5,7,0,1] -> 8 (n=9 present, 8 absent)");
 
   // --- Single element: both branches of the answer ------------------------
-  check(missingNumber(std::vector<int>{0}) == 1,
+  check(missingNumber(vector<int>{0}) == 1,
         "[0] -> 1 (single element, missing value is n)");
-  check(missingNumber(std::vector<int>{1}) == 0,
+  check(missingNumber(vector<int>{1}) == 0,
         "[1] -> 0 (single element, the out-of-range value is the only one)");
 
   // --- Boundary answers: the very first and very last candidate -----------
-  check(missingNumber(std::vector<int>{1, 2, 3}) == 0,
+  check(missingNumber(vector<int>{1, 2, 3}) == 0,
         "[1,2,3] -> 0 (missing value is the range minimum)");
-  check(missingNumber(std::vector<int>{0, 1, 2}) == 3,
+  check(missingNumber(vector<int>{0, 1, 2}) == 3,
         "[0,1,2] -> 3 (missing value is the range maximum)");
 
   // --- Already-sorted and reverse-sorted inputs --------------------------
-  check(missingNumber(std::vector<int>{0, 1, 2, 3, 5}) == 4,
+  check(missingNumber(vector<int>{0, 1, 2, 3, 5}) == 4,
         "[0,1,2,3,5] -> 4 (already sorted, one gap)");
-  check(missingNumber(std::vector<int>{4, 3, 2, 1}) == 0,
+  check(missingNumber(vector<int>{4, 3, 2, 1}) == 0,
         "[4,3,2,1] -> 0 (reverse sorted; the value 4 has no home and is skipped)");
 
   // --- Degenerate input: no elements at all ------------------------------
   // Not reachable under LeetCode's constraints (n >= 1), but the code must not
   // read out of bounds: with n = 0 the range is [0, 0] and 0 is missing.
-  check(missingNumber(std::vector<int>{}) == 0,
+  check(missingNumber(vector<int>{}) == 0,
         "[] -> 0 (empty array, range is [0,0])");
 
   // --- The sorting pass itself, inspected directly -----------------------
   {
-    std::vector<int> nums = {3, 0, 1};
+    vector<int> nums = {3, 0, 1};
     cyclic_sort_zero_based(nums);
     // 3 is out of range for a 3-slot array and is never moved from index 0...
     // except that 0 and 1 both want homes, and placing them displaces it.
     // Expected end state: index 0 holds 0, index 1 holds 1, index 2 holds the
     // unplaceable 3.
-    std::vector<int> expected = {0, 1, 3};
+    vector<int> expected = {0, 1, 3};
     check(nums == expected,
           "sorting pass: [3,0,1] -> [0,1,3] (unplaceable 3 ends up in the gap)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

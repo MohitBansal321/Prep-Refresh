@@ -4,16 +4,17 @@
 > **In one line:** `dp[i]` = length of the longest increasing subsequence *ending exactly at* `i` — look back at every earlier smaller element and extend its best.
 
 ```cpp
-std::vector<int> dp(n, 1);   // every single element is a subsequence of length 1
+using namespace std;
+vector<int> dp(n, 1);   // every single element is a subsequence of length 1
 int best = 1;
 
 for (size_t i = 1; i < n; ++i) {
   for (size_t j = 0; j < i; ++j) {
     if (nums[j] < nums[i]) {
-      dp[i] = std::max(dp[i], dp[j] + 1);   // place nums[i] after the subsequence ending at j
+      dp[i] = max(dp[i], dp[j] + 1);   // place nums[i] after the subsequence ending at j
     }
   }
-  best = std::max(best, dp[i]);
+  best = max(best, dp[i]);
 }
 ```
 

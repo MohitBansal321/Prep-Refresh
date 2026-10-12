@@ -24,8 +24,11 @@
 #include <string>
 #include <vector>
 
-int findKthLargest(const std::vector<int>& nums, int k) {
-    std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;
+using namespace std;
+
+
+int findKthLargest(const vector<int>& nums, int k) {
+    priority_queue<int, vector<int>, greater<int>> minHeap;
 
     for (int value : nums) {
         minHeap.push(value);
@@ -40,8 +43,8 @@ int findKthLargest(const std::vector<int>& nums, int k) {
 }
 
 namespace {
-void check(int actual, int expected, const std::string& label) {
-    std::cout << (actual == expected ? "[PASS] " : "[FAIL] ") << label
+void check(int actual, int expected, const string& label) {
+    cout << (actual == expected ? "[PASS] " : "[FAIL] ") << label
               << " (got " << actual << ", expected " << expected << ")\n";
 }
 }  // namespace
@@ -60,6 +63,6 @@ int main() {
     check(findKthLargest({-1, -5, -3, -2, -4}, 1), -1,
           "all-negative array, k == 1 returns the largest (least negative)");
 
-    std::cout << "\nAll findKthLargest checks executed.\n";
+    cout << "\nAll findKthLargest checks executed.\n";
     return 0;
 }

@@ -51,8 +51,11 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct Node {
-  std::array<Node*, 26> children{};  // value-init: all nullptr
+  array<Node*, 26> children{};  // value-init: all nullptr
   bool isWord = false;
 };
 
@@ -62,7 +65,7 @@ class Trie {
 
   ~Trie() { destroy(root_); }
 
-  void insert(const std::string& word) {
+  void insert(const string& word) {
     Node* cur = root_;
     for (char c : word) {
       int idx = c - 'a';
@@ -75,8 +78,8 @@ class Trie {
   // Depth-first search restricted to nodes on all-word paths.
   // `current` mirrors the path from root to `node`; `best` holds the
   // longest buildable word found so far.
-  void dfs(const Node* node, int depth, std::string& current,
-           std::string& best) const {
+  void dfs(const Node* node, int depth, string& current,
+           string& best) const {
     // Prune: past the root, every node on a valid answer's path must be a
     // complete word itself. If not, nothing below can be buildable either.
     if (depth > 0 && !node->isWord) return;
@@ -106,12 +109,12 @@ class Trie {
   }
 };
 
-std::string longestWord(const std::vector<std::string>& words) {
+string longestWord(const vector<string>& words) {
   Trie trie;
-  for (const std::string& w : words) trie.insert(w);
+  for (const string& w : words) trie.insert(w);
 
-  std::string current;  // reused path buffer (push/pop, no reallocation churn)
-  std::string best;     // starts empty: correct answer when nothing builds
+  string current;  // reused path buffer (push/pop, no reallocation churn)
+  string best;     // starts empty: correct answer when nothing builds
   trie.dfs(trie.getRoot(), 0, current, best);
   return best;
 }
@@ -120,19 +123,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     // Canonical case: full unbroken chain down to "world".
-    std::vector<std::string> words = {"w", "wo", "wor", "worl", "world"};
+    vector<string> words = {"w", "wo", "wor", "worl", "world"};
     check(longestWord(words) == "world",
           "[w,wo,wor,worl,world] -> \"world\"");
   }
@@ -140,7 +143,7 @@ int main() {
   {
     // Tie-break: "apple" vs "apply" both length 5 -> lexicographically
     // smaller "apple" must win.
-    std::vector<std::string> words = {"a", "banana", "app", "appl",
+    vector<string> words = {"a", "banana", "app", "appl",
                                       "ap", "apply", "apple"};
     check(longestWord(words) == "apple",
           "tie between apple/apply -> \"apple\"");
@@ -151,30 +154,30 @@ int main() {
 
   {
     // Edge: no single-character seeds -> no word is buildable -> "".
-    std::vector<std::string> words = {"ab", "bc"};
+    vector<string> words = {"ab", "bc"};
     check(longestWord(words) == "", "[ab,bc] (no 1-char words) -> \"\"");
   }
 
   {
     // Edge: chain broken mid-way — "breakf" exists but "break" does not,
     // so neither "breakf" nor anything under it qualifies.
-    std::vector<std::string> words = {"b", "br", "bre", "brea", "breakf"};
+    vector<string> words = {"b", "br", "bre", "brea", "breakf"};
     check(longestWord(words) == "brea",
           "chain broken before \"break\" -> \"brea\"");
   }
 
   {
     // Edge: single word, trivially its own answer.
-    std::vector<std::string> words = {"a"};
+    vector<string> words = {"a"};
     check(longestWord(words) == "a", "single word [a] -> \"a\"");
   }
 
   {
     // Edge: duplicate words must not break anything.
-    std::vector<std::string> words = {"t", "t", "ti", "tig", "tige", "tiger"};
+    vector<string> words = {"t", "t", "ti", "tig", "tige", "tiger"};
     check(longestWord(words) == "tiger", "duplicates tolerated -> \"tiger\"");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

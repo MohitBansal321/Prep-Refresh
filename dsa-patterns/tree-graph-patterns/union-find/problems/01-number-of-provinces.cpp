@@ -47,10 +47,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0), component_count_(n) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
 
   int find(int x) {
@@ -65,7 +68,7 @@ class DisjointSet {
     int root_y = find(y);
     if (root_x == root_y) return;  // already in the same province
 
-    if (rank_[root_x] < rank_[root_y]) std::swap(root_x, root_y);
+    if (rank_[root_x] < rank_[root_y]) swap(root_x, root_y);
     parent_[root_y] = root_x;
     if (rank_[root_x] == rank_[root_y]) ++rank_[root_x];
     --component_count_;  // two provinces just merged into one
@@ -74,12 +77,12 @@ class DisjointSet {
   int componentCount() const { return component_count_; }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
   int component_count_;
 };
 
-int findCircleNum(const std::vector<std::vector<int>>& isConnected) {
+int findCircleNum(const vector<vector<int>>& isConnected) {
   int n = static_cast<int>(isConnected.size());
   DisjointSet dsu(n);
 
@@ -100,34 +103,34 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::vector<int>> isConnected = {{1, 1, 0}, {1, 1, 0}, {0, 0, 1}};
+    vector<vector<int>> isConnected = {{1, 1, 0}, {1, 1, 0}, {0, 0, 1}};
     check(findCircleNum(isConnected) == 2, "[[1,1,0],[1,1,0],[0,0,1]] -> 2 provinces");
   }
 
   {
-    std::vector<std::vector<int>> isConnected = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    vector<vector<int>> isConnected = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
     check(findCircleNum(isConnected) == 3, "identity matrix (no connections) -> 3 provinces");
   }
 
   {
-    std::vector<std::vector<int>> isConnected = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
+    vector<vector<int>> isConnected = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
     check(findCircleNum(isConnected) == 1, "fully connected 3x3 -> 1 province");
   }
 
   {
     // Transitive chain: 0-1, 1-2, 2-3 connected; 4 is isolated.
-    std::vector<std::vector<int>> isConnected = {
+    vector<vector<int>> isConnected = {
         {1, 1, 0, 0, 0},
         {1, 1, 1, 0, 0},
         {0, 1, 1, 1, 0},
@@ -139,10 +142,10 @@ int main() {
   }
 
   {
-    std::vector<std::vector<int>> isConnected = {{1}};
+    vector<vector<int>> isConnected = {{1}};
     check(findCircleNum(isConnected) == 1, "single city -> 1 province");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

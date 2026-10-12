@@ -71,18 +71,21 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // canFinish — Kahn's algorithm, cycle verdict only.
 //
 // prerequisites[i] = {a, b} means "take b before a".
 // ----------------------------------------------------------------------------
 bool canFinish(int numCourses,
-               const std::vector<std::pair<int, int> >& prerequisites) {
+               const vector<pair<int, int> >& prerequisites) {
   // adj[u] = every course that lists u as a prerequisite, i.e. every course
   // that must come AFTER u. Writing this sentence down before coding is the
   // discipline that keeps the edge direction straight.
-  std::vector<std::vector<int> > adj(static_cast<size_t>(numCourses));
-  std::vector<int> inDegree(static_cast<size_t>(numCourses), 0);
+  vector<vector<int> > adj(static_cast<size_t>(numCourses));
+  vector<int> inDegree(static_cast<size_t>(numCourses), 0);
 
   for (size_t i = 0; i < prerequisites.size(); ++i) {
     int after = prerequisites[i].first;    // a — the course being unlocked
@@ -94,7 +97,7 @@ bool canFinish(int numCourses,
   }
 
   // Courses with no prerequisites at all — the initial frontier.
-  std::queue<int> ready;
+  queue<int> ready;
   for (int course = 0; course < numCourses; ++course) {
     if (inDegree[static_cast<size_t>(course)] == 0) {
       ready.push(course);
@@ -110,7 +113,7 @@ bool canFinish(int numCourses,
     ready.pop();
     ++placedCount;
 
-    const std::vector<int>& dependents = adj[static_cast<size_t>(current)];
+    const vector<int>& dependents = adj[static_cast<size_t>(current)];
     for (size_t i = 0; i < dependents.size(); ++i) {
       size_t next = static_cast<size_t>(dependents[i]);
       --inDegree[next];
@@ -130,28 +133,28 @@ int main() {
   int passCount = 0;
   int failCount = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++passCount;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++failCount;
     }
   };
 
-  typedef std::vector<std::pair<int, int> > Pairs;
+  typedef vector<pair<int, int> > Pairs;
 
   // --- LeetCode's own examples -------------------------------------------
   {
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(1, 0));
     check(canFinish(2, p) == true, "LC example 1: 2 courses, 1 requires 0 -> true");
   }
   {
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(0, 1));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(0, 1));
     check(canFinish(2, p) == false, "LC example 2: mutual prerequisites -> false");
   }
 
@@ -165,7 +168,7 @@ int main() {
     // A self-loop is the smallest possible cycle: course 0 requires itself,
     // so its in-degree starts at 1 and can never fall to 0.
     Pairs p;
-    p.push_back(std::pair<int, int>(0, 0));
+    p.push_back(pair<int, int>(0, 0));
     check(canFinish(1, p) == false, "self-loop (course requires itself) -> false");
   }
   {
@@ -175,18 +178,18 @@ int main() {
     // the verdict is unaffected. Duplicates are only dangerous if you
     // de-duplicate ONE of the two structures and not the other.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(1, 0));
     check(canFinish(2, p) == true, "duplicate identical prerequisite -> still true");
   }
   {
     // A long chain: 0 -> 1 -> 2 -> 3 -> 4. Valid, and exercises the case
     // where the queue holds exactly one node at every single step.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(2, 1));
-    p.push_back(std::pair<int, int>(3, 2));
-    p.push_back(std::pair<int, int>(4, 3));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(2, 1));
+    p.push_back(pair<int, int>(3, 2));
+    p.push_back(pair<int, int>(4, 3));
     check(canFinish(5, p) == true, "linear chain of 5 courses -> true");
   }
   {
@@ -195,11 +198,11 @@ int main() {
     // This is the "mostly a DAG with one cyclic pocket" case from
     // ../README.md, "Common Mistakes", fifth bullet.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(2, 1));
-    p.push_back(std::pair<int, int>(3, 2));
-    p.push_back(std::pair<int, int>(1, 3));
-    p.push_back(std::pair<int, int>(4, 3));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(2, 1));
+    p.push_back(pair<int, int>(3, 2));
+    p.push_back(pair<int, int>(1, 3));
+    p.push_back(pair<int, int>(4, 3));
     check(canFinish(5, p) == false, "3-cycle hidden inside a larger graph -> false");
   }
   {
@@ -207,10 +210,10 @@ int main() {
     // needs two separate decrements before it becomes eligible — the case
     // the trace diagram walks through for node 3.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(2, 0));
-    p.push_back(std::pair<int, int>(3, 1));
-    p.push_back(std::pair<int, int>(3, 2));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(2, 0));
+    p.push_back(pair<int, int>(3, 1));
+    p.push_back(pair<int, int>(3, 2));
     check(canFinish(4, p) == true, "diamond dependency (two paths into one node) -> true");
   }
   {
@@ -218,12 +221,12 @@ int main() {
     // sort reports failure for the WHOLE input, not "order what I can" —
     // see ../README.md, "Tradeoffs", last paragraph.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(3, 2));
-    p.push_back(std::pair<int, int>(2, 3));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(3, 2));
+    p.push_back(pair<int, int>(2, 3));
     check(canFinish(4, p) == false, "clean component + cyclic component -> false overall");
   }
 
-  std::cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
+  cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
   return failCount == 0 ? 0 : 1;
 }

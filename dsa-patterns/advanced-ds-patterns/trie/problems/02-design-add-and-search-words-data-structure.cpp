@@ -55,13 +55,16 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
+
 class WordDictionary {
  public:
   WordDictionary() : root_(new Node()) {}
 
   ~WordDictionary() { destroy(root_); }
 
-  void addWord(const std::string& word) {
+  void addWord(const string& word) {
     Node* cur = root_;
     for (char c : word) {
       int idx = c - 'a';
@@ -71,11 +74,11 @@ class WordDictionary {
     cur->isWord = true;
   }
 
-  bool search(const std::string& word) const { return match(root_, word, 0); }
+  bool search(const string& word) const { return match(root_, word, 0); }
 
  private:
   struct Node {
-    std::array<Node*, 26> children{};
+    array<Node*, 26> children{};
     bool isWord = false;
   };
 
@@ -83,7 +86,7 @@ class WordDictionary {
 
   // Can any stored word match word[i..] starting from `node`?
   // Recursive because '.' forces branching; plain characters stay linear.
-  bool match(const Node* node, const std::string& word, size_t i) const {
+  bool match(const Node* node, const string& word, size_t i) const {
     if (i == word.size()) return node->isWord;  // consumed all chars: same
                                                 // end-of-word rule as LC 208
 
@@ -114,12 +117,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -175,6 +178,6 @@ int main() {
     check(wd.search("d.g") == true, "search(\"d.g\") -> true");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -32,24 +32,27 @@
 #include <string>
 #include <vector>
 
-std::vector<std::vector<int>> merge(std::vector<std::vector<int>> intervals) {
+using namespace std;
+
+
+vector<vector<int>> merge(vector<vector<int>> intervals) {
   if (intervals.empty()) return {};
 
-  std::sort(intervals.begin(), intervals.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
+  sort(intervals.begin(), intervals.end(),
+            [](const vector<int>& a, const vector<int>& b) {
               return a[0] < b[0];
             });
 
-  std::vector<std::vector<int>> result;
+  vector<vector<int>> result;
   result.push_back(intervals[0]);
 
   for (size_t i = 1; i < intervals.size(); ++i) {
-    std::vector<int>& current = result.back();
-    const std::vector<int>& next = intervals[i];
+    vector<int>& current = result.back();
+    const vector<int>& next = intervals[i];
 
     if (next[0] <= current[1]) {
       // Overlap or exact touch: extend current's end.
-      current[1] = std::max(current[1], next[1]);
+      current[1] = max(current[1], next[1]);
     } else {
       // No overlap: current is finished, start a new one.
       result.push_back(next);
@@ -59,11 +62,11 @@ std::vector<std::vector<int>> merge(std::vector<std::vector<int>> intervals) {
   return result;
 }
 
-std::string toString(const std::vector<std::vector<int>>& intervals) {
-  std::string out = "[";
+string toString(const vector<vector<int>>& intervals) {
+  string out = "[";
   for (size_t i = 0; i < intervals.size(); ++i) {
-    out += "[" + std::to_string(intervals[i][0]) + "," +
-           std::to_string(intervals[i][1]) + "]";
+    out += "[" + to_string(intervals[i][0]) + "," +
+           to_string(intervals[i][1]) + "]";
     if (i + 1 < intervals.size()) out += ",";
   }
   out += "]";
@@ -74,13 +77,13 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](const std::vector<std::vector<int>>& actual,
-                    const std::vector<std::vector<int>>& expected,
-                    const std::string& label) {
+  auto check = [&](const vector<vector<int>>& actual,
+                    const vector<vector<int>>& expected,
+                    const string& label) {
     bool ok = (actual == expected);
-    std::cout << (ok ? "[PASS] " : "[FAIL] ") << label << "\n";
-    std::cout << "       got:      " << toString(actual) << "\n";
-    std::cout << "       expected: " << toString(expected) << "\n";
+    cout << (ok ? "[PASS] " : "[FAIL] ") << label << "\n";
+    cout << "       got:      " << toString(actual) << "\n";
+    cout << "       expected: " << toString(expected) << "\n";
     ok ? ++pass_count : ++fail_count;
   };
 
@@ -108,6 +111,6 @@ int main() {
 
   check(merge({{1, 4}}), {{1, 4}}, "single interval passes through unchanged");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

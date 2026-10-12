@@ -55,7 +55,10 @@
 #include <string>
 #include <vector>
 
-int maxSubarraySumCircular(const std::vector<int>& nums) {
+using namespace std;
+
+
+int maxSubarraySumCircular(const vector<int>& nums) {
   int total_sum = 0;
 
   int current_max = nums[0];
@@ -70,13 +73,13 @@ int maxSubarraySumCircular(const std::vector<int>& nums) {
     if (i == 0) continue;  // current_max/current_min already seeded with nums[0].
 
     // Ordinary (maximizing) Kadane's pass -- best NON-wrapping subarray.
-    current_max = std::max(nums[i], current_max + nums[i]);
-    best_max = std::max(best_max, current_max);
+    current_max = max(nums[i], current_max + nums[i]);
+    best_max = max(best_max, current_max);
 
     // Mirror (minimizing) Kadane's pass -- worst NON-wrapping subarray,
     // used to find the largest possible "hole" to remove for wraparound.
-    current_min = std::min(nums[i], current_min + nums[i]);
-    best_min = std::min(best_min, current_min);
+    current_min = min(nums[i], current_min + nums[i]);
+    best_min = min(best_min, current_min);
   }
 
   // Degenerate case: every element is negative. Then best_min equals
@@ -89,55 +92,55 @@ int maxSubarraySumCircular(const std::vector<int>& nums) {
   }
 
   int best_wrapping_sum = total_sum - best_min;
-  return std::max(best_max, best_wrapping_sum);
+  return max(best_max, best_wrapping_sum);
 }
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {1, -2, 3, -2};
+    vector<int> nums = {1, -2, 3, -2};
     check(maxSubarraySumCircular(nums) == 3, "[1,-2,3,-2] -> 3 (no wraparound needed)");
   }
   {
-    std::vector<int> nums = {5, -3, 5};
+    vector<int> nums = {5, -3, 5};
     check(maxSubarraySumCircular(nums) == 10, "[5,-3,5] -> 10 (wraps: 5 + 5)");
   }
   {
     // All-negative: must return the least-negative element, not 0.
-    std::vector<int> nums = {-3, -2, -3};
+    vector<int> nums = {-3, -2, -3};
     check(maxSubarraySumCircular(nums) == -2, "[-3,-2,-3] -> -2 (least-negative, NOT 0)");
   }
   {
     // Best is the non-wrapping subarray [3,-1,2] = 4; the wrapping
     // alternative (total 3, minus minimum non-wrap subarray -1) also
     // evaluates to 4, so the two happen to tie here.
-    std::vector<int> nums = {3, -1, 2, -1};
+    vector<int> nums = {3, -1, 2, -1};
     check(maxSubarraySumCircular(nums) == 4, "[3,-1,2,-1] -> 4 (non-wrap [3,-1,2], ties with wrap)");
   }
   {
-    std::vector<int> nums = {3, -2, 2, -3};
+    vector<int> nums = {3, -2, 2, -3};
     check(maxSubarraySumCircular(nums) == 3, "[3,-2,2,-3] -> 3 (best is [3] alone)");
   }
   {
     // Best is the non-wrapping subarray [9,-3,3] = 9; total sum is -1 and
     // the best possible wrap (total minus the minimum non-wrap subarray,
     // -6) only reaches 5, so the non-wrapping answer wins here.
-    std::vector<int> nums = {-2, 4, -5, 4, -5, 9, -3, 3, -6};
+    vector<int> nums = {-2, 4, -5, 4, -5, 9, -3, 3, -6};
     check(maxSubarraySumCircular(nums) == 9, "[-2,4,-5,4,-5,9,-3,3,-6] -> 9 (non-wrap [9,-3,3])");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

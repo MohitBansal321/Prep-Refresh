@@ -48,6 +48,9 @@
 #include <queue>
 #include <string>
 
+using namespace std;
+
+
 struct TreeNode {
   int val;
   TreeNode* left;
@@ -69,7 +72,7 @@ int minDepth(TreeNode* root) {
     return 0;  // An empty tree has depth 0 by convention.
   }
 
-  std::queue<TreeNode*> q;
+  queue<TreeNode*> q;
   q.push(root);
   int depth = 1;  // A single node counts as depth 1, per the problem statement.
 
@@ -104,12 +107,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -171,6 +174,6 @@ int main() {
     freeTree(root);
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

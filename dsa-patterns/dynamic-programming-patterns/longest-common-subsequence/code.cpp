@@ -37,11 +37,14 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // longestCommonSubsequence — generic, reusable LCS length function.
 //
 // Works over any type `Sequence` that supports .size() and operator[]
-// returning comparable elements (std::string, std::vector<int>, etc.).
+// returning comparable elements (string, vector<int>, etc.).
 //
 // Builds the full (n+1) x (m+1) table, where dp[i][j] means "the LCS length
 // considering only the first i elements of `a` and the first j elements of
@@ -59,7 +62,7 @@ int longestCommonSubsequence(const Sequence& a, const Sequence& b) {
 
   // dp[i][j]: LCS length of a[0..i) and b[0..j). Extra row/column at index 0
   // represents the empty-prefix base case, already zero-initialized.
-  std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+  vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
 
   for (size_t i = 1; i <= n; ++i) {
     for (size_t j = 1; j <= m; ++j) {
@@ -72,7 +75,7 @@ int longestCommonSubsequence(const Sequence& a, const Sequence& b) {
         // No match at this position: the LCS of these two prefixes cannot
         // use BOTH a[i-1] and b[j-1] together, so it is the better of
         // "skip a[i-1]" (look at dp[i-1][j]) or "skip b[j-1]" (dp[i][j-1]).
-        dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+        dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
       }
     }
   }
@@ -103,13 +106,13 @@ Sequence reconstructLCS(const Sequence& a, const Sequence& b) {
   const size_t n = a.size();
   const size_t m = b.size();
 
-  std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+  vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
   for (size_t i = 1; i <= n; ++i) {
     for (size_t j = 1; j <= m; ++j) {
       if (a[i - 1] == b[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1] + 1;
       } else {
-        dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+        dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
       }
     }
   }
@@ -134,7 +137,7 @@ Sequence reconstructLCS(const Sequence& a, const Sequence& b) {
     }
   }
 
-  std::reverse(result.begin(), result.end());
+  reverse(result.begin(), result.end());
   return result;
 }
 
@@ -145,36 +148,36 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- longestCommonSubsequence (length only) ---\n";
+  cout << "--- longestCommonSubsequence (length only) ---\n";
   {
-    check(longestCommonSubsequence(std::string("abcde"), std::string("ace")) == 3,
+    check(longestCommonSubsequence(string("abcde"), string("ace")) == 3,
           "\"abcde\" vs \"ace\" -> length 3");
-    check(longestCommonSubsequence(std::string("abc"), std::string("abc")) == 3,
+    check(longestCommonSubsequence(string("abc"), string("abc")) == 3,
           "identical strings -> length 3 (whole string)");
-    check(longestCommonSubsequence(std::string("abc"), std::string("def")) == 0,
+    check(longestCommonSubsequence(string("abc"), string("def")) == 0,
           "no shared characters -> length 0");
-    check(longestCommonSubsequence(std::string(""), std::string("abc")) == 0,
+    check(longestCommonSubsequence(string(""), string("abc")) == 0,
           "empty vs non-empty -> length 0 (base case)");
-    check(longestCommonSubsequence(std::string("ABCBDAB"), std::string("BDCABA")) == 4,
+    check(longestCommonSubsequence(string("ABCBDAB"), string("BDCABA")) == 4,
           "\"ABCBDAB\" vs \"BDCABA\" -> length 4 (classic textbook example)");
   }
 
-  std::cout << "\n--- reconstructLCS (actual subsequence) ---\n";
+  cout << "\n--- reconstructLCS (actual subsequence) ---\n";
   {
-    std::string result = reconstructLCS(std::string("abcde"), std::string("ace"));
+    string result = reconstructLCS(string("abcde"), string("ace"));
     check(result == "ace", "\"abcde\" vs \"ace\" -> reconstructed \"ace\"");
 
-    std::string result2 = reconstructLCS(std::string("ABCBDAB"), std::string("BDCABA"));
+    string result2 = reconstructLCS(string("ABCBDAB"), string("BDCABA"));
     // Two subsequences of length 4 are valid for this classic example:
     // "BCBA" and "BDAB". Either is an acceptable LCS.
     check(result2.size() == 4 && (result2 == "BCBA" || result2 == "BDAB"),
@@ -182,18 +185,18 @@ int main() {
 
     // Consistency check: the reconstructed subsequence's length must always
     // equal what the length-only function reports, for any input pair.
-    std::string x = "AGGTAB";
-    std::string y = "GXTXAYB";
+    string x = "AGGTAB";
+    string y = "GXTXAYB";
     int len = longestCommonSubsequence(x, y);
-    std::string sub = reconstructLCS(x, y);
+    string sub = reconstructLCS(x, y);
     check(static_cast<int>(sub.size()) == len,
           "reconstructed length matches longestCommonSubsequence's length");
     check(sub == "GTAB", "\"AGGTAB\" vs \"GXTXAYB\" -> reconstructed \"GTAB\"");
 
-    std::string empty_result = reconstructLCS(std::string(""), std::string("xyz"));
+    string empty_result = reconstructLCS(string(""), string("xyz"));
     check(empty_result.empty(), "empty vs non-empty -> reconstructed \"\" (empty)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -16,7 +16,8 @@
 ### Template Skeleton (Kruskal's)
 
 ```cpp
-std::sort(edges.begin(), edges.end(),
+using namespace std;
+sort(edges.begin(), edges.end(),
           [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
 
 DisjointSet dsu(n);

@@ -95,6 +95,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // cyclic_sort
 //
@@ -105,7 +108,7 @@
 // array's length keeps the bound check identical to every other file in this
 // directory: "does this value have a slot in THIS array?"
 // ----------------------------------------------------------------------------
-void cyclic_sort(std::vector<int>& nums) {
+void cyclic_sort(vector<int>& nums) {
   const int slots = static_cast<int>(nums.size());
   int i = 0;
 
@@ -120,7 +123,7 @@ void cyclic_sort(std::vector<int>& nums) {
       // back and forth forever. This is the check that makes the surplus copy
       // stall instead of spinning.
       if (nums[i] != nums[correct_index]) {
-        std::swap(nums[i], nums[correct_index]);
+        swap(nums[i], nums[correct_index]);
         continue;  // Do NOT advance: re-examine whatever just landed at i.
       }
     }
@@ -137,7 +140,7 @@ void cyclic_sort(std::vector<int>& nums) {
 // which cannot happen under LeetCode's constraints but keeps the function
 // total rather than undefined.
 // ----------------------------------------------------------------------------
-int findDuplicate(std::vector<int> nums) {
+int findDuplicate(vector<int> nums) {
   cyclic_sort(nums);
 
   const int slots = static_cast<int>(nums.size());
@@ -153,11 +156,11 @@ int findDuplicate(std::vector<int> nums) {
 // ============================================================================
 // Test scaffolding
 // ============================================================================
-std::string to_string(const std::vector<int>& v) {
-  std::string out = "[";
+string to_string(const vector<int>& v) {
+  string out = "[";
   for (size_t i = 0; i < v.size(); ++i) {
     if (i) out += ",";
-    out += std::to_string(v[i]);
+    out += to_string(v[i]);
   }
   out += "]";
   return out;
@@ -167,20 +170,20 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto check_result = [&](std::vector<int> input, int expected,
-                          const std::string& note) {
-    const std::string label = to_string(input) + " -> " +
-                              std::to_string(expected) + "  (" + note + ")";
+  auto check_result = [&](vector<int> input, int expected,
+                          const string& note) {
+    const string label = to_string(input) + " -> " +
+                              to_string(expected) + "  (" + note + ")";
     check(findDuplicate(input) == expected, label);
   };
 
@@ -217,16 +220,16 @@ int main() {
 
   // --- The sorting pass itself, inspected directly -----------------------
   {
-    std::vector<int> nums = {1, 3, 4, 2, 2};
+    vector<int> nums = {1, 3, 4, 2, 2};
     cyclic_sort(nums);
     // 1..4 all reach their homes at indices 0..3; the surplus 2 has nowhere to
     // go (index 1 already holds a 2) and stalls in the leftover slot.
-    std::vector<int> expected = {1, 2, 3, 4, 2};
+    vector<int> expected = {1, 2, 3, 4, 2};
     check(nums == expected,
           "sorting pass: [1,3,4,2,2] -> " + to_string(expected) +
               " (the surplus copy is the only value left displaced)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -12,6 +12,9 @@
 #include <iostream>
 #include <unordered_map>
 
+using namespace std;
+
+
 class LRUCache {
  public:
   explicit LRUCache(int capacity) : capacity_(capacity) {
@@ -81,19 +84,19 @@ class LRUCache {
   int capacity_;
   Node* head_;
   Node* tail_;
-  std::unordered_map<int, Node*> map_;
+  unordered_map<int, Node*> map_;
 };
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -123,6 +126,6 @@ int main() {
   check(single.get(1) == -1, "capacity-1 cache evicts previous key on next put");
   check(single.get(2) == 2, "capacity-1 cache keeps the newest key");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

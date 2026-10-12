@@ -56,9 +56,12 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 namespace {
 
-bool backtrack(std::vector<std::vector<char>>& grid, const std::string& word,
+bool backtrack(vector<vector<char>>& grid, const string& word,
                 int row, int col, size_t index) {
   if (index == word.size()) {
     return true;  // Matched every character -> the word was fully traced.
@@ -100,7 +103,7 @@ bool backtrack(std::vector<std::vector<char>>& grid, const std::string& word,
 // but is guaranteed fully restored to its original contents by the time
 // this function returns -- every '#' mark placed during CHOOSE is undone
 // before the corresponding recursive call's stack frame returns.
-bool exist(std::vector<std::vector<char>>& grid, const std::string& word) {
+bool exist(vector<vector<char>>& grid, const string& word) {
   if (grid.empty() || grid[0].empty() || word.empty()) return false;
 
   int rows = static_cast<int>(grid.size());
@@ -120,17 +123,17 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::vector<std::vector<char>> board = {
+  vector<vector<char>> board = {
       {'A', 'B', 'C', 'E'},
       {'S', 'F', 'C', 'S'},
       {'A', 'D', 'E', 'E'},
@@ -143,17 +146,17 @@ int main() {
   check(exist(board, "ABCESEEEFS") == false, "word longer than any real path -> false");
 
   {
-    std::vector<std::vector<char>> single = {{'A'}};
+    vector<vector<char>> single = {{'A'}};
     check(exist(single, "A") == true, "single-cell grid matches single-letter word");
     check(exist(single, "AA") == false, "single-cell grid cannot match a 2-letter word");
   }
 
   {
-    std::vector<std::vector<char>> board2 = {
+    vector<vector<char>> board2 = {
         {'A', 'A'},
         {'A', 'A'},
     };
-    std::vector<std::vector<char>> board2_original = board2;
+    vector<vector<char>> board2_original = board2;
 
     check(exist(board2, "AAAA") == true, "path can snake through all 4 cells of a 2x2 all-A grid");
     // The strongest direct proof of the UNDO step: `exist` mutates `board2`
@@ -165,6 +168,6 @@ int main() {
     check(board2 == board2_original, "grid still restored correctly even on a failing search");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

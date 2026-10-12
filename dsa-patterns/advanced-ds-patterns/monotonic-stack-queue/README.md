@@ -19,11 +19,12 @@ The problem asks for the "next greater/smaller element" for every position, or t
 ## Template
 
 ```cpp
+using namespace std;
 // Next Greater Element for every position (circular or linear).
-std::vector<int> nextGreaterElement(const std::vector<int>& nums) {
+vector<int> nextGreaterElement(const vector<int>& nums) {
   int n = nums.size();
-  std::vector<int> result(n, -1);
-  std::vector<int> stack;  // holds INDICES; values increase bottom-to-top
+  vector<int> result(n, -1);
+  vector<int> stack;  // holds INDICES; values increase bottom-to-top
   for (int i = 0; i < n; ++i) {
     while (!stack.empty() && nums[stack.back()] < nums[i]) {
       result[stack.back()] = nums[i];
@@ -35,9 +36,9 @@ std::vector<int> nextGreaterElement(const std::vector<int>& nums) {
 }
 
 // Sliding Window Maximum.
-std::vector<int> maxSlidingWindow(const std::vector<int>& nums, int k) {
-  std::deque<int> dq;  // holds indices, values strictly decreasing front-to-back
-  std::vector<int> result;
+vector<int> maxSlidingWindow(const vector<int>& nums, int k) {
+  deque<int> dq;  // holds indices, values strictly decreasing front-to-back
+  vector<int> result;
   for (int i = 0; i < (int)nums.size(); ++i) {
     while (!dq.empty() && nums[dq.back()] < nums[i]) dq.pop_back();
     dq.push_back(i);

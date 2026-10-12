@@ -29,11 +29,14 @@
 #include <string>
 #include <vector>
 
-std::vector<bool> checkIfPrerequisite(
-    int numCourses, const std::vector<std::vector<int>>& prerequisites,
-    const std::vector<std::vector<int>>& queries) {
-  std::vector<std::vector<bool>> reach(
-      numCourses, std::vector<bool>(numCourses, false));
+using namespace std;
+
+
+vector<bool> checkIfPrerequisite(
+    int numCourses, const vector<vector<int>>& prerequisites,
+    const vector<vector<int>>& queries) {
+  vector<vector<bool>> reach(
+      numCourses, vector<bool>(numCourses, false));
 
   for (const auto& p : prerequisites) {
     reach[p[0]][p[1]] = true;  // a direct prerequisite edge
@@ -52,7 +55,7 @@ std::vector<bool> checkIfPrerequisite(
     }
   }
 
-  std::vector<bool> answers;
+  vector<bool> answers;
   answers.reserve(queries.size());
   for (const auto& q : queries) {
     answers.push_back(reach[q[0]][q[1]]);
@@ -67,12 +70,12 @@ std::vector<bool> checkIfPrerequisite(
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -81,9 +84,9 @@ int main() {
   {
     // numCourses=2, prerequisites=[[1,0]] (course 1 before course 0),
     // queries=[[0,1],[1,0]].
-    std::vector<std::vector<int>> prereqs = {{1, 0}};
-    std::vector<std::vector<int>> queries = {{0, 1}, {1, 0}};
-    std::vector<bool> result = checkIfPrerequisite(2, prereqs, queries);
+    vector<vector<int>> prereqs = {{1, 0}};
+    vector<vector<int>> queries = {{0, 1}, {1, 0}};
+    vector<bool> result = checkIfPrerequisite(2, prereqs, queries);
     check(result[0] == false, "0 is NOT a prerequisite of 1 (edge only goes 1->0)");
     check(result[1] == true, "1 IS a prerequisite of 0 (direct edge)");
   }
@@ -92,31 +95,31 @@ int main() {
     // Transitivity: 0->1->2 as a chain. 0 must be a prerequisite of 2 even
     // though no direct edge 0->2 exists -- this is the entire point of the
     // waypoint relaxation.
-    std::vector<std::vector<int>> prereqs = {{0, 1}, {1, 2}};
-    std::vector<std::vector<int>> queries = {{0, 2}, {2, 0}};
-    std::vector<bool> result = checkIfPrerequisite(3, prereqs, queries);
+    vector<vector<int>> prereqs = {{0, 1}, {1, 2}};
+    vector<vector<int>> queries = {{0, 2}, {2, 0}};
+    vector<bool> result = checkIfPrerequisite(3, prereqs, queries);
     check(result[0] == true, "0 -> 2 transitively via 1, even with no direct edge");
     check(result[1] == false, "2 is not a prerequisite of 0 in either direction");
   }
 
   {
     // No prerequisites at all: every query must be false.
-    std::vector<std::vector<int>> prereqs = {};
-    std::vector<std::vector<int>> queries = {{0, 1}, {1, 0}};
-    std::vector<bool> result = checkIfPrerequisite(2, prereqs, queries);
+    vector<vector<int>> prereqs = {};
+    vector<vector<int>> queries = {{0, 1}, {1, 0}};
+    vector<bool> result = checkIfPrerequisite(2, prereqs, queries);
     check(!result[0] && !result[1], "no prerequisites -> every query is false");
   }
 
   {
     // A diamond: 0->1, 0->2, 1->3, 2->3. Both 1 and 2 are transitive
     // prerequisites of 3 via different intermediate paths.
-    std::vector<std::vector<int>> prereqs = {{0, 1}, {0, 2}, {1, 3}, {2, 3}};
-    std::vector<std::vector<int>> queries = {{0, 3}, {1, 3}, {2, 3}};
-    std::vector<bool> result = checkIfPrerequisite(4, prereqs, queries);
+    vector<vector<int>> prereqs = {{0, 1}, {0, 2}, {1, 3}, {2, 3}};
+    vector<vector<int>> queries = {{0, 3}, {1, 3}, {2, 3}};
+    vector<bool> result = checkIfPrerequisite(4, prereqs, queries);
     check(result[0] && result[1] && result[2],
           "diamond dependency graph -> all three queries resolve true");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

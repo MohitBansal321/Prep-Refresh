@@ -4,14 +4,15 @@
 > **In one line:** sort by start time, then sweep once: keep extending the current interval while the next one overlaps, flush and start fresh the moment it doesn't.
 
 ```cpp
-std::sort(intervals.begin(), intervals.end(),
+using namespace std;
+sort(intervals.begin(), intervals.end(),
           [](auto& a, auto& b) { return a.first < b.first; });
 
-std::pair<int, int> current = intervals[0];
+pair<int, int> current = intervals[0];
 for (size_t i = 1; i < intervals.size(); ++i) {
   const auto& next = intervals[i];
   if (next.first <= current.second) {
-    current.second = std::max(current.second, next.second);   // overlap: extend
+    current.second = max(current.second, next.second);   // overlap: extend
   } else {
     merged.push_back(current);   // no overlap: flush, start a new "current"
     current = next;

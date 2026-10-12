@@ -4,7 +4,8 @@
 > **In one line:** swap each value into its home index (`v - 1`) until every in-range slot holds its correct value — no comparisons, no extra array.
 
 ```cpp
-void cyclic_sort(std::vector<int>& nums) {
+using namespace std;
+void cyclic_sort(vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   int i = 0;
 
@@ -13,7 +14,7 @@ void cyclic_sort(std::vector<int>& nums) {
     const bool in_range = nums[i] >= 1 && nums[i] <= n;
 
     if (in_range && nums[i] != nums[correct_index]) {
-      std::swap(nums[i], nums[correct_index]);
+      swap(nums[i], nums[correct_index]);
       // do NOT advance i: re-check whatever just landed here
     } else {
       ++i;   // out of range, already home, or a duplicate — move on

@@ -55,11 +55,14 @@
 #include <string>
 #include <vector>
 
-int minDistance(const std::string& word1, const std::string& word2) {
+using namespace std;
+
+
+int minDistance(const string& word1, const string& word2) {
   const size_t n = word1.size();
   const size_t m = word2.size();
 
-  std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+  vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
 
   // Base cases: converting to/from the empty string costs one operation per
   // remaining character (all deletes, or all inserts).
@@ -76,7 +79,7 @@ int minDistance(const std::string& word1, const std::string& word2) {
         int replace_cost = dp[i - 1][j - 1];
         int delete_cost = dp[i - 1][j];
         int insert_cost = dp[i][j - 1];
-        dp[i][j] = 1 + std::min({replace_cost, delete_cost, insert_cost});
+        dp[i][j] = 1 + min({replace_cost, delete_cost, insert_cost});
       }
     }
   }
@@ -88,12 +91,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -106,6 +109,6 @@ int main() {
   check(minDistance("", "abc") == 3, "\"\" -> \"abc\" costs 3 (insert all)");
   check(minDistance("abc", "abc") == 0, "identical strings cost 0");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -50,18 +50,21 @@
 #include <string>
 #include <unordered_map>
 
-std::string minWindow(const std::string& s, const std::string& t) {
+using namespace std;
+
+
+string minWindow(const string& s, const string& t) {
     if (s.empty() || t.empty() || t.size() > s.size()) {
         return "";
     }
 
-    std::unordered_map<char, int> need;
+    unordered_map<char, int> need;
     for (char c : t) {
         need[c]++;
     }
     int required = static_cast<int>(need.size());  // distinct chars to satisfy
 
-    std::unordered_map<char, int> window;
+    unordered_map<char, int> window;
     int satisfied = 0;  // how many distinct chars currently meet their requirement
 
     int bestLen = INT_MAX;
@@ -109,15 +112,15 @@ std::string minWindow(const std::string& s, const std::string& t) {
 // ----------------------------------------------------------------------------
 static int failures = 0;
 
-static void check(const std::string& actual, const std::string& expected, const std::string& label) {
+static void check(const string& actual, const string& expected, const string& label) {
     bool pass = (actual == expected);
-    std::cout << (pass ? "[PASS] " : "[FAIL] ") << label
+    cout << (pass ? "[PASS] " : "[FAIL] ") << label
               << " -> got \"" << actual << "\", expected \"" << expected << "\"\n";
     if (!pass) ++failures;
 }
 
 int main() {
-    std::cout << "=== Minimum Window Substring (LC 76) ===\n\n";
+    cout << "=== Minimum Window Substring (LC 76) ===\n\n";
 
     check(minWindow("ADOBECODEBANC", "ABC"), "BANC", "s=\"ADOBECODEBANC\", t=\"ABC\"");
     check(minWindow("a", "a"), "a", "s=\"a\", t=\"a\"");
@@ -126,6 +129,6 @@ int main() {
     check(minWindow("aa", "aa"), "aa", "s=\"aa\", t=\"aa\" (needs both duplicates)");
     check(minWindow("cabwefgewcwaefgcf", "cae"), "cwae", "s=\"cabwefgewcwaefgcf\", t=\"cae\"");
 
-    std::cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
+    cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
     return failures == 0 ? 0 : 1;
 }

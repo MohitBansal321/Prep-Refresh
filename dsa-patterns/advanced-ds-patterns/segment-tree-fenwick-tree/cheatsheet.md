@@ -16,9 +16,10 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Fenwick Tree (1-indexed internally; pass/receive 0-indexed positions)
 class FenwickTree {
-    std::vector<long long> tree;
+    vector<long long> tree;
     int n;
  public:
     explicit FenwickTree(int size) : tree(size + 1, 0), n(size) {}

@@ -29,6 +29,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // The standard binary tree node used by every file in this module.
 // ----------------------------------------------------------------------------
@@ -87,10 +90,10 @@ void deleteTree(TreeNode* node) {
 // problems/03-path-sum-ii.cpp, which deliberately uses a SHARED mutable
 // vector and must un-append on the way back up).
 // ----------------------------------------------------------------------------
-void collectPaths(TreeNode* node, std::string pathSoFar, std::vector<std::string>& results) {
+void collectPaths(TreeNode* node, string pathSoFar, vector<string>& results) {
   if (!node) return;  // Base case: nothing here, nothing to add.
 
-  pathSoFar += std::to_string(node->val);
+  pathSoFar += to_string(node->val);
 
   bool isLeaf = (!node->left && !node->right);
   if (isLeaf) {
@@ -105,8 +108,8 @@ void collectPaths(TreeNode* node, std::string pathSoFar, std::vector<std::string
   if (node->right) collectPaths(node->right, pathSoFar + "->", results);
 }
 
-std::vector<std::string> binaryTreePaths(TreeNode* root) {
-  std::vector<std::string> results;
+vector<string> binaryTreePaths(TreeNode* root) {
+  vector<string> results;
   collectPaths(root, "", results);
   return results;
 }
@@ -146,7 +149,7 @@ int maxDepth(TreeNode* node) {
 
   // Only after BOTH recursive calls have returned can this node compute its
   // own answer.
-  return 1 + std::max(leftDepth, rightDepth);
+  return 1 + max(leftDepth, rightDepth);
 }
 
 // ============================================================================
@@ -156,30 +159,30 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   TreeNode* root = buildSampleTree();
 
-  std::cout << "--- binaryTreePaths (preorder, path-building) ---\n";
+  cout << "--- binaryTreePaths (preorder, path-building) ---\n";
   {
-    std::vector<std::string> paths = binaryTreePaths(root);
-    std::vector<std::string> expected = {
+    vector<string> paths = binaryTreePaths(root);
+    vector<string> expected = {
         "5->4->11->7", "5->4->11->2", "5->8->13", "5->8->4->1"};
     check(paths == expected, "sample tree -> 4 root-to-leaf paths, in left-to-right order");
     for (const auto& p : paths) {
-      std::cout << "    " << p << "\n";
+      cout << "    " << p << "\n";
     }
   }
 
-  std::cout << "\n--- hasPathSum (preorder, running sum) ---\n";
+  cout << "\n--- hasPathSum (preorder, running sum) ---\n";
   {
     check(hasPathSum(root, 22) == true, "5->4->11->2 sums to 22 -> true");
     check(hasPathSum(root, 26) == true, "5->8->13 sums to 26 -> true");
@@ -189,7 +192,7 @@ int main() {
     check(hasPathSum(empty, 0) == false, "empty tree -> false, regardless of target");
   }
 
-  std::cout << "\n--- maxDepth (postorder, aggregation) ---\n";
+  cout << "\n--- maxDepth (postorder, aggregation) ---\n";
   {
     check(maxDepth(root) == 4, "sample tree -> max depth 4 (5-4-11-7 or 5-4-11-2)");
 
@@ -202,6 +205,6 @@ int main() {
 
   deleteTree(root);
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

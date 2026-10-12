@@ -16,27 +16,28 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 struct TopoResult {
-    std::vector<int> order;   // a valid ordering; INCOMPLETE (short) if hasCycle
+    vector<int> order;   // a valid ordering; INCOMPLETE (short) if hasCycle
     bool hasCycle;
 };
 
 // edges: {u, v} means "u must come before v" — v depends on u.
 TopoResult topologicalSort(int numNodes,
-                           const std::vector<std::pair<int,int>>& edges) {
-    std::vector<std::vector<int>> adj(numNodes);   // adj[u] = everything depending on u
-    std::vector<int> inDegree(numNodes, 0);        // unmet prerequisites per node
+                           const vector<pair<int,int>>& edges) {
+    vector<vector<int>> adj(numNodes);   // adj[u] = everything depending on u
+    vector<int> inDegree(numNodes, 0);        // unmet prerequisites per node
 
     for (const auto& [u, v] : edges) {
         adj[u].push_back(v);
         ++inDegree[v];                             // v gains one prerequisite
     }
 
-    std::queue<int> q;
+    queue<int> q;
     for (int i = 0; i < numNodes; ++i)
         if (inDegree[i] == 0) q.push(i);           // seed: depends on nothing
                                                    // (ALL of them, not just node 0)
-    std::vector<int> order;
+    vector<int> order;
     while (!q.empty()) {
         int u = q.front(); q.pop();
         order.push_back(u);                        // every prerequisite of u is placed

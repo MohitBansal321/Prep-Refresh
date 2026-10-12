@@ -4,9 +4,10 @@
 > **In one line:** recurse into each child, carrying state built so far (here, a path string) down through the call — and act on it once you hit a leaf.
 
 ```cpp
-void collectPaths(TreeNode* node, std::string pathSoFar, std::vector<std::string>& results) {
+using namespace std;
+void collectPaths(TreeNode* node, string pathSoFar, vector<string>& results) {
   if (!node) return;
-  pathSoFar += std::to_string(node->val);
+  pathSoFar += to_string(node->val);
 
   bool isLeaf = (!node->left && !node->right);   // BOTH children null, not just one
   if (isLeaf) { results.push_back(pathSoFar); return; }

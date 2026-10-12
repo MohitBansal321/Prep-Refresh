@@ -33,22 +33,25 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct Edge {
   int from;
   int to;
   int weight;
 };
 
-int networkDelayTime(const std::vector<std::vector<int>>& times, int n, int k) {
-  const long long kInf = std::numeric_limits<long long>::max();
-  std::vector<Edge> edges;
+int networkDelayTime(const vector<vector<int>>& times, int n, int k) {
+  const long long kInf = numeric_limits<long long>::max();
+  vector<Edge> edges;
   edges.reserve(times.size());
   for (const auto& t : times) {
     // LeetCode nodes are 1-indexed; shift to 0-indexed internally.
     edges.push_back({t[0] - 1, t[1] - 1, t[2]});
   }
 
-  std::vector<long long> dist(n, kInf);
+  vector<long long> dist(n, kInf);
   dist[k - 1] = 0;
 
   for (int pass = 0; pass < n - 1; ++pass) {
@@ -66,7 +69,7 @@ int networkDelayTime(const std::vector<std::vector<int>>& times, int n, int k) {
   long long maxDist = 0;
   for (int i = 0; i < n; ++i) {
     if (dist[i] == kInf) return -1;  // some node never received the signal
-    maxDist = std::max(maxDist, dist[i]);
+    maxDist = max(maxDist, dist[i]);
   }
   return static_cast<int>(maxDist);
 }
@@ -78,12 +81,12 @@ int networkDelayTime(const std::vector<std::vector<int>>& times, int n, int k) {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -91,20 +94,20 @@ void check(bool condition, const std::string& label) {
 int main() {
   {
     // LeetCode's own worked example: times = [[2,1,1],[2,3,1],[3,4,1]], n=4, k=2
-    std::vector<std::vector<int>> times = {{2, 1, 1}, {2, 3, 1}, {3, 4, 1}};
+    vector<vector<int>> times = {{2, 1, 1}, {2, 3, 1}, {3, 4, 1}};
     check(networkDelayTime(times, 4, 2) == 2,
           "classic example -> 2 (node 4 is the farthest, reached in 2 hops)");
   }
 
   {
     // Single node, no edges needed -- signal "arrives" instantly.
-    std::vector<std::vector<int>> times = {};
+    vector<vector<int>> times = {};
     check(networkDelayTime(times, 1, 1) == 0, "single node, no edges -> 0");
   }
 
   {
     // Unreachable node -> -1, not a crash or a huge sentinel value.
-    std::vector<std::vector<int>> times = {{1, 2, 1}};
+    vector<vector<int>> times = {{1, 2, 1}};
     check(networkDelayTime(times, 2, 2) == -1,
           "source cannot reach all nodes -> -1");
   }
@@ -112,11 +115,11 @@ int main() {
   {
     // A longer direct edge beaten by a two-hop path -- confirms relaxation
     // actually improves the naive direct-edge distance, not just copies it.
-    std::vector<std::vector<int>> times = {{1, 2, 10}, {1, 3, 1}, {3, 2, 1}};
+    vector<vector<int>> times = {{1, 2, 10}, {1, 3, 1}, {3, 2, 1}};
     check(networkDelayTime(times, 3, 1) == 2,
           "two-hop path (1->3->2 = 2) beats the direct edge (1->2 = 10)");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

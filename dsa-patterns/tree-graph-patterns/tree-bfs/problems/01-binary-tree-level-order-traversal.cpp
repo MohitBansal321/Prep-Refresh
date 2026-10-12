@@ -36,6 +36,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct TreeNode {
   int val;
   TreeNode* left;
@@ -52,18 +55,18 @@ void freeTree(TreeNode* root) {
   delete root;
 }
 
-std::vector<std::vector<int>> levelOrder(TreeNode* root) {
-  std::vector<std::vector<int>> result;
+vector<vector<int>> levelOrder(TreeNode* root) {
+  vector<vector<int>> result;
   if (root == nullptr) {
     return result;
   }
 
-  std::queue<TreeNode*> q;
+  queue<TreeNode*> q;
   q.push(root);
 
   while (!q.empty()) {
     size_t level_size = q.size();  // Snapshot: the level-size trick.
-    std::vector<int> level_values;
+    vector<int> level_values;
     level_values.reserve(level_size);
 
     for (size_t i = 0; i < level_size; ++i) {
@@ -79,7 +82,7 @@ std::vector<std::vector<int>> levelOrder(TreeNode* root) {
       }
     }
 
-    result.push_back(std::move(level_values));
+    result.push_back(move(level_values));
   }
 
   return result;
@@ -89,12 +92,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -107,7 +110,7 @@ int main() {
     root->right->left = new TreeNode(15);
     root->right->right = new TreeNode(7);
 
-    std::vector<std::vector<int>> expected = {{3}, {9, 20}, {15, 7}};
+    vector<vector<int>> expected = {{3}, {9, 20}, {15, 7}};
     check(levelOrder(root) == expected, "classic example -> [[3],[9,20],[15,7]]");
 
     freeTree(root);
@@ -119,7 +122,7 @@ int main() {
 
   {
     TreeNode* root = new TreeNode(1);
-    std::vector<std::vector<int>> expected = {{1}};
+    vector<vector<int>> expected = {{1}};
     check(levelOrder(root) == expected, "single node -> [[1]]");
     freeTree(root);
   }
@@ -137,7 +140,7 @@ int main() {
     root->right->left = new TreeNode(6);
     root->right->right = new TreeNode(7);
 
-    std::vector<std::vector<int>> expected = {{1}, {2, 3}, {4, 5, 6, 7}};
+    vector<vector<int>> expected = {{1}, {2, 3}, {4, 5, 6, 7}};
     check(levelOrder(root) == expected, "perfect tree depth 3 -> [[1],[2,3],[4,5,6,7]]");
 
     freeTree(root);
@@ -149,12 +152,12 @@ int main() {
     root->left = new TreeNode(2);
     root->left->left = new TreeNode(3);
 
-    std::vector<std::vector<int>> expected = {{1}, {2}, {3}};
+    vector<vector<int>> expected = {{1}, {2}, {3}};
     check(levelOrder(root) == expected, "left-skewed chain -> [[1],[2],[3]]");
 
     freeTree(root);
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

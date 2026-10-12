@@ -16,12 +16,13 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Maximize value (rod cutting), capacity FORWARD fill
-std::vector<long long> dp(capacity + 1, 0);   // dp[0] = 0 is a real base case
+vector<long long> dp(capacity + 1, 0);   // dp[0] = 0 is a real base case
 for (int w = 1; w <= capacity; ++w) {
     for (int i = 0; i < n; ++i) {
         if (weights[i] <= w) {
-            dp[w] = std::max(dp[w], dp[w - weights[i]] + values[i]);
+            dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
         }
     }
 }
@@ -29,12 +30,12 @@ for (int w = 1; w <= capacity; ++w) {
 
 // Minimize count to an EXACT target (coin change)
 const int UNREACHABLE = INT_MAX / 2;
-std::vector<int> dp(amount + 1, UNREACHABLE);
+vector<int> dp(amount + 1, UNREACHABLE);
 dp[0] = 0;                                    // 0 coins needed to make amount 0
 for (int w = 1; w <= amount; ++w) {
     for (int c : coins) {
         if (c <= w && dp[w - c] != UNREACHABLE) {
-            dp[w] = std::min(dp[w], dp[w - c] + 1);
+            dp[w] = min(dp[w], dp[w - c] + 1);
         }
     }
 }
@@ -43,7 +44,7 @@ for (int w = 1; w <= amount; ++w) {
 // Count DISTINCT COMBINATIONS to an exact target (coin change II)
 // NOTE the loop order: coin OUTER, amount INNER — this is what makes it
 // count combinations instead of permutations.
-std::vector<long long> dp(amount + 1, 0);
+vector<long long> dp(amount + 1, 0);
 dp[0] = 1;                                    // exactly 1 way to make 0: use nothing
 for (int c : coins) {
     for (int w = c; w <= amount; ++w) {

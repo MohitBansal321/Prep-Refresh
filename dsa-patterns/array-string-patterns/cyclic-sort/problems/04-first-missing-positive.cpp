@@ -104,6 +104,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // cyclic_sort
 //
@@ -112,7 +115,7 @@
 // in-range guard does real work — arbitrary noise in the input must be left
 // untouched rather than crashing the swap.
 // ----------------------------------------------------------------------------
-void cyclic_sort(std::vector<int>& nums) {
+void cyclic_sort(vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   int i = 0;
 
@@ -129,7 +132,7 @@ void cyclic_sort(std::vector<int>& nums) {
       // and an `i != correct_index` test would swap two equal values back and
       // forth forever.
       if (nums[i] != nums[correct_index]) {
-        std::swap(nums[i], nums[correct_index]);
+        swap(nums[i], nums[correct_index]);
         continue;  // Do NOT advance: re-examine whatever just landed at i.
       }
     }
@@ -146,7 +149,7 @@ void cyclic_sort(std::vector<int>& nums) {
 // about allocating no structure proportional to n and holds for a
 // by-reference call.
 // ----------------------------------------------------------------------------
-int firstMissingPositive(std::vector<int> nums) {
+int firstMissingPositive(vector<int> nums) {
   const int n = static_cast<int>(nums.size());
 
   cyclic_sort(nums);
@@ -168,11 +171,11 @@ int firstMissingPositive(std::vector<int> nums) {
 // ============================================================================
 // Test scaffolding
 // ============================================================================
-std::string to_string(const std::vector<int>& v) {
-  std::string out = "[";
+string to_string(const vector<int>& v) {
+  string out = "[";
   for (size_t i = 0; i < v.size(); ++i) {
     if (i) out += ",";
-    out += std::to_string(v[i]);
+    out += to_string(v[i]);
   }
   out += "]";
   return out;
@@ -182,20 +185,20 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto check_result = [&](std::vector<int> input, int expected,
-                          const std::string& note) {
-    const std::string label = to_string(input) + " -> " +
-                              std::to_string(expected) + "  (" + note + ")";
+  auto check_result = [&](vector<int> input, int expected,
+                          const string& note) {
+    const string label = to_string(input) + " -> " +
+                              to_string(expected) + "  (" + note + ")";
     check(firstMissingPositive(input) == expected, label);
   };
 
@@ -241,17 +244,17 @@ int main() {
 
   // --- The sorting pass itself, inspected directly -----------------------
   {
-    std::vector<int> nums = {3, 4, -1, 1};
+    vector<int> nums = {3, 4, -1, 1};
     cyclic_sort(nums);
     // 1 and 3 reach their homes (indices 0 and 2); 4 reaches index 3; -1 is
     // noise and is simply parked wherever a swap left it — at index 1, which
     // is 2's home, and that unfilled home is the answer.
-    std::vector<int> expected = {1, -1, 3, 4};
+    vector<int> expected = {1, -1, 3, 4};
     check(nums == expected,
           "sorting pass: [3,4,-1,1] -> " + to_string(expected) +
               " (noise ends up parked in the unfilled home)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

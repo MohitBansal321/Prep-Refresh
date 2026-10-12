@@ -21,7 +21,7 @@
 // automatically works with its own independent copy -- appending to it in
 // one branch can never affect a sibling branch. That is a deliberate choice:
 // it avoids the explicit "un-append on the way back up" discipline that a
-// SHARED mutable path (a std::vector<int> reused across calls, as in
+// SHARED mutable path (a vector<int> reused across calls, as in
 // 03-path-sum-ii.cpp) would require. The cost is that each recursive call
 // allocates its own string copy -- a reasonable trade for this problem's
 // small typical path lengths, and worth contrasting explicitly with 03's
@@ -53,6 +53,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct TreeNode {
   int val;
   TreeNode* left;
@@ -60,10 +63,10 @@ struct TreeNode {
   TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
 };
 
-void collectPaths(TreeNode* node, std::string pathSoFar, std::vector<std::string>& results) {
+void collectPaths(TreeNode* node, string pathSoFar, vector<string>& results) {
   if (!node) return;  // Base case: nothing here, nothing to add.
 
-  pathSoFar += std::to_string(node->val);
+  pathSoFar += to_string(node->val);
 
   bool isLeaf = (!node->left && !node->right);
   if (isLeaf) {
@@ -75,8 +78,8 @@ void collectPaths(TreeNode* node, std::string pathSoFar, std::vector<std::string
   if (node->right) collectPaths(node->right, pathSoFar + "->", results);
 }
 
-std::vector<std::string> binaryTreePaths(TreeNode* root) {
-  std::vector<std::string> results;
+vector<string> binaryTreePaths(TreeNode* root) {
+  vector<string> results;
   collectPaths(root, "", results);
   return results;
 }
@@ -105,28 +108,28 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     TreeNode* root = buildExampleTree();
-    std::vector<std::string> paths = binaryTreePaths(root);
-    std::vector<std::string> expected = {"1->2->5", "1->3"};
+    vector<string> paths = binaryTreePaths(root);
+    vector<string> expected = {"1->2->5", "1->3"};
     check(paths == expected, "example tree -> [\"1->2->5\", \"1->3\"]");
     deleteTree(root);
   }
 
   {
     TreeNode* single = new TreeNode(42);
-    std::vector<std::string> paths = binaryTreePaths(single);
-    std::vector<std::string> expected = {"42"};
+    vector<string> paths = binaryTreePaths(single);
+    vector<string> expected = {"42"};
     check(paths == expected, "single node -> [\"42\"] (root is its own leaf)");
     deleteTree(single);
   }
@@ -136,17 +139,17 @@ int main() {
     TreeNode* root = new TreeNode(1);
     root->left = new TreeNode(2);
     root->left->left = new TreeNode(3);
-    std::vector<std::string> paths = binaryTreePaths(root);
-    std::vector<std::string> expected = {"1->2->3"};
+    vector<string> paths = binaryTreePaths(root);
+    vector<string> expected = {"1->2->3"};
     check(paths == expected, "left-skewed chain -> single path \"1->2->3\"");
     deleteTree(root);
   }
 
   {
-    std::vector<std::string> paths = binaryTreePaths(nullptr);
+    vector<string> paths = binaryTreePaths(nullptr);
     check(paths.empty(), "empty tree -> no paths");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

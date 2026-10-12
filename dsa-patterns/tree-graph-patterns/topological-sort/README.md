@@ -4,7 +4,8 @@
 > **In one line:** Kahn's algorithm: repeatedly peel off nodes with zero remaining prerequisites, decrementing their neighbours' in-degree as they're removed — if some nodes never reach in-degree 0, the graph has a cycle.
 
 ```cpp
-std::queue<int> readyQueue;
+using namespace std;
+queue<int> readyQueue;
 for (int node = 0; node < numNodes; ++node) {
   if (inDegree[node] == 0) readyQueue.push(node);   // no prerequisites: safe to place first
 }

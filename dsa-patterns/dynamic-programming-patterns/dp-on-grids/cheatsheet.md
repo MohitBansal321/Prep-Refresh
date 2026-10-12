@@ -16,8 +16,9 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Counting variant (e.g. Unique Paths)
-std::vector<std::vector<long long>> dp(rows, std::vector<long long>(cols, 0));
+vector<vector<long long>> dp(rows, vector<long long>(cols, 0));
 for (int r = 0; r < rows; ++r) {
   for (int c = 0; c < cols; ++c) {
     if (r == 0 || c == 0) { dp[r][c] = 1; continue; }  // one straight-line way
@@ -32,7 +33,7 @@ for (int r = 0; r < rows; ++r) {
     if (r == 0 && c == 0) { dp[r][c] = grid[0][0]; continue; }
     int fromTop  = (r > 0) ? dp[r - 1][c] : INT_MAX;
     int fromLeft = (c > 0) ? dp[r][c - 1] : INT_MAX;
-    dp[r][c] = std::min(fromTop, fromLeft) + grid[r][c];
+    dp[r][c] = min(fromTop, fromLeft) + grid[r][c];
   }
 }
 

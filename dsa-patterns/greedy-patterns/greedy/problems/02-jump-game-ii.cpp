@@ -51,10 +51,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the minimum number of jumps to reach the last index.
 // Preconditions per LeetCode: nums.size() >= 1 and the last index is always
 // reachable (we still return a well-defined count without re-verifying).
-int jump(const std::vector<int>& nums) {
+int jump(const vector<int>& nums) {
   int n = static_cast<int>(nums.size());
   int jumps = 0;      // BFS depth committed so far.
   int curEnd = 0;     // Rightmost index reachable with exactly `jumps` jumps.
@@ -65,7 +68,7 @@ int jump(const std::vector<int>& nums) {
   for (int i = 0; i < n - 1; ++i) {
     // This index is inside the current layer, so its jump feeds the NEXT
     // layer's boundary. Irrevocable local update -- route stays irrelevant.
-    farthest = std::max(farthest, i + nums[i]);
+    farthest = max(farthest, i + nums[i]);
 
     // Current layer exhausted at i: the only way onward is one more jump,
     // and the best that jump can do is reach the accumulated frontier.
@@ -87,12 +90,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -146,6 +149,6 @@ int main() {
     check(jump({1, 2, 3}) == 2, "[1,2,3] -> exact-boundary landing, 2 jumps");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

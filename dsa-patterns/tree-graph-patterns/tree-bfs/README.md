@@ -3,16 +3,17 @@
 > **In one line:** snapshot `q.size()` *before* consuming the queue — that count is exactly the current level, because children pushed during the loop are invisible to it.
 
 ```cpp
-std::vector<std::vector<int>> levelOrder(TreeNode* root) {
-  std::vector<std::vector<int>> result;
+using namespace std;
+vector<vector<int>> levelOrder(TreeNode* root) {
+  vector<vector<int>> result;
   if (root == nullptr) return result;
 
-  std::queue<TreeNode*> q;
+  queue<TreeNode*> q;
   q.push(root);                          // the queue now holds exactly level 0
 
   while (!q.empty()) {
     size_t level_size = q.size();        // <-- the whole pattern is this line
-    std::vector<int> level_values;
+    vector<int> level_values;
 
     for (size_t i = 0; i < level_size; ++i) {
       TreeNode* node = q.front();
@@ -22,7 +23,7 @@ std::vector<std::vector<int>> levelOrder(TreeNode* root) {
       if (node->left  != nullptr) q.push(node->left);   // next level
       if (node->right != nullptr) q.push(node->right);
     }
-    result.push_back(std::move(level_values));   // one commit per level
+    result.push_back(move(level_values));   // one commit per level
   }
   return result;
 }

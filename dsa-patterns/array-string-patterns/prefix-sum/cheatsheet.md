@@ -16,8 +16,9 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Build phase — O(n), done once.
-std::vector<long long> prefix(n + 1, 0);
+vector<long long> prefix(n + 1, 0);
 for (int i = 1; i <= n; ++i) {
     prefix[i] = prefix[i - 1] + arr[i - 1];
 }
@@ -28,7 +29,7 @@ long long rangeSum(int i, int j) {           // inclusive, 0-indexed
 }
 
 // Subarray-sum-equals-K family (prefix sum + hash map of frequencies):
-std::unordered_map<long long, int> seen{{0, 1}};   // prefixSum -> count seen so far
+unordered_map<long long, int> seen{{0, 1}};   // prefixSum -> count seen so far
 long long running = 0;
 int count = 0;
 for (int x : arr) {

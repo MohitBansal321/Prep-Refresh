@@ -42,13 +42,16 @@
 #include <string>
 #include <vector>
 
-int eraseOverlapIntervals(std::vector<std::vector<int>> intervals) {
+using namespace std;
+
+
+int eraseOverlapIntervals(vector<vector<int>> intervals) {
   if (intervals.empty()) return 0;
 
   // Sort by END time — the key insight that separates this problem from
   // plain Merge Intervals (which sorts by start).
-  std::sort(intervals.begin(), intervals.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
+  sort(intervals.begin(), intervals.end(),
+            [](const vector<int>& a, const vector<int>& b) {
               return a[1] < b[1];
             });
 
@@ -78,9 +81,9 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](int actual, int expected, const std::string& label) {
+  auto check = [&](int actual, int expected, const string& label) {
     bool ok = (actual == expected);
-    std::cout << (ok ? "[PASS] " : "[FAIL] ") << label << " (got " << actual
+    cout << (ok ? "[PASS] " : "[FAIL] ") << label << " (got " << actual
                << ", expected " << expected << ")\n";
     ok ? ++pass_count : ++fail_count;
   };
@@ -103,6 +106,6 @@ int main() {
                                 {-62, -49}}), 3,
         "unsorted mixed-sign intervals, four of five overlap once sorted by end");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

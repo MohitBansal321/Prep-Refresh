@@ -55,6 +55,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
 class MedianFinder {
  public:
@@ -80,7 +81,7 @@ class MedianFinder {
 
   double findMedian() const {
     if (low_.empty() && high_.empty()) {
-      throw std::logic_error("findMedian() called with no numbers inserted.");
+      throw logic_error("findMedian() called with no numbers inserted.");
     }
     if (low_.size() == high_.size()) {
       return (static_cast<double>(low_.top()) + static_cast<double>(high_.top())) / 2.0;
@@ -89,20 +90,20 @@ class MedianFinder {
   }
 
  private:
-  std::priority_queue<int> low_;                                          // max-heap
-  std::priority_queue<int, std::vector<int>, std::greater<int>> high_;    // min-heap
+  priority_queue<int> low_;                                          // max-heap
+  priority_queue<int, vector<int>, greater<int>> high_;    // min-heap
 };
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -166,12 +167,12 @@ int main() {
     bool threw = false;
     try {
       mf.findMedian();
-    } catch (const std::logic_error&) {
+    } catch (const logic_error&) {
       threw = true;
     }
     check(threw, "findMedian() with no inserts -> throws std::logic_error");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

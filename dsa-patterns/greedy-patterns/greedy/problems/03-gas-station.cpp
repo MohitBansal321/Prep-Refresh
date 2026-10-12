@@ -48,8 +48,11 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns an index from which the full circuit is completable, or -1.
-int completeCircuit(const std::vector<int>& gas, const std::vector<int>& cost) {
+int completeCircuit(const vector<int>& gas, const vector<int>& cost) {
   int total = 0;   // Net gain around the WHOLE circuit. Decides existence.
   int tank = 0;    // Tank of the current candidate run since `start`.
   int start = 0;   // Current candidate starting station.
@@ -78,12 +81,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -131,6 +134,6 @@ int main() {
           "gas [1,1,10], cost [2,2,1] -> two resets then start 2");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

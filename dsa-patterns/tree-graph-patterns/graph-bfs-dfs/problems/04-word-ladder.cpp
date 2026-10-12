@@ -109,13 +109,16 @@
 #include <unordered_set>
 #include <vector>
 
-int ladderLength(const std::string& beginWord,
-                 const std::string& endWord,
-                 const std::vector<std::string>& wordList) {
+using namespace std;
+
+
+int ladderLength(const string& beginWord,
+                 const string& endWord,
+                 const vector<string>& wordList) {
   // The dictionary. It serves two purposes at once: "is this candidate a real
   // word?" and "has this word already been visited?" — because a word is
   // ERASED the moment it is discovered.
-  std::unordered_set<std::string> unused(wordList.begin(), wordList.end());
+  unordered_set<string> unused(wordList.begin(), wordList.end());
 
   // Early exit: the rules require endWord to be in wordList, so if it is not,
   // no sequence can possibly end there. Skipping this check does not produce a
@@ -127,7 +130,7 @@ int ladderLength(const std::string& beginWord,
   // must be removed, or the BFS could rediscover and re-enqueue its own start.
   unused.erase(beginWord);
 
-  std::queue<std::string> frontier;
+  queue<string> frontier;
   frontier.push(beginWord);
 
   // DISTANCE STARTS AT 1, NOT 0. The problem counts the number of WORDS in the
@@ -145,7 +148,7 @@ int ladderLength(const std::string& beginWord,
     int ringSize = static_cast<int>(frontier.size());
 
     for (int i = 0; i < ringSize; ++i) {
-      std::string word = frontier.front();
+      string word = frontier.front();
       frontier.pop();
 
       // Enumerate neighbours by mutation, not by comparison. For each
@@ -159,7 +162,7 @@ int ladderLength(const std::string& beginWord,
 
           word[pos] = letter;
 
-          std::unordered_set<std::string>::iterator found = unused.find(word);
+          unordered_set<string>::iterator found = unused.find(word);
           if (found == unused.end()) continue;  // Not a word, or already visited.
 
           if (word == endWord) {
@@ -192,18 +195,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hot");
     words.push_back("dot");
     words.push_back("dog");
@@ -216,7 +219,7 @@ int main() {
 
   {
     // Same dictionary minus "cog": endWord is not in the list at all.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hot");
     words.push_back("dot");
     words.push_back("dog");
@@ -228,14 +231,14 @@ int main() {
 
   {
     // Empty dictionary: the early endWord check returns before any traversal.
-    std::vector<std::string> words;
+    vector<string> words;
     check(ladderLength("hit", "cog", words) == 0, "empty wordList -> 0");
   }
 
   {
     // One hop: begin and end differ by a single letter, and endWord is present.
     // 2 words, not 1 -- the off-by-one guard.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("cog");
     check(ladderLength("cot", "cog", words) == 2, "single hop -> 2 words (not 1)");
   }
@@ -243,7 +246,7 @@ int main() {
   {
     // Single-character words: L == 1, so every dictionary word is adjacent to
     // every other. Exercises the smallest possible mutation loop.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("a");
     words.push_back("b");
     words.push_back("c");
@@ -253,7 +256,7 @@ int main() {
   {
     // A dead end plus the real route. "hot"->"hut" is a valid transformation
     // that leads nowhere; BFS must not be derailed by it.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hot");
     words.push_back("hut");
     words.push_back("hog");
@@ -270,7 +273,7 @@ int main() {
     // on it visited, and report 5 -- a correct-looking answer that is simply not
     // the minimum. BFS exhausts the entire 2-word ring (baa, aab) before any
     // 3-word candidate, so it discovers "abb" via "aab" and cannot miss it.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("aab");  // short route, step 1
     words.push_back("abb");  // the target
     words.push_back("baa");  // long route, step 1
@@ -283,7 +286,7 @@ int main() {
   {
     // A bridging word makes an otherwise-unreachable target reachable: "cot"
     // is the only word joining the "h_t" group to the "co_" group.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hot");
     words.push_back("cot");
     words.push_back("cog");
@@ -294,7 +297,7 @@ int main() {
     // Genuinely unreachable: endWord is present but in a disconnected part of
     // the word graph (nothing is one letter away from anything in the other
     // group).
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hot");
     words.push_back("dog");
     check(ladderLength("hit", "dog", words) == 0,
@@ -304,7 +307,7 @@ int main() {
   {
     // beginWord itself appears in wordList. It must be erased up front, or it
     // can be rediscovered and re-enqueued.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hit");
     words.push_back("hot");
     words.push_back("hog");
@@ -315,7 +318,7 @@ int main() {
     // Duplicate entries in wordList. The unordered_set collapses them, so the
     // answer is unaffected -- worth asserting, since a vector-based visited
     // scheme could double-count.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hot");
     words.push_back("hot");
     words.push_back("hog");
@@ -326,7 +329,7 @@ int main() {
   {
     // A straight chain of 5 dictionary words: the longest ladder here, and a
     // check that the ring counter increments exactly once per level.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("aab");
     words.push_back("abb");
     words.push_back("bbb");
@@ -340,12 +343,12 @@ int main() {
     // differ, but the code should not hang or misbehave: the early check finds
     // endWord present, beginWord is erased (so endWord is gone too), and the
     // BFS finds nothing -> 0. Documented, not a hidden crash.
-    std::vector<std::string> words;
+    vector<string> words;
     words.push_back("hit");
     check(ladderLength("hit", "hit", words) == 0,
           "beginWord == endWord (out of spec) -> 0, no hang");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

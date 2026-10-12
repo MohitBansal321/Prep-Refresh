@@ -39,18 +39,21 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the cheapest price from src to dst using at most k+1 edges, or -1.
-int findCheapestPrice(int n, const std::vector<std::vector<int>>& flights,
+int findCheapestPrice(int n, const vector<vector<int>>& flights,
                        int src, int dst, int k) {
-  const long long kInf = std::numeric_limits<long long>::max();
-  std::vector<long long> dist(n, kInf);
+  const long long kInf = numeric_limits<long long>::max();
+  vector<long long> dist(n, kInf);
   dist[src] = 0;
 
   for (int pass = 0; pass <= k; ++pass) {
     // CRITICAL: relax against a snapshot from the end of the previous pass.
     // Mutating `dist` in place mid-pass would let a single pass chain two
     // improvements together, silently using k+2 edges instead of k+1.
-    std::vector<long long> next = dist;
+    vector<long long> next = dist;
     for (const auto& f : flights) {
       int u = f[0], v = f[1], price = f[2];
       if (dist[u] == kInf) continue;
@@ -71,12 +74,12 @@ int findCheapestPrice(int n, const std::vector<std::vector<int>>& flights,
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -87,7 +90,7 @@ int main() {
     // k=1 (at most 2 edges). The cheap route 0->1->2->3 needs 3 edges
     // (2 stops), exceeding the budget, so the algorithm must fall back to
     // 0->2 (500) -> 3 (100) = 600, which uses exactly 2 edges (1 stop).
-    std::vector<std::vector<int>> flights = {
+    vector<vector<int>> flights = {
         {0, 1, 100}, {1, 2, 100}, {2, 3, 100}, {0, 2, 500}};
     check(findCheapestPrice(4, flights, 0, 3, 1) == 600,
           "k=1 stop -> 600 (0->2->3), the cheap 3-edge route is out of budget");
@@ -96,7 +99,7 @@ int main() {
   {
     // Same graph, k=0 (direct flights only, at most 1 edge) -- no edge
     // 0->3 exists directly, so the destination is unreachable.
-    std::vector<std::vector<int>> flights = {
+    vector<vector<int>> flights = {
         {0, 1, 100}, {1, 2, 100}, {2, 3, 100}, {0, 2, 500}};
     check(findCheapestPrice(4, flights, 0, 3, 0) == -1,
           "k=0 stops, no direct edge to dst -> -1");
@@ -105,7 +108,7 @@ int main() {
   {
     // Same graph, k=2 (unlimited for this graph) -- the cheap 3-edge route
     // (0->1->2->3 = 300) is now within budget and should win over 600.
-    std::vector<std::vector<int>> flights = {
+    vector<vector<int>> flights = {
         {0, 1, 100}, {1, 2, 100}, {2, 3, 100}, {0, 2, 500}};
     check(findCheapestPrice(4, flights, 0, 3, 2) == 300,
           "k=2 stops -> 300, the cheap 3-edge route now fits the budget");
@@ -113,7 +116,7 @@ int main() {
 
   {
     // src == dst: zero edges needed, cost is trivially 0 regardless of k.
-    std::vector<std::vector<int>> flights = {{0, 1, 100}};
+    vector<vector<int>> flights = {{0, 1, 100}};
     check(findCheapestPrice(2, flights, 0, 0, 0) == 0,
           "src == dst -> 0, no flight needed");
   }
@@ -123,7 +126,7 @@ int main() {
     // budget -- confirms the algorithm respects k even when a cheaper,
     // over-budget path exists, rather than always returning the global
     // cheapest path regardless of hop count.
-    std::vector<std::vector<int>> flights = {
+    vector<vector<int>> flights = {
         {0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {0, 4, 100}};
     check(findCheapestPrice(5, flights, 0, 4, 2) == 100,
           "cheap 4-edge path (cost 4) exceeds k=2 budget -> falls back to "
@@ -132,6 +135,6 @@ int main() {
           "k=3 stops -> the cheap 4-edge path (cost 4) now fits");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

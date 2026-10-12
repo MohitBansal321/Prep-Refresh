@@ -73,11 +73,14 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Shared helper: total of the array. Kept separate so both implementations
 // agree on the odd-total early exit without duplicating the reasoning.
 // ----------------------------------------------------------------------------
-static int arraySum(const std::vector<int>& nums) {
+static int arraySum(const vector<int>& nums) {
   int total = 0;
   for (size_t k = 0; k < nums.size(); ++k) {
     total += nums[k];
@@ -90,18 +93,18 @@ static int arraySum(const std::vector<int>& nums) {
 //
 // dp[i][s] = can a sum of exactly s be formed using only the first i numbers?
 //
-// Note the use of std::vector<char> rather than std::vector<bool>: the latter
+// Note the use of vector<char> rather than vector<bool>: the latter
 // is a bit-packed specialization whose element access is slower and whose
 // references are proxy objects, which makes it a poor default for DP tables.
 // ----------------------------------------------------------------------------
-bool canPartition2D(const std::vector<int>& nums) {
+bool canPartition2D(const vector<int>& nums) {
   int total = arraySum(nums);
   if (total % 2 != 0) return false;  // Odd total: no equal split can exist.
 
   int target = total / 2;
   int n = static_cast<int>(nums.size());
 
-  std::vector<std::vector<char> > dp(n + 1, std::vector<char>(target + 1, 0));
+  vector<vector<char> > dp(n + 1, vector<char>(target + 1, 0));
 
   // Base column: a sum of 0 is always reachable -- take nothing. This is the
   // dp[*][0] = 0-value base case from ../README.md's Architecture section,
@@ -135,13 +138,13 @@ bool canPartition2D(const std::vector<int>& nums) {
 //
 // Mirrors knapsack01Optimized in ../code.cpp, with max() replaced by an OR.
 // ----------------------------------------------------------------------------
-bool canPartition1D(const std::vector<int>& nums) {
+bool canPartition1D(const vector<int>& nums) {
   int total = arraySum(nums);
   if (total % 2 != 0) return false;
 
   int target = total / 2;
 
-  std::vector<char> dp(target + 1, 0);
+  vector<char> dp(target + 1, 0);
   dp[0] = 1;  // The empty subset. Omit this and nothing is ever reachable.
 
   for (size_t k = 0; k < nums.size(); ++k) {
@@ -170,7 +173,7 @@ bool canPartition1D(const std::vector<int>& nums) {
 //
 // Guarded to small n because 2^n is exactly the blowup we are avoiding.
 // ----------------------------------------------------------------------------
-bool canPartitionBruteForce(const std::vector<int>& nums) {
+bool canPartitionBruteForce(const vector<int>& nums) {
   int n = static_cast<int>(nums.size());
   if (n > 20) return false;  // Refuse rather than hang; tests stay small.
 
@@ -196,12 +199,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -209,8 +212,8 @@ int main() {
   // Every case runs all three implementations and demands they agree, so a
   // divergence between the 2D table, the 1D reverse sweep, and the brute
   // force shows up as a failure rather than as a silently plausible number.
-  auto checkAll = [&](const std::vector<int>& nums, bool expected,
-                      const std::string& label) {
+  auto checkAll = [&](const vector<int>& nums, bool expected,
+                      const string& label) {
     bool a = canPartition2D(nums);
     bool b = canPartition1D(nums);
     bool c = canPartitionBruteForce(nums);
@@ -220,13 +223,13 @@ int main() {
   };
 
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(5); nums.push_back(11); nums.push_back(5);
     checkAll(nums, true, "[1,5,11,5] -> true ([1,5,5] | [11], each sums to 11)");
   }
 
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(2); nums.push_back(3); nums.push_back(5);
     checkAll(nums, false, "[1,2,3,5] -> false (total 11 is odd)");
   }
@@ -235,7 +238,7 @@ int main() {
     // Even total, yet still unsplittable -- the odd-total shortcut is only a
     // shortcut, never the whole answer. total = 8, target = 4, and the
     // reachable sums are {0,1,2,3,5,6,7,8}: 4 is missing.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(2); nums.push_back(5);
     checkAll(nums, false, "[1,2,5] -> false (total 8 is EVEN but 4 is unreachable)");
   }
@@ -243,7 +246,7 @@ int main() {
   {
     // Single element: total is that element, always trivially unsplittable
     // (an odd value fails on parity, an even value has no second piece).
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     checkAll(nums, false, "[1] -> false (single element, odd total)");
   }
@@ -252,34 +255,34 @@ int main() {
     // The forward-sweep trap in its smallest form. total = 2, target = 1.
     // A forward sweep over [2] would not fire here, but a forward sweep over
     // [3] with target 3 would wrongly reuse the 3; see the header comment.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(2);
     checkAll(nums, false, "[2] -> false (single element cannot be split in two)");
   }
 
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1); nums.push_back(1);
     checkAll(nums, true, "[1,1] -> true (duplicates, one to each side)");
   }
 
   {
     // All-same values, even count -> always splittable.
-    std::vector<int> nums;
+    vector<int> nums;
     for (int k = 0; k < 4; ++k) nums.push_back(2);
     checkAll(nums, true, "[2,2,2,2] -> true (all-same, even count)");
   }
 
   {
     // All-same values, odd count -> total is an odd multiple, never splittable.
-    std::vector<int> nums;
+    vector<int> nums;
     for (int k = 0; k < 3; ++k) nums.push_back(5);
     checkAll(nums, false, "[5,5,5] -> false (all-same, odd count -> odd total)");
   }
 
   {
     // Needs three of the five numbers on one side: 3 + 3 + 3 = 9 = 18 / 2.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(3); nums.push_back(3); nums.push_back(3);
     nums.push_back(4); nums.push_back(5);
     checkAll(nums, true, "[3,3,3,4,5] -> true (3+3+3 = 9 = half of 18)");
@@ -288,7 +291,7 @@ int main() {
   {
     // Zeros are legal weights and must not break the reverse sweep: a zero
     // contributes nothing and cannot make an odd total even.
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(0); nums.push_back(0); nums.push_back(4); nums.push_back(4);
     checkAll(nums, true, "[0,0,4,4] -> true (zero-weight items are harmless)");
   }
@@ -297,10 +300,10 @@ int main() {
     // Empty input: total 0, target 0, and the empty subset reaches 0 -- so
     // two empty halves both sum to 0. LeetCode never sends this, but the
     // implementations must still agree rather than crash on an empty table.
-    std::vector<int> nums;
+    vector<int> nums;
     checkAll(nums, true, "[] -> true (two empty halves, both summing to 0)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

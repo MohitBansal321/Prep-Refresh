@@ -44,7 +44,7 @@
 // The one caveat, and it is a real production one: recursive DFS on a grid that
 // is ALL land recurses up to m*n frames deep (a 1000x1000 all-land grid is a
 // million nested calls) and will blow the call stack. The iterative BFS version
-// — or an iterative DFS with an explicit std::stack — has no such limit. That
+// — or an iterative DFS with an explicit stack — has no such limit. That
 // tradeoff, not "shortest path," is the reason to switch traversals here.
 // Contrast with 04-word-ladder.cpp, where BFS is not a preference but a
 // correctness requirement.
@@ -84,6 +84,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // floodFill — recursive DFS from one land cell, marking the whole island.
 //
@@ -94,8 +97,8 @@
 // against the same fixture grid, and would otherwise need to rebuild it every
 // time. In an interview, say out loud which one you are doing and why.
 // ----------------------------------------------------------------------------
-void floodFill(const std::vector<std::string>& grid,
-               std::vector<std::vector<bool> >& visited,
+void floodFill(const vector<string>& grid,
+               vector<vector<bool> >& visited,
                int row,
                int col) {
   int rows = static_cast<int>(grid.size());
@@ -130,13 +133,13 @@ void floodFill(const std::vector<std::string>& grid,
   floodFill(grid, visited, row, col + 1);  // right
 }
 
-int numIslands(const std::vector<std::string>& grid) {
+int numIslands(const vector<string>& grid) {
   int rows = static_cast<int>(grid.size());
   if (rows == 0) return 0;
   int cols = static_cast<int>(grid[0].size());
   if (cols == 0) return 0;
 
-  std::vector<std::vector<bool> > visited(rows, std::vector<bool>(cols, false));
+  vector<vector<bool> > visited(rows, vector<bool>(cols, false));
   int islands = 0;
 
   // The outer scan over EVERY cell is the grid version of "loop over every
@@ -160,18 +163,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("11110");
     grid.push_back("11010");
     grid.push_back("11000");
@@ -180,7 +183,7 @@ int main() {
   }
 
   {
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("11000");
     grid.push_back("11000");
     grid.push_back("00100");
@@ -190,33 +193,33 @@ int main() {
 
   {
     // Empty input: the m == 0 early return must fire before any indexing.
-    std::vector<std::string> grid;
+    vector<string> grid;
     check(numIslands(grid) == 0, "empty grid (no rows) -> 0");
   }
 
   {
     // A row of zero width: cols == 0 must also be handled, or grid[0][0]
     // reads out of bounds.
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("");
     check(numIslands(grid) == 0, "grid with one zero-width row -> 0");
   }
 
   {
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("1");
     check(numIslands(grid) == 1, "single cell of land -> 1");
   }
 
   {
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("0");
     check(numIslands(grid) == 0, "single cell of water -> 0");
   }
 
   {
     // All water: the outer scan visits every cell and never starts a fill.
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("000");
     grid.push_back("000");
     check(numIslands(grid) == 0, "all water -> 0");
@@ -225,7 +228,7 @@ int main() {
   {
     // All land: one island, and the deepest recursion this file performs
     // (every cell is one frame on the call stack in the worst ordering).
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("111");
     grid.push_back("111");
     grid.push_back("111");
@@ -236,7 +239,7 @@ int main() {
     // THE 4-DIRECTIONAL TEST. These two land cells touch only at a corner.
     // Under 4-directional connectivity they are two islands; a solution that
     // sloppily also recursed diagonally would answer 1 and be wrong.
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("10");
     grid.push_back("01");
     check(numIslands(grid) == 2, "diagonal-only touch is NOT connected -> 2, not 1");
@@ -245,7 +248,7 @@ int main() {
   {
     // A "checkerboard" maximises the number of components: every land cell is
     // its own island. 5 land cells in a 3x3 checkerboard.
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("101");
     grid.push_back("010");
     grid.push_back("101");
@@ -255,11 +258,11 @@ int main() {
   {
     // Single row / single column: the bounds guards must not walk off either
     // end of a 1-wide grid.
-    std::vector<std::string> row;
+    vector<string> row;
     row.push_back("10101");
     check(numIslands(row) == 3, "single row 10101 -> 3");
 
-    std::vector<std::string> column;
+    vector<string> column;
     column.push_back("1");
     column.push_back("0");
     column.push_back("1");
@@ -269,7 +272,7 @@ int main() {
   {
     // A U-shape: proves the fill genuinely walks around a bend rather than
     // only travelling in straight lines.
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("101");
     grid.push_back("101");
     grid.push_back("111");
@@ -279,14 +282,14 @@ int main() {
   {
     // Input must survive the call unmodified — this is the payoff for using a
     // separate `visited` grid instead of overwriting '1' with '0' in place.
-    std::vector<std::string> grid;
+    vector<string> grid;
     grid.push_back("11");
     grid.push_back("11");
-    std::vector<std::string> before = grid;
+    vector<string> before = grid;
     numIslands(grid);
     check(grid == before, "input grid is not mutated by numIslands");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

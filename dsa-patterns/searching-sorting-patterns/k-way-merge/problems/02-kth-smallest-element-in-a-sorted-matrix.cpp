@@ -57,10 +57,13 @@
 #include <tuple>
 #include <vector>
 
-using HeapEntry = std::tuple<int, int, int>;  // {value, row, col}
-using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>>;
+using namespace std;
 
-int kthSmallest(const std::vector<std::vector<int>>& matrix, int k) {
+
+using HeapEntry = tuple<int, int, int>;  // {value, row, col}
+using MinHeap = priority_queue<HeapEntry, vector<HeapEntry>, greater<>>;
+
+int kthSmallest(const vector<vector<int>>& matrix, int k) {
   const int n = static_cast<int>(matrix.size());
   MinHeap heap;
 
@@ -74,12 +77,12 @@ int kthSmallest(const std::vector<std::vector<int>>& matrix, int k) {
 
   int popped_count = 0;
   while (!heap.empty()) {
-    // Unpack the tuple field by field with std::get<> rather than a C++17
+    // Unpack the tuple field by field with get<> rather than a C++17
     // structured binding, so this file compiles on older toolchains too.
     const HeapEntry top = heap.top();
-    const int value = std::get<0>(top);
-    const int row = std::get<1>(top);
-    const int col = std::get<2>(top);
+    const int value = get<0>(top);
+    const int row = get<1>(top);
+    const int col = get<2>(top);
     heap.pop();
     ++popped_count;
 
@@ -106,19 +109,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // ---- Test 1: the classic LeetCode example -----------------------------------
   {
-    std::vector<std::vector<int>> matrix = {
+    vector<vector<int>> matrix = {
         {1, 5, 9},
         {10, 11, 13},
         {12, 13, 15},
@@ -128,7 +131,7 @@ int main() {
 
   // ---- Test 2: k = 1 (smallest element overall, top-left in a sorted matrix) -
   {
-    std::vector<std::vector<int>> matrix = {
+    vector<vector<int>> matrix = {
         {1, 5, 9},
         {10, 11, 13},
         {12, 13, 15},
@@ -138,7 +141,7 @@ int main() {
 
   // ---- Test 3: k = n*n (largest element overall) ------------------------------
   {
-    std::vector<std::vector<int>> matrix = {
+    vector<vector<int>> matrix = {
         {1, 5, 9},
         {10, 11, 13},
         {12, 13, 15},
@@ -148,13 +151,13 @@ int main() {
 
   // ---- Test 4: single-element matrix -------------------------------------------
   {
-    std::vector<std::vector<int>> matrix = {{5}};
+    vector<vector<int>> matrix = {{5}};
     check(kthSmallest(matrix, 1) == 5, "1x1 matrix, k=1 -> 5");
   }
 
   // ---- Test 5: matrix with duplicate values ------------------------------------
   {
-    std::vector<std::vector<int>> matrix = {
+    vector<vector<int>> matrix = {
         {1, 2},
         {1, 3},
     };
@@ -164,7 +167,7 @@ int main() {
 
   // ---- Test 6: larger 4x4 matrix -------------------------------------------------
   {
-    std::vector<std::vector<int>> matrix = {
+    vector<vector<int>> matrix = {
         {1, 3, 5, 7},
         {2, 4, 6, 8},
         {3, 5, 7, 9},
@@ -174,6 +177,6 @@ int main() {
     check(kthSmallest(matrix, 6) == 4, "4x4 matrix, k=6 -> 4");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

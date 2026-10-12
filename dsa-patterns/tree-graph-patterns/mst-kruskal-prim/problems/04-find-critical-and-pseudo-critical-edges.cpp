@@ -48,10 +48,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
   int find(int x) {
     if (parent_[x] != x) parent_[x] = find(parent_[x]);
@@ -60,23 +63,23 @@ class DisjointSet {
   bool unionSets(int x, int y) {
     int rootX = find(x), rootY = find(y);
     if (rootX == rootY) return false;
-    if (rank_[rootX] < rank_[rootY]) std::swap(rootX, rootY);
+    if (rank_[rootX] < rank_[rootY]) swap(rootX, rootY);
     parent_[rootY] = rootX;
     if (rank_[rootX] == rank_[rootY]) ++rank_[rootX];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
 // Runs Kruskal's over `order` (a permutation of edge indices already sorted
 // by weight), optionally skipping `exclude` and optionally pre-including
 // `forceInclude` before considering anything else. Returns the total
 // weight, or -1 if the result is not a full spanning tree.
-int kruskalWeight(int n, const std::vector<std::vector<int>>& edges,
-                   const std::vector<int>& order, int exclude, int forceInclude) {
+int kruskalWeight(int n, const vector<vector<int>>& edges,
+                   const vector<int>& order, int exclude, int forceInclude) {
   DisjointSet dsu(n);
   int totalWeight = 0;
   int edgesUsed = 0;
@@ -100,18 +103,18 @@ int kruskalWeight(int n, const std::vector<std::vector<int>>& edges,
   return edgesUsed == n - 1 ? totalWeight : -1;
 }
 
-std::vector<std::vector<int>> findCriticalAndPseudoCriticalEdges(
-    int n, const std::vector<std::vector<int>>& edges) {
+vector<vector<int>> findCriticalAndPseudoCriticalEdges(
+    int n, const vector<vector<int>>& edges) {
   int m = static_cast<int>(edges.size());
-  std::vector<int> order(m);
-  std::iota(order.begin(), order.end(), 0);
-  std::sort(order.begin(), order.end(), [&](int a, int b) {
+  vector<int> order(m);
+  iota(order.begin(), order.end(), 0);
+  sort(order.begin(), order.end(), [&](int a, int b) {
     return edges[a][2] < edges[b][2];
   });
 
   int baseline = kruskalWeight(n, edges, order, -1, -1);
 
-  std::vector<int> critical, pseudo;
+  vector<int> critical, pseudo;
   for (int i = 0; i < m; ++i) {
     int withoutI = kruskalWeight(n, edges, order, i, -1);
     if (withoutI == -1 || withoutI > baseline) {
@@ -134,18 +137,18 @@ std::vector<std::vector<int>> findCriticalAndPseudoCriticalEdges(
 int g_pass = 0;
 int g_fail = 0;
 
-bool sameSet(std::vector<int> a, std::vector<int> b) {
-  std::sort(a.begin(), a.end());
-  std::sort(b.begin(), b.end());
+bool sameSet(vector<int> a, vector<int> b) {
+  sort(a.begin(), a.end());
+  sort(b.begin(), b.end());
   return a == b;
 }
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -155,7 +158,7 @@ int main() {
     // n=5, edges=[[0,1,1],[1,2,1],[2,3,2],[0,3,2],[0,4,3],[3,4,3],[1,4,6]]
     // (LeetCode's own worked example). Expected: critical = [0,1], pseudo =
     // [2,3,4,5]. Edge 6 (1-4, weight 6) is neither.
-    std::vector<std::vector<int>> edges = {
+    vector<vector<int>> edges = {
         {0, 1, 1}, {1, 2, 1}, {2, 3, 2}, {0, 3, 2}, {0, 4, 3}, {3, 4, 3}, {1, 4, 6}};
     auto result = findCriticalAndPseudoCriticalEdges(5, edges);
     check(sameSet(result[0], {0, 1}), "critical edges -> {0, 1}");
@@ -168,7 +171,7 @@ int main() {
     // the most expensive edge is neither critical nor pseudo-critical
     // (no MST ever includes it, since it is strictly worse than the
     // alternative).
-    std::vector<std::vector<int>> edges = {{0, 1, 1}, {1, 2, 2}, {0, 2, 3}};
+    vector<vector<int>> edges = {{0, 1, 1}, {1, 2, 2}, {0, 2, 3}};
     auto result = findCriticalAndPseudoCriticalEdges(3, edges);
     check(sameSet(result[0], {0, 1}),
           "distinct-weight triangle -> both cheap edges are critical");
@@ -181,7 +184,7 @@ int main() {
     // critical (any two of the three form a valid MST, so no single edge
     // is required by every MST), but all three are pseudo-critical (each
     // one appears in at least one valid MST).
-    std::vector<std::vector<int>> edges = {{0, 1, 1}, {1, 2, 1}, {0, 2, 1}};
+    vector<vector<int>> edges = {{0, 1, 1}, {1, 2, 1}, {0, 2, 1}};
     auto result = findCriticalAndPseudoCriticalEdges(3, edges);
     check(result[0].empty(),
           "equal-weight triangle -> no edge is critical (ties allow swapping)");
@@ -189,6 +192,6 @@ int main() {
           "equal-weight triangle -> all three edges are pseudo-critical");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

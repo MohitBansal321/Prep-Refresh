@@ -46,8 +46,11 @@
 #include <string>
 #include <unordered_map>
 
-int lengthOfLongestSubstring(const std::string& s) {
-    std::unordered_map<char, int> lastSeenIndex;  // char -> most recent index
+using namespace std;
+
+
+int lengthOfLongestSubstring(const string& s) {
+    unordered_map<char, int> lastSeenIndex;  // char -> most recent index
     int left = 0;
     int best = 0;
 
@@ -62,7 +65,7 @@ int lengthOfLongestSubstring(const std::string& s) {
         }
 
         lastSeenIndex[c] = right;  // record/refresh this character's position
-        best = std::max(best, right - left + 1);
+        best = max(best, right - left + 1);
     }
 
     return best;
@@ -73,15 +76,15 @@ int lengthOfLongestSubstring(const std::string& s) {
 // ----------------------------------------------------------------------------
 static int failures = 0;
 
-static void check(int actual, int expected, const std::string& label) {
+static void check(int actual, int expected, const string& label) {
     bool pass = (actual == expected);
-    std::cout << (pass ? "[PASS] " : "[FAIL] ") << label
+    cout << (pass ? "[PASS] " : "[FAIL] ") << label
               << " -> got " << actual << ", expected " << expected << '\n';
     if (!pass) ++failures;
 }
 
 int main() {
-    std::cout << "=== Longest Substring Without Repeating Characters (LC 3) ===\n\n";
+    cout << "=== Longest Substring Without Repeating Characters (LC 3) ===\n\n";
 
     check(lengthOfLongestSubstring("abcabcbb"), 3, "\"abcabcbb\"");
     check(lengthOfLongestSubstring("bbbbb"), 1, "\"bbbbb\"");
@@ -92,6 +95,6 @@ int main() {
     check(lengthOfLongestSubstring("abba"), 2, "\"abba\"");   // classic tricky case
     check(lengthOfLongestSubstring("au"), 2, "\"au\"");
 
-    std::cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
+    cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
     return failures == 0 ? 0 : 1;
 }

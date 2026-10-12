@@ -24,15 +24,18 @@
 #include <string>
 #include <vector>
 
-int coinChange(const std::vector<int>& coins, int amount) {
+using namespace std;
+
+
+int coinChange(const vector<int>& coins, int amount) {
     const int UNREACHABLE = INT_MAX / 2; // avoid overflow on dp[w - c] + 1
-    std::vector<int> dp(amount + 1, UNREACHABLE);
+    vector<int> dp(amount + 1, UNREACHABLE);
     dp[0] = 0; // base case: 0 coins needed to make amount 0
 
     for (int w = 1; w <= amount; ++w) {
         for (int c : coins) {
             if (c <= w && dp[w - c] != UNREACHABLE) {
-                dp[w] = std::min(dp[w], dp[w - c] + 1);
+                dp[w] = min(dp[w], dp[w - c] + 1);
             }
         }
     }
@@ -43,12 +46,12 @@ namespace {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(const std::string& label, int actual, int expected) {
+void check(const string& label, int actual, int expected) {
     if (actual == expected) {
-        std::cout << "[PASS] " << label << " => " << actual << "\n";
+        cout << "[PASS] " << label << " => " << actual << "\n";
         ++g_pass;
     } else {
-        std::cout << "[FAIL] " << label << " => got " << actual
+        cout << "[FAIL] " << label << " => got " << actual
                    << ", expected " << expected << "\n";
         ++g_fail;
     }
@@ -62,6 +65,6 @@ int main() {
     check("coins=[1,3,4], amount=6 (3+3)", coinChange({1, 3, 4}, 6), 2);
     check("coins=[186,419,83,408], amount=6249", coinChange({186, 419, 83, 408}, 6249), 20);
 
-    std::cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
+    cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
     return g_fail == 0 ? 0 : 1;
 }

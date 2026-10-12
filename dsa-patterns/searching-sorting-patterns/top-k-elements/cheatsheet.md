@@ -16,8 +16,9 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // "K largest" -- MIN-heap of size K (inverted relative to intuition)
-std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;
+priority_queue<int, vector<int>, greater<int>> minHeap;
 for (int value : nums) {
     minHeap.push(value);
     if (static_cast<int>(minHeap.size()) > k) {
@@ -27,7 +28,7 @@ for (int value : nums) {
 // minHeap now holds exactly the K largest values (NOT sorted order).
 
 // "K smallest" -- MAX-heap of size K (the mirror image)
-std::priority_queue<int> maxHeap;   // default priority_queue is already a max-heap
+priority_queue<int> maxHeap;   // default priority_queue is already a max-heap
 for (int value : nums) {
     maxHeap.push(value);
     if (static_cast<int>(maxHeap.size()) > k) {
@@ -36,10 +37,10 @@ for (int value : nums) {
 }
 
 // "K most frequent" -- same min-heap shape, keyed by frequency
-std::unordered_map<int, int> freq;
+unordered_map<int, int> freq;
 for (int value : nums) ++freq[value];
-std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>,
-                     std::greater<std::pair<int,int>>> minHeapByFreq;  // (count, value)
+priority_queue<pair<int,int>, vector<pair<int,int>>,
+                     greater<pair<int,int>>> minHeapByFreq;  // (count, value)
 for (auto& [value, count] : freq) {
     minHeapByFreq.push({count, value});
     if (static_cast<int>(minHeapByFreq.size()) > k) {

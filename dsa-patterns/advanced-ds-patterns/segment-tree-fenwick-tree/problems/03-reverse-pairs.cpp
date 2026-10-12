@@ -54,6 +54,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Fenwick Tree storing occurrence counts over compressed value-ranks.
 class FenwickCount {
  public:
@@ -71,20 +74,20 @@ class FenwickCount {
   }
 
  private:
-  std::vector<int> tree_;
+  vector<int> tree_;
   int n_;
 };
 
-long long reversePairs(const std::vector<int>& nums) {
+long long reversePairs(const vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   if (n == 0) return 0;
 
   // ---- Coordinate compression over the ORIGINAL values ------------------
   // Thresholds (2 * nums[j]) are searched against these keys via
   // upper_bound; they never need to be inserted themselves.
-  std::vector<long long> keys(nums.begin(), nums.end());
-  std::sort(keys.begin(), keys.end());
-  keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+  vector<long long> keys(nums.begin(), nums.end());
+  sort(keys.begin(), keys.end());
+  keys.erase(unique(keys.begin(), keys.end()), keys.end());
   const int m = static_cast<int>(keys.size());
 
   FenwickCount ft(m);
@@ -98,7 +101,7 @@ long long reversePairs(const std::vector<int>& nums) {
     long long threshold = 2LL * nums[j];  // long long: avoids int overflow
     int leq =
         static_cast<int>(
-            std::upper_bound(keys.begin(), keys.end(), threshold) -
+            upper_bound(keys.begin(), keys.end(), threshold) -
             keys.begin());  // number of distinct keys <= threshold
     if (leq > 0) {
       pairs += inserted - ft.query(leq - 1);
@@ -108,7 +111,7 @@ long long reversePairs(const std::vector<int>& nums) {
 
     // Insert nums[j] AFTER counting, since the pair needs i < j strictly.
     int rank =
-        static_cast<int>(std::lower_bound(keys.begin(), keys.end(),
+        static_cast<int>(lower_bound(keys.begin(), keys.end(),
                                           static_cast<long long>(nums[j])) -
                          keys.begin());
     ft.update(rank, 1);
@@ -119,7 +122,7 @@ long long reversePairs(const std::vector<int>& nums) {
 }
 
 // O(n^2) reference implementation used only to cross-check the Fenwick result.
-long long reversePairsBrute(const std::vector<int>& nums) {
+long long reversePairsBrute(const vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   long long pairs = 0;
   for (int i = 0; i < n; ++i) {
@@ -134,12 +137,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -178,7 +181,7 @@ int main() {
   {
     // Cross-check battery against brute force: assorted shapes including
     // sorted, reverse-sorted, mixed signs, and overflow-prone extremes.
-    std::vector<std::vector<int>> batteries = {
+    vector<vector<int>> batteries = {
         {1, 3, 2, 3, 1},
         {2, 4, 3, 5, 1},
         {5, 4, 3, 2, 1},
@@ -195,6 +198,6 @@ int main() {
     check(all_match, "battery of 7 arrays matches O(n^2) brute force");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

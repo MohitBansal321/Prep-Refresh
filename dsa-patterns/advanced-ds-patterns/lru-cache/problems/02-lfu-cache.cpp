@@ -31,7 +31,7 @@
 // can no longer represent the order, because entries now belong to frequency
 // groups:
 //
-//   freqList_: std::unordered_map<int, Bucket*>
+//   freqList_: unordered_map<int, Bucket*>
 //       maps a use-count f to one doubly linked list holding ALL nodes whose
 //       counter equals f, most-recently-used at the front.
 //   minFreq_: the smallest counter present anywhere in the cache.
@@ -69,13 +69,16 @@
 #include <string>
 #include <unordered_map>
 
+using namespace std;
+
+
 class LFUCache {
  public:
   explicit LFUCache(int capacity) : capacity_(capacity), minFreq_(0), size_(0) {}
 
   ~LFUCache() {
     // Nodes live inside buckets, so freeing every bucket frees every node.
-    std::unordered_map<int, Bucket*>::iterator it = freqList_.begin();
+    unordered_map<int, Bucket*>::iterator it = freqList_.begin();
     for (; it != freqList_.end(); ++it) {
       destroyBucket(it->second);
     }
@@ -83,7 +86,7 @@ class LFUCache {
 
   int get(int key) {
     if (capacity_ <= 0) return -1;
-    std::unordered_map<int, Node*>::iterator it = keyNode_.find(key);
+    unordered_map<int, Node*>::iterator it = keyNode_.find(key);
     if (it == keyNode_.end()) return -1;
     bump(it->second);  // a get is a use: move up one frequency bucket
     return it->second->value;
@@ -92,7 +95,7 @@ class LFUCache {
   void put(int key, int value) {
     if (capacity_ <= 0) return;
 
-    std::unordered_map<int, Node*>::iterator it = keyNode_.find(key);
+    unordered_map<int, Node*>::iterator it = keyNode_.find(key);
 
     // ---- Path 1: overwrite existing key ---------------------------------
     if (it != keyNode_.end()) {
@@ -173,7 +176,7 @@ class LFUCache {
   }
 
   Bucket* getOrCreateBucket(int freq) {
-    std::unordered_map<int, Bucket*>::iterator it = freqList_.find(freq);
+    unordered_map<int, Bucket*>::iterator it = freqList_.find(freq);
     if (it != freqList_.end()) return it->second;
     Bucket* b = new Bucket();
     freqList_[freq] = b;
@@ -200,20 +203,20 @@ class LFUCache {
   int capacity_;
   int minFreq_;                                  // lowest counter present
   int size_;                                     // number of cached keys
-  std::unordered_map<int, Node*> keyNode_;       // key -> node (one copy)
-  std::unordered_map<int, Bucket*> freqList_;    // freq -> bucket list
+  unordered_map<int, Node*> keyNode_;       // key -> node (one copy)
+  unordered_map<int, Bucket*> freqList_;    // freq -> bucket list
 };
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -270,6 +273,6 @@ int main() {
     check(cache.get(5) == 50, "miss left the real entry untouched");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

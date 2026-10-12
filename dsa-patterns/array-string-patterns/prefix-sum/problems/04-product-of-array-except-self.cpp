@@ -25,9 +25,12 @@
 #include <string>
 #include <vector>
 
-std::vector<long long> productExceptSelf(const std::vector<int>& nums) {
+using namespace std;
+
+
+vector<long long> productExceptSelf(const vector<int>& nums) {
   const size_t n = nums.size();
-  std::vector<long long> answer(n, 1);
+  vector<long long> answer(n, 1);
 
   // Pass 1 (left to right): answer[i] = product of nums[0 .. i-1].
   long long prefix_product = 1;
@@ -50,49 +53,49 @@ std::vector<long long> productExceptSelf(const std::vector<int>& nums) {
 int main() {
   int pass_count = 0;
   int fail_count = 0;
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto to_string_vec = [](const std::vector<long long>& v) {
-    std::string s = "[";
+  auto to_string_vec = [](const vector<long long>& v) {
+    string s = "[";
     for (size_t i = 0; i < v.size(); ++i) {
-      s += std::to_string(v[i]);
+      s += to_string(v[i]);
       if (i + 1 < v.size()) s += ", ";
     }
     return s + "]";
   };
 
   {
-    std::vector<int> nums = {1, 2, 3, 4};
-    std::vector<long long> expected = {24, 12, 8, 6};
+    vector<int> nums = {1, 2, 3, 4};
+    vector<long long> expected = {24, 12, 8, 6};
     auto result = productExceptSelf(nums);
     check(result == expected,
           "[1,2,3,4] -> " + to_string_vec(expected) + ", got " +
               to_string_vec(result));
   }
   {
-    std::vector<int> nums = {-1, 1, 0, -3, 3};
-    std::vector<long long> expected = {0, 0, 9, 0, 0};
+    vector<int> nums = {-1, 1, 0, -3, 3};
+    vector<long long> expected = {0, 0, 9, 0, 0};
     auto result = productExceptSelf(nums);
     check(result == expected,
           "[-1,1,0,-3,3] -> " + to_string_vec(expected) + ", got " +
               to_string_vec(result));
   }
   {
-    std::vector<int> nums = {2, 3};
-    std::vector<long long> expected = {3, 2};
+    vector<int> nums = {2, 3};
+    vector<long long> expected = {3, 2};
     auto result = productExceptSelf(nums);
     check(result == expected, "[2,3] -> " + to_string_vec(expected) +
                                    ", got " + to_string_vec(result));
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

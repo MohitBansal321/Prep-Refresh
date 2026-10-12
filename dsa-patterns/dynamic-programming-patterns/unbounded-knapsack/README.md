@@ -4,14 +4,15 @@
 > **In one line:** the same table shape as 0/1 Knapsack, but each coin/item can be reused any number of times — shown here as coin-change, minimizing the count of coins that sum to a target amount.
 
 ```cpp
+using namespace std;
 const int UNREACHABLE = INT_MAX / 2;
-std::vector<int> dp(amount + 1, UNREACHABLE);
+vector<int> dp(amount + 1, UNREACHABLE);
 dp[0] = 0;   // base case: 0 coins needed to make amount 0
 
 for (int w = 1; w <= amount; ++w) {
   for (int c : coins) {
     if (c <= w && dp[w - c] != UNREACHABLE) {
-      dp[w] = std::min(dp[w], dp[w - c] + 1);   // reuse coin c any number of times
+      dp[w] = min(dp[w], dp[w - c] + 1);   // reuse coin c any number of times
     }
   }
 }

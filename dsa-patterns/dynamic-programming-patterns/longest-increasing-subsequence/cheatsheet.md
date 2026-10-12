@@ -17,24 +17,25 @@
 
 ### Skeleton
 ```cpp
+using namespace std;
 // O(n^2)
 template <typename T>
-int lengthOfLIS_On2(const std::vector<T>& nums) {
+int lengthOfLIS_On2(const vector<T>& nums) {
   int n = nums.size();
-  std::vector<int> dp(n, 1);
+  vector<int> dp(n, 1);
   int best = 1;
   for (int i = 1; i < n; ++i)
     for (int j = 0; j < i; ++j)
-      if (nums[j] < nums[i]) { dp[i] = std::max(dp[i], dp[j] + 1); best = std::max(best, dp[i]); }
+      if (nums[j] < nums[i]) { dp[i] = max(dp[i], dp[j] + 1); best = max(best, dp[i]); }
   return best;
 }
 
 // O(n log n) -- patience sorting
 template <typename T>
-int lengthOfLIS_NLogN(const std::vector<T>& nums) {
-  std::vector<T> tails;
+int lengthOfLIS_NLogN(const vector<T>& nums) {
+  vector<T> tails;
   for (const T& x : nums) {
-    auto it = std::lower_bound(tails.begin(), tails.end(), x);
+    auto it = lower_bound(tails.begin(), tails.end(), x);
     if (it == tails.end()) tails.push_back(x);
     else *it = x;
   }

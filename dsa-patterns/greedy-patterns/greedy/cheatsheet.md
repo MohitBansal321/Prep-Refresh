@@ -16,8 +16,9 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Flavor 1: sort-then-commit (interval scheduling shape)
-std::sort(items.begin(), items.end(),
+sort(items.begin(), items.end(),
           [](const Item& a, const Item& b) { return a.key < b.key; });  // THE decision
 State state = neutral;                                                   // e.g. lastEnd
 for (const auto& item : items) {
@@ -31,7 +32,7 @@ for (const auto& item : items) {
 int farthest = 0;
 for (int i = 0; i < n; ++i) {
     if (i > farthest) return false;              // cursor overtook the frontier
-    farthest = std::max(farthest, i + nums[i]);  // extend it -- route irrelevant
+    farthest = max(farthest, i + nums[i]);  // extend it -- route irrelevant
 }
 ```
 

@@ -32,7 +32,7 @@
 // No single standard container answers both: a hash map has no order; a list
 // cannot look up a key in O(1). So compose them:
 //
-//   - std::unordered_map<int, Node*> map_ : key -> address of its list node.
+//   - unordered_map<int, Node*> map_ : key -> address of its list node.
 //     The map stores POINTERS, never copies — there is one copy of each
 //     entry, living in the node, so there is nothing to keep in sync.
 //   - a doubly linked list of nodes kept in recency order: most recently
@@ -73,6 +73,9 @@
 #include <string>
 #include <unordered_map>
 
+using namespace std;
+
+
 class LRUCache {
  public:
   explicit LRUCache(int capacity) : capacity_(capacity) {
@@ -95,7 +98,7 @@ class LRUCache {
   }
 
   int get(int key) {
-    std::unordered_map<int, Node*>::iterator it = map_.find(key);
+    unordered_map<int, Node*>::iterator it = map_.find(key);
     if (it == map_.end()) {
       return -1;  // Miss: order unchanged — nothing was "used".
     }
@@ -108,7 +111,7 @@ class LRUCache {
   }
 
   void put(int key, int value) {
-    std::unordered_map<int, Node*>::iterator it = map_.find(key);
+    unordered_map<int, Node*>::iterator it = map_.find(key);
 
     // ---- Path 1: overwrite an existing key ------------------------------
     if (it != map_.end()) {
@@ -168,19 +171,19 @@ class LRUCache {
   int capacity_;
   Node* head_;  // sentinel: head_->next is the MRU real entry
   Node* tail_;  // sentinel: tail_->prev is the LRU real entry (the victim)
-  std::unordered_map<int, Node*> map_;
+  unordered_map<int, Node*> map_;
 };
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -235,6 +238,6 @@ int main() {
     check(cache.get(2) == 200, "repeat hits on one key do not evict another");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

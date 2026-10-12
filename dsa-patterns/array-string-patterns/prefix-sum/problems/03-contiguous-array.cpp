@@ -29,11 +29,14 @@
 #include <unordered_map>
 #include <vector>
 
-int findMaxLength(const std::vector<int>& nums) {
+using namespace std;
+
+
+int findMaxLength(const vector<int>& nums) {
   // running total -> first index at which this running total occurred.
   // Seed with {0: -1}: a running total of 0 "at index -1" means the whole
   // prefix up to and including the current index is balanced.
-  std::unordered_map<int, int> first_seen;
+  unordered_map<int, int> first_seen;
   first_seen[0] = -1;
 
   int curr = 0;
@@ -44,7 +47,7 @@ int findMaxLength(const std::vector<int>& nums) {
 
     auto it = first_seen.find(curr);
     if (it != first_seen.end()) {
-      max_len = std::max(max_len, i - it->second);
+      max_len = max(max_len, i - it->second);
     } else {
       first_seen[curr] = i;
     }
@@ -56,12 +59,12 @@ int findMaxLength(const std::vector<int>& nums) {
 int main() {
   int pass_count = 0;
   int fail_count = 0;
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -74,6 +77,6 @@ int main() {
         "[1,1,1,1] -> 0 (no balance possible)");
   check(findMaxLength({0, 0, 1, 1}) == 4, "[0,0,1,1] -> 4");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

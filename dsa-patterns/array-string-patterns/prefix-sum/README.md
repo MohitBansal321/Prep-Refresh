@@ -4,7 +4,8 @@
 > **In one line:** precompute running totals once; any range sum afterward is a single subtraction — O(1), no matter how wide the range.
 
 ```cpp
-void build(const std::vector<int>& arr) {
+using namespace std;
+void build(const vector<int>& arr) {
   prefix_.assign(arr.size() + 1, 0LL);
   for (size_t i = 1; i <= arr.size(); ++i) {
     prefix_[i] = prefix_[i - 1] + arr[i - 1];

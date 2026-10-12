@@ -23,7 +23,7 @@
 // half, min-heap for the upper half, balanced in size), but with one
 // fundamental new requirement: as the window slides, the OLDEST element
 // must leave the structure, not just new elements arrive. Plain
-// std::priority_queue cannot remove an arbitrary element cheaply -- it can
+// priority_queue cannot remove an arbitrary element cheaply -- it can
 // only pop its root. That mismatch is exactly why this problem is rated
 // hard, and exactly why it belongs last in this module's reading order
 // (see problems/README.md).
@@ -81,14 +81,17 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace std;
+
+
 class SlidingWindowMedian {
  public:
   explicit SlidingWindowMedian(int k) : k_(k) {}
 
   // Processes the full array and returns the median of every window of
   // size k_, in order.
-  std::vector<double> medianSlidingWindow(const std::vector<int>& nums) {
-    std::vector<double> result;
+  vector<double> medianSlidingWindow(const vector<int>& nums) {
+    vector<double> result;
     result.reserve(nums.size() >= static_cast<size_t>(k_) ? nums.size() - k_ + 1 : 0);
 
     for (size_t i = 0; i < nums.size(); ++i) {
@@ -108,14 +111,14 @@ class SlidingWindowMedian {
 
  private:
   int k_;
-  std::priority_queue<long long> low_;                                                   // max-heap
-  std::priority_queue<long long, std::vector<long long>, std::greater<long long>> high_;  // min-heap
+  priority_queue<long long> low_;                                                   // max-heap
+  priority_queue<long long, vector<long long>, greater<long long>> high_;  // min-heap
   int low_size_ = 0;   // logical size of low_, excluding pending removals
   int high_size_ = 0;  // logical size of high_, excluding pending removals
-  std::unordered_map<long long, int> pending_removals_;
+  unordered_map<long long, int> pending_removals_;
 
   // Pops the top of low_ (or high_) while it is a value pending removal.
-  void cleanTop(std::priority_queue<long long>& heap) {
+  void cleanTop(priority_queue<long long>& heap) {
     while (!heap.empty()) {
       auto it = pending_removals_.find(heap.top());
       if (it == pending_removals_.end() || it->second == 0) break;
@@ -124,7 +127,7 @@ class SlidingWindowMedian {
     }
   }
 
-  void cleanTop(std::priority_queue<long long, std::vector<long long>, std::greater<long long>>& heap) {
+  void cleanTop(priority_queue<long long, vector<long long>, greater<long long>>& heap) {
     while (!heap.empty()) {
       auto it = pending_removals_.find(heap.top());
       if (it == pending_removals_.end() || it->second == 0) break;
@@ -205,29 +208,29 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto approx_equal_vec = [](const std::vector<double>& a, const std::vector<double>& b) {
+  auto approx_equal_vec = [](const vector<double>& a, const vector<double>& b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
-      if (std::fabs(a[i] - b[i]) > 1e-9) return false;
+      if (fabs(a[i] - b[i]) > 1e-9) return false;
     }
     return true;
   };
 
   {
     // Classic LeetCode example.
-    std::vector<int> nums = {1, 3, -1, -3, 5, 3, 6, 7};
+    vector<int> nums = {1, 3, -1, -3, 5, 3, 6, 7};
     SlidingWindowMedian swm(3);
-    std::vector<double> expected = {1.0, -1.0, -1.0, 3.0, 5.0, 6.0};
+    vector<double> expected = {1.0, -1.0, -1.0, 3.0, 5.0, 6.0};
     auto result = swm.medianSlidingWindow(nums);
     check(approx_equal_vec(result, expected),
           "nums=[1,3,-1,-3,5,3,6,7], k=3 -> [1,-1,-1,3,5,6]");
@@ -235,30 +238,30 @@ int main() {
 
   {
     // Even window size -> every median is an average of two values.
-    std::vector<int> nums = {1, 2, 3, 4, 2, 3, 1, 4, 2};
+    vector<int> nums = {1, 2, 3, 4, 2, 3, 1, 4, 2};
     SlidingWindowMedian swm(2);
     // Windows: [1,2]->1.5 [2,3]->2.5 [3,4]->3.5 [4,2]->3.0 [2,3]->2.5
     //          [3,1]->2.0 [1,4]->2.5 [4,2]->3.0
-    std::vector<double> expected = {1.5, 2.5, 3.5, 3.0, 2.5, 2.0, 2.5, 3.0};
+    vector<double> expected = {1.5, 2.5, 3.5, 3.0, 2.5, 2.0, 2.5, 3.0};
     auto result = swm.medianSlidingWindow(nums);
     check(approx_equal_vec(result, expected), "k=2 (even window) -> averaged medians");
   }
 
   {
     // Window size 1 -> median is just the element itself.
-    std::vector<int> nums = {5, -2, 8, 0};
+    vector<int> nums = {5, -2, 8, 0};
     SlidingWindowMedian swm(1);
-    std::vector<double> expected = {5.0, -2.0, 8.0, 0.0};
+    vector<double> expected = {5.0, -2.0, 8.0, 0.0};
     auto result = swm.medianSlidingWindow(nums);
     check(approx_equal_vec(result, expected), "k=1 -> median equals each element");
   }
 
   {
     // Window size equal to the full array -> a single median value.
-    std::vector<int> nums = {4, 2, 7, 1};
+    vector<int> nums = {4, 2, 7, 1};
     SlidingWindowMedian swm(4);
     // sorted [1,2,4,7] -> median (2+4)/2 = 3.0
-    std::vector<double> expected = {3.0};
+    vector<double> expected = {3.0};
     auto result = swm.medianSlidingWindow(nums);
     check(approx_equal_vec(result, expected), "k == n -> single median over whole array");
   }
@@ -266,13 +269,13 @@ int main() {
   {
     // Duplicate values sliding in and out repeatedly -- stresses lazy
     // deletion when the value being removed has copies still present.
-    std::vector<int> nums = {2, 2, 2, 2, 2};
+    vector<int> nums = {2, 2, 2, 2, 2};
     SlidingWindowMedian swm(3);
-    std::vector<double> expected = {2.0, 2.0, 2.0};
+    vector<double> expected = {2.0, 2.0, 2.0};
     auto result = swm.medianSlidingWindow(nums);
     check(approx_equal_vec(result, expected), "all-duplicate stream -> median stays 2.0");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

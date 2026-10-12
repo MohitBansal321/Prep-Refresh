@@ -57,12 +57,15 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 namespace {
 
 constexpr int kSize = 9;
 constexpr int kBoxSize = 3;
 
-bool isValidPlacement(const std::vector<std::vector<char>>& board, int row,
+bool isValidPlacement(const vector<vector<char>>& board, int row,
                        int col, char digit) {
   for (int i = 0; i < kSize; ++i) {
     if (board[row][i] == digit) return false;  // same row
@@ -81,7 +84,7 @@ bool isValidPlacement(const std::vector<std::vector<char>>& board, int row,
 
 // Returns true once the board (from this cell onward) is completely and
 // validly filled. Mutates `board` in place.
-bool backtrack(std::vector<std::vector<char>>& board, int row, int col) {
+bool backtrack(vector<vector<char>>& board, int row, int col) {
   if (row == kSize) {
     return true;  // Fell off the last row -> every cell filled validly.
   }
@@ -113,13 +116,13 @@ bool backtrack(std::vector<std::vector<char>>& board, int row, int col) {
 
 }  // namespace
 
-void solveSudoku(std::vector<std::vector<char>>& board) {
+void solveSudoku(vector<vector<char>>& board) {
   backtrack(board, 0, 0);
 }
 
 namespace {
 
-bool boardIsFullyValid(std::vector<std::vector<char>> board) {
+bool boardIsFullyValid(vector<vector<char>> board) {
   // Takes `board` BY VALUE (a deliberate copy) so we can freely blank out
   // each cell to re-validate it against the rest of the board without
   // disturbing the caller's copy.
@@ -139,11 +142,11 @@ bool boardIsFullyValid(std::vector<std::vector<char>> board) {
   return true;
 }
 
-void printBoard(const std::vector<std::vector<char>>& board) {
+void printBoard(const vector<vector<char>>& board) {
   for (const auto& rowVec : board) {
-    std::string line;
+    string line;
     for (char c : rowVec) line += c;
-    std::cout << "  " << line << "\n";
+    cout << "  " << line << "\n";
   }
 }
 
@@ -153,18 +156,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // Classic LeetCode example board.
-  std::vector<std::vector<char>> board = {
+  vector<vector<char>> board = {
       {'5', '3', '.', '.', '7', '.', '.', '.', '.'},
       {'6', '.', '.', '1', '9', '5', '.', '.', '.'},
       {'.', '9', '8', '.', '.', '.', '.', '6', '.'},
@@ -176,7 +179,7 @@ int main() {
       {'.', '.', '.', '.', '8', '.', '.', '7', '9'},
   };
 
-  std::vector<std::vector<char>> expected = {
+  vector<vector<char>> expected = {
       {'5', '3', '4', '6', '7', '8', '9', '1', '2'},
       {'6', '7', '2', '1', '9', '5', '3', '4', '8'},
       {'1', '9', '8', '3', '4', '2', '5', '6', '7'},
@@ -189,17 +192,17 @@ int main() {
   };
 
   solveSudoku(board);
-  std::cout << "Solved board:\n";
+  cout << "Solved board:\n";
   printBoard(board);
 
   check(board == expected, "classic LeetCode example solves to the known unique solution");
   check(boardIsFullyValid(board), "solved board satisfies row/column/box constraints");
 
   // A board that is already fully solved should be returned unchanged.
-  std::vector<std::vector<char>> alreadySolved = expected;
+  vector<vector<char>> alreadySolved = expected;
   solveSudoku(alreadySolved);
   check(alreadySolved == expected, "already-solved board is left unchanged");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

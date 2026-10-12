@@ -42,13 +42,16 @@
 #include <string>
 #include <vector>
 
-int minimumCost(int n, const std::vector<std::vector<int>>& highways,
+using namespace std;
+
+
+int minimumCost(int n, const vector<vector<int>>& highways,
                  int discounts) {
-  const long long kInf = std::numeric_limits<long long>::max() / 2;
+  const long long kInf = numeric_limits<long long>::max() / 2;
 
   // dist[u][d]: minimum cost to reach city u having used exactly d discounts.
-  std::vector<std::vector<long long>> dist(
-      n, std::vector<long long>(discounts + 1, kInf));
+  vector<vector<long long>> dist(
+      n, vector<long long>(discounts + 1, kInf));
   dist[0][0] = 0;
 
   // Relax repeatedly: a shortest path uses at most n-1 edges, so n-1 full
@@ -91,7 +94,7 @@ int minimumCost(int n, const std::vector<std::vector<int>>& highways,
 
   long long best = kInf;
   for (int d = 0; d <= discounts; ++d) {
-    best = std::min(best, dist[n - 1][d]);
+    best = min(best, dist[n - 1][d]);
   }
   return best >= kInf ? -1 : static_cast<int>(best);
 }
@@ -103,12 +106,12 @@ int minimumCost(int n, const std::vector<std::vector<int>>& highways,
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -117,14 +120,14 @@ int main() {
   {
     // A single road, one discount card available: the full toll (10) can
     // be halved to 5.
-    std::vector<std::vector<int>> highways = {{0, 1, 10}};
+    vector<vector<int>> highways = {{0, 1, 10}};
     check(minimumCost(2, highways, 1) == 5,
           "one road, one discount -> toll halved from 10 to 5");
   }
 
   {
     // Same road, zero discounts -- must pay full price.
-    std::vector<std::vector<int>> highways = {{0, 1, 10}};
+    vector<vector<int>> highways = {{0, 1, 10}};
     check(minimumCost(2, highways, 0) == 10,
           "one road, zero discounts -> pay the full toll");
   }
@@ -133,7 +136,7 @@ int main() {
     // Two roads in series, one discount card: spending it on the pricier
     // road (10 -> 5) beats spending it on the cheaper one (4 -> 2), since
     // 5+4=9 beats 10+2=12.
-    std::vector<std::vector<int>> highways = {{0, 1, 10}, {1, 2, 4}};
+    vector<vector<int>> highways = {{0, 1, 10}, {1, 2, 4}};
     check(minimumCost(3, highways, 1) == 9,
           "one discount spent on the pricier edge (10->5) beats spending it "
           "on the cheaper one (4->2)");
@@ -141,18 +144,18 @@ int main() {
 
   {
     // Two roads in series, two discounts -- both edges get halved.
-    std::vector<std::vector<int>> highways = {{0, 1, 10}, {1, 2, 4}};
+    vector<vector<int>> highways = {{0, 1, 10}, {1, 2, 4}};
     check(minimumCost(3, highways, 2) == 7,
           "two discounts -> both edges halved: 5 + 2 = 7");
   }
 
   {
     // Unreachable destination -> -1.
-    std::vector<std::vector<int>> highways = {{0, 1, 5}};
+    vector<vector<int>> highways = {{0, 1, 5}};
     check(minimumCost(3, highways, 1) == -1,
           "city 2 is unreachable -> -1");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

@@ -62,9 +62,12 @@
 #include <string>
 #include <vector>
 
-std::vector<int> maxSlidingWindow(const std::vector<int>& nums, int k) {
-  std::deque<int> dq;  // INDICES; values strictly decreasing front-to-back
-  std::vector<int> result;
+using namespace std;
+
+
+vector<int> maxSlidingWindow(const vector<int>& nums, int k) {
+  deque<int> dq;  // INDICES; values strictly decreasing front-to-back
+  vector<int> result;
   result.reserve(nums.size() - k + 1);
 
   for (int i = 0; i < static_cast<int>(nums.size()); ++i) {
@@ -99,33 +102,33 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {1, 3, -1, -3, 5, 3, 6, 7};
-    std::vector<int> expected = {3, 3, 5, 5, 6, 7};
+    vector<int> nums = {1, 3, -1, -3, 5, 3, 6, 7};
+    vector<int> expected = {3, 3, 5, 5, 6, 7};
     check(maxSlidingWindow(nums, 3) == expected,
           "classic example k=3 -> [3,3,5,5,6,7]");
   }
 
   {
     // k = 1: every element is its own window's max.
-    std::vector<int> nums = {1};
-    std::vector<int> expected = {1};
+    vector<int> nums = {1};
+    vector<int> expected = {1};
     check(maxSlidingWindow(nums, 1) == expected, "single element k=1 -> [1]");
   }
 
   {
-    std::vector<int> nums = {9, 8, 7, 6, 5};
-    std::vector<int> expected = {9, 8, 7};
+    vector<int> nums = {9, 8, 7, 6, 5};
+    vector<int> expected = {9, 8, 7};
     check(maxSlidingWindow(nums, 3) == expected,
           "strictly decreasing: front expires each step -> [9,8,7]");
   }
@@ -133,8 +136,8 @@ int main() {
   {
     // Strictly increasing: every newcomer dominates the whole deque, so the
     // deque holds exactly one index at all times.
-    std::vector<int> nums = {1, 2, 3, 4, 5};
-    std::vector<int> expected = {3, 4, 5};
+    vector<int> nums = {1, 2, 3, 4, 5};
+    vector<int> expected = {3, 4, 5};
     check(maxSlidingWindow(nums, 3) == expected,
           "strictly increasing: constant back-pops -> [3,4,5]");
   }
@@ -142,8 +145,8 @@ int main() {
   {
     // Duplicates: strict '<' keeps equal values; when the older duplicate
     // expires the newer identical one still represents the max correctly.
-    std::vector<int> nums = {4, 4, 4, 4};
-    std::vector<int> expected = {4, 4, 4};
+    vector<int> nums = {4, 4, 4, 4};
+    vector<int> expected = {4, 4, 4};
     check(maxSlidingWindow(nums, 2) == expected,
           "all duplicates k=2 -> [4,4,4]");
   }
@@ -151,20 +154,20 @@ int main() {
   {
     // The current max sits exactly at the window edge and must be evicted by
     // the front-expiry rule, promoting the next candidate.
-    std::vector<int> nums = {5, 1, 2, 3};
-    std::vector<int> expected = {5, 2, 3};
+    vector<int> nums = {5, 1, 2, 3};
+    vector<int> expected = {5, 2, 3};
     check(maxSlidingWindow(nums, 2) == expected,
           "max at window edge gets evicted -> [5,2,3]");
   }
 
   {
     // Negative values throughout.
-    std::vector<int> nums = {-7, -3, -9, -1};
-    std::vector<int> expected = {-3, -1};
+    vector<int> nums = {-7, -3, -9, -1};
+    vector<int> expected = {-3, -1};
     check(maxSlidingWindow(nums, 3) == expected,
           "negatives k=3 -> [-3,-1]");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

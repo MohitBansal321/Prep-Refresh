@@ -43,14 +43,17 @@
 #include <string>
 #include <vector>
 
-int minCost(int maxTime, const std::vector<std::vector<int>>& edges,
-            const std::vector<int>& passingFees) {
+using namespace std;
+
+
+int minCost(int maxTime, const vector<vector<int>>& edges,
+            const vector<int>& passingFees) {
   const int n = static_cast<int>(passingFees.size());
-  const long long kInf = std::numeric_limits<long long>::max() / 2;
+  const long long kInf = numeric_limits<long long>::max() / 2;
 
   // dp[t][u]: minimum fee to be at city u having spent exactly t minutes.
-  std::vector<std::vector<long long>> dp(
-      maxTime + 1, std::vector<long long>(n, kInf));
+  vector<vector<long long>> dp(
+      maxTime + 1, vector<long long>(n, kInf));
   dp[0][0] = passingFees[0];  // pay to stand at the start, at time 0
 
   for (int t = 0; t <= maxTime; ++t) {
@@ -58,17 +61,17 @@ int minCost(int maxTime, const std::vector<std::vector<int>>& edges,
       int u = e[0], v = e[1], w = e[2];
       if (t - w < 0) continue;  // not enough time budget for this edge yet
       if (dp[t - w][u] != kInf) {
-        dp[t][v] = std::min(dp[t][v], dp[t - w][u] + passingFees[v]);
+        dp[t][v] = min(dp[t][v], dp[t - w][u] + passingFees[v]);
       }
       if (dp[t - w][v] != kInf) {
-        dp[t][u] = std::min(dp[t][u], dp[t - w][v] + passingFees[u]);
+        dp[t][u] = min(dp[t][u], dp[t - w][v] + passingFees[u]);
       }
     }
   }
 
   long long best = kInf;
   for (int t = 0; t <= maxTime; ++t) {
-    best = std::min(best, dp[t][n - 1]);
+    best = min(best, dp[t][n - 1]);
   }
   return best >= kInf ? -1 : static_cast<int>(best);
 }
@@ -80,12 +83,12 @@ int minCost(int maxTime, const std::vector<std::vector<int>>& edges,
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -96,9 +99,9 @@ int main() {
     // [4,5,15]], passingFees=[5,1,2,20,20,3]. Two routes to city 5:
     // 0->1->2->5 costs time 30, fee 5+1+2+3=11; 0->3->4->5 costs time 21,
     // fee 5+20+20+3=48. The cheaper-fee route (11) fits exactly at maxTime.
-    std::vector<std::vector<int>> edges = {
+    vector<vector<int>> edges = {
         {0, 1, 10}, {1, 2, 10}, {2, 5, 10}, {0, 3, 1}, {3, 4, 10}, {4, 5, 15}};
-    std::vector<int> fees = {5, 1, 2, 20, 20, 3};
+    vector<int> fees = {5, 1, 2, 20, 20, 3};
     check(minCost(30, edges, fees) == 11,
           "cheap-fee route (0->1->2->5, fee 11) fits exactly at maxTime=30");
   }
@@ -107,9 +110,9 @@ int main() {
     // Same graph, tighter maxTime=29 -- the cheap route needs exactly 30
     // minutes and no longer fits, forcing the more expensive 21-minute
     // route (fee 48).
-    std::vector<std::vector<int>> edges = {
+    vector<vector<int>> edges = {
         {0, 1, 10}, {1, 2, 10}, {2, 5, 10}, {0, 3, 1}, {3, 4, 10}, {4, 5, 15}};
-    std::vector<int> fees = {5, 1, 2, 20, 20, 3};
+    vector<int> fees = {5, 1, 2, 20, 20, 3};
     check(minCost(29, edges, fees) == 48,
           "tighter maxTime=29 excludes the cheap route -> falls back to fee 48");
   }
@@ -117,20 +120,20 @@ int main() {
   {
     // maxTime too small to reach the destination at all -> -1, not a huge
     // sentinel value or a crash.
-    std::vector<std::vector<int>> edges = {{0, 1, 10}};
-    std::vector<int> fees = {1, 1};
+    vector<vector<int>> edges = {{0, 1, 10}};
+    vector<int> fees = {1, 1};
     check(minCost(5, edges, fees) == -1, "not enough time to travel -> -1");
   }
 
   {
     // src == dst (n == 1): only the starting fee is ever paid, regardless
     // of maxTime.
-    std::vector<std::vector<int>> edges = {};
-    std::vector<int> fees = {7};
+    vector<vector<int>> edges = {};
+    vector<int> fees = {7};
     check(minCost(0, edges, fees) == 7,
           "single city, no travel needed -> just the starting fee");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

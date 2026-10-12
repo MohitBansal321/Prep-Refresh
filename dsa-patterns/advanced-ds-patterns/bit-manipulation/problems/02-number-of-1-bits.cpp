@@ -51,6 +51,9 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
+
 int countSetBits(unsigned int n) {
   int count = 0;
 
@@ -78,12 +81,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -132,6 +135,6 @@ int main() {
   check(isPowerOfTwo(0x80000000u) == true,
         "isPowerOfTwo(0x80000000) -> true (2^31)");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

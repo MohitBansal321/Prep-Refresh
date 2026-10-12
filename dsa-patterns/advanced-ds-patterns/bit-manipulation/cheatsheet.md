@@ -16,8 +16,9 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // XOR cancels pairs: the single value appearing an odd number of times.
-int singleNumber(const std::vector<int>& nums) {
+int singleNumber(const vector<int>& nums) {
   int result = 0;
   for (int n : nums) result ^= n;
   return result;

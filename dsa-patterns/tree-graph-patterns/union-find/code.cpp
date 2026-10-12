@@ -33,6 +33,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
 // ----------------------------------------------------------------------------
 // DisjointSet — a generic Union-Find structure over the integers [0, n).
@@ -51,9 +52,9 @@ class DisjointSet {
   explicit DisjointSet(int n)
       : parent_(n), rank_(n, 0), size_(n, 1), component_count_(n) {
     if (n < 0) {
-      throw std::invalid_argument("DisjointSet size must be non-negative.");
+      throw invalid_argument("DisjointSet size must be non-negative.");
     }
-    std::iota(parent_.begin(), parent_.end(), 0);  // parent_[i] = i
+    iota(parent_.begin(), parent_.end(), 0);  // parent_[i] = i
   }
 
   // find(x): returns the representative ("root") of the group containing x.
@@ -99,7 +100,7 @@ class DisjointSet {
 
     // Attach the shallower tree under the deeper one.
     if (rank_[root_x] < rank_[root_y]) {
-      std::swap(root_x, root_y);
+      swap(root_x, root_y);
     }
     parent_[root_y] = root_x;
     size_[root_x] += size_[root_y];
@@ -130,13 +131,13 @@ class DisjointSet {
  private:
   void check_bounds(int x) const {
     if (x < 0 || x >= static_cast<int>(parent_.size())) {
-      throw std::out_of_range("DisjointSet: index out of range.");
+      throw out_of_range("DisjointSet: index out of range.");
     }
   }
 
-  std::vector<int> parent_;  // parent_[i] = parent of i (i itself, if root)
-  std::vector<int> rank_;    // rank_[i] = upper bound on height of tree rooted at i
-  std::vector<int> size_;    // size_[i] = number of elements in i's tree (i must be a root for this to be current)
+  vector<int> parent_;  // parent_[i] = parent of i (i itself, if root)
+  vector<int> rank_;    // rank_[i] = upper bound on height of tree rooted at i
+  vector<int> size_;    // size_[i] = number of elements in i's tree (i must be a root for this to be current)
   int component_count_;      // number of disjoint groups remaining
 };
 
@@ -147,17 +148,17 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- Basic union/find/connected ---\n";
+  cout << "--- Basic union/find/connected ---\n";
   {
     DisjointSet dsu(10);  // 10 singleton groups: {0}, {1}, ..., {9}
     check(dsu.componentCount() == 10, "starts with 10 components");
@@ -172,7 +173,7 @@ int main() {
     check(dsu.componentCount() == 8, "component count drops to 8");
   }
 
-  std::cout << "\n--- Union returns false on redundant edge (cycle signal) ---\n";
+  cout << "\n--- Union returns false on redundant edge (cycle signal) ---\n";
   {
     DisjointSet dsu(5);
     check(dsu.unionSets(0, 1) == true, "first union of 0-1 succeeds");
@@ -184,7 +185,7 @@ int main() {
           "component count unaffected by the redundant (cycle) edge");
   }
 
-  std::cout << "\n--- componentSize tracks merged group sizes ---\n";
+  cout << "\n--- componentSize tracks merged group sizes ---\n";
   {
     DisjointSet dsu(6);
     dsu.unionSets(0, 1);
@@ -199,7 +200,7 @@ int main() {
     check(dsu.componentCount() == 2, "two components remain: {0,1,2,3,4} and {5}");
   }
 
-  std::cout << "\n--- Path compression keeps find() flat after repeated calls ---\n";
+  cout << "\n--- Path compression keeps find() flat after repeated calls ---\n";
   {
     // Deliberately chain unions in a way that WOULD build a tall chain
     // without union by rank (0 under 1 under 2 under ... under 9).
@@ -216,18 +217,18 @@ int main() {
     check(all_same_root, "every element resolves to the same root after the chain");
   }
 
-  std::cout << "\n--- Out-of-range access throws instead of corrupting state ---\n";
+  cout << "\n--- Out-of-range access throws instead of corrupting state ---\n";
   {
     DisjointSet dsu(3);
     bool threw = false;
     try {
       dsu.find(5);
-    } catch (const std::out_of_range&) {
+    } catch (const out_of_range&) {
       threw = true;
     }
     check(threw, "find() on an out-of-range index throws std::out_of_range");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

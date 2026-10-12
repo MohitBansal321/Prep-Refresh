@@ -24,7 +24,8 @@
 ### Template Skeleton
 
 ```cpp
-std::vector<std::vector<long long>> dist(n, std::vector<long long>(n, kInf));
+using namespace std;
+vector<vector<long long>> dist(n, vector<long long>(n, kInf));
 for (int i = 0; i < n; ++i) dist[i][i] = 0;
 // ... fill dist[edge.from][edge.to] with direct edge weights ...
 

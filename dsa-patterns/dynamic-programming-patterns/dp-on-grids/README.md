@@ -23,8 +23,9 @@ This only works because movement is one-directional (right/down) — there are n
 ## Template
 
 ```cpp
+using namespace std;
 int uniquePaths(int rows, int cols) {
-  std::vector<std::vector<int>> dp(rows, std::vector<int>(cols, 0));
+  vector<vector<int>> dp(rows, vector<int>(cols, 0));
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
       if (r == 0 || c == 0) { dp[r][c] = 1; continue; }  // one way along an edge
@@ -34,15 +35,15 @@ int uniquePaths(int rows, int cols) {
   return dp[rows - 1][cols - 1];
 }
 
-int minPathSum(std::vector<std::vector<int>>& grid) {
+int minPathSum(vector<vector<int>>& grid) {
   int rows = grid.size(), cols = grid[0].size();
-  std::vector<std::vector<int>> dp(rows, std::vector<int>(cols));
+  vector<vector<int>> dp(rows, vector<int>(cols));
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
       if (r == 0 && c == 0) { dp[r][c] = grid[r][c]; continue; }
       int fromTop = (r > 0) ? dp[r - 1][c] : INT_MAX;
       int fromLeft = (c > 0) ? dp[r][c - 1] : INT_MAX;
-      dp[r][c] = std::min(fromTop, fromLeft) + grid[r][c];
+      dp[r][c] = min(fromTop, fromLeft) + grid[r][c];
     }
   }
   return dp[rows - 1][cols - 1];

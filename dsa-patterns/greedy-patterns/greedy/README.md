@@ -4,7 +4,8 @@
 > **In one line:** sort by end time, then greedily keep any interval whose start doesn't overlap the last one kept — keeping the earliest-ending option always leaves the most room for what comes after.
 
 ```cpp
-std::sort(intervals.begin(), intervals.end(),
+using namespace std;
+sort(intervals.begin(), intervals.end(),
           [](auto& a, auto& b) { return a.second < b.second; });   // sort by END time
 
 int count = 0;

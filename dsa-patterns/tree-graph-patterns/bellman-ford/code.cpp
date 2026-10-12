@@ -17,6 +17,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct Edge {
   int from;
   int to;
@@ -24,7 +27,7 @@ struct Edge {
 };
 
 struct BellmanFordResult {
-  std::vector<long long> dist;
+  vector<long long> dist;
   bool hasNegativeCycle;
 };
 
@@ -46,9 +49,9 @@ struct BellmanFordResult {
 // more edges is to loop back through a cycle — and the only way looping
 // through a cycle helps is if that cycle's total weight is negative.
 // ----------------------------------------------------------------------------
-BellmanFordResult bellmanFord(int n, int src, const std::vector<Edge>& edges) {
-  const long long kInf = std::numeric_limits<long long>::max();
-  std::vector<long long> dist(n, kInf);
+BellmanFordResult bellmanFord(int n, int src, const vector<Edge>& edges) {
+  const long long kInf = numeric_limits<long long>::max();
+  vector<long long> dist(n, kInf);
   dist[src] = 0;
 
   for (int pass = 0; pass < n - 1; ++pass) {
@@ -86,18 +89,18 @@ BellmanFordResult bellmanFord(int n, int src, const std::vector<Edge>& edges) {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
 
 int main() {
-  const long long kInf = std::numeric_limits<long long>::max();
+  const long long kInf = numeric_limits<long long>::max();
 
   {
     // A graph with one negative edge but NO negative cycle:
@@ -108,7 +111,7 @@ int main() {
     // Concrete edges (classic CLRS-style example):
     //   0->1 (6), 0->2 (7), 1->2 (5), 1->3 (-4), 1->4 (8),
     //   2->3 (-3), 2->4 (9), 3->1 (7), 4->0 (2), 4->3 (7)
-    std::vector<Edge> edges = {
+    vector<Edge> edges = {
         {0, 1, 6}, {0, 2, 7}, {1, 2, 5}, {1, 3, -4}, {1, 4, 8},
         {2, 3, -3}, {2, 4, 9}, {3, 1, 7}, {4, 0, 2}, {4, 3, 7},
     };
@@ -126,7 +129,7 @@ int main() {
     //   0 -> 1 (weight 1)
     //   1 -> 2 (weight -1)
     //   2 -> 1 (weight -1)   <- cycle 1->2->1 has total weight -2
-    std::vector<Edge> edges = {
+    vector<Edge> edges = {
         {0, 1, 1},
         {1, 2, -1},
         {2, 1, -1},
@@ -143,7 +146,7 @@ int main() {
     //   0 -> 1 (weight 3)      (src=0 reaches only node 1)
     //   2 -> 3 (weight -1)
     //   3 -> 2 (weight -1)     <- negative cycle, but unreachable from 0
-    std::vector<Edge> edges = {
+    vector<Edge> edges = {
         {0, 1, 3},
         {2, 3, -1},
         {3, 2, -1},
@@ -157,7 +160,7 @@ int main() {
 
   {
     // Disconnected node: must stay at infinity, not crash or read garbage.
-    std::vector<Edge> edges = {{0, 1, 5}};
+    vector<Edge> edges = {{0, 1, 5}};
     BellmanFordResult result = bellmanFord(3, 0, edges);
     check(result.dist[2] == kInf, "disconnected node 2 stays at infinity");
     check(!result.hasNegativeCycle, "no edges to a cycle -> no false positive");
@@ -165,7 +168,7 @@ int main() {
 
   {
     // Single-node graph, no edges at all.
-    std::vector<Edge> edges = {};
+    vector<Edge> edges = {};
     BellmanFordResult result = bellmanFord(1, 0, edges);
     check(result.dist[0] == 0, "single node graph: source distance is 0");
     check(!result.hasNegativeCycle, "no edges -> trivially no negative cycle");
@@ -176,13 +179,13 @@ int main() {
     // must still produce correct distances (the `changed` flag must not
     // cause an early return with a wrong, half-relaxed distance array).
     //   0 -> 1 (1) -> 2 (1) -> 3 (1) -> 4 (1)   (a simple chain)
-    std::vector<Edge> edges = {
+    vector<Edge> edges = {
         {0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1},
     };
     BellmanFordResult result = bellmanFord(5, 0, edges);
     check(result.dist[4] == 4, "chain of 4 edges converges early, still correct");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

@@ -366,3 +366,4 @@ Things to fix or improve in the material — **later, not during a session.**
 
 - `images/trace-diagram.md` has no mermaid block in: bit-manipulation, dp-on-grids, palindromic-subsequence,
   dijkstras-algorithm (found by `module-audit`, 2026-10-05). Fix after week 6.
+- Interactive step-through visualizer for Dijkstra (heap push/pop, dist table) — user asked 2026-10-12. Build after the session, not during.

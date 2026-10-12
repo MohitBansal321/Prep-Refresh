@@ -16,30 +16,36 @@
 ### Template Skeleton
 
 ```cpp
+#include <iostream>
+#include <limits>
+#include <queue>
+#include <vector>
+using namespace std;
+
 // adj[u] = list of {v, weight} pairs for each directed edge u -> v
-std::vector<int> dijkstra(int n, int src,
-                          const std::vector<std::vector<std::pair<int,int>>>& adj) {
-  const int kInf = std::numeric_limits<int>::max();
-  std::vector<int> dist(n, kInf);
+vector<int> dijkstra(int n, int src,
+                     const vector<vector<pair<int, int>>>& adj) {
+  const int kInf = numeric_limits<int>::max();
+  vector<int> dist(n, kInf);
   dist[src] = 0;
 
-  // Min-heap of {distance, node}; std::greater<> flips the default max-heap.
-  std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>,
-                      std::greater<>> pq;
+  // Min-heap of {distance, node}; greater<> flips the default max-heap.
+  priority_queue<pair<int, int>, vector<pair<int, int>>, greater<>> pq;
   pq.push({0, src});
 
   while (!pq.empty()) {
-    const int d = pq.top().first;   // distance recorded when pushed
-    const int u = pq.top().second;  // node it belongs to
+    const pair<int, int> top = pq.top();
+    const int d = top.first;   // tentative distance recorded when pushed
+    const int u = top.second;  // the node that distance belongs to
     pq.pop();
-    if (d > dist[u]) continue;      // stale entry — a better one already won
+    if (d > dist[u]) continue;  // stale entry — a better one already won
 
-    for (const std::pair<int,int>& edge : adj[u]) {
-      const int v = edge.first;
-      const int w = edge.second;
+    for (const pair<int, int>& edge : adj[u]) {
+      const int v = edge.first;   // neighbour node
+      const int w = edge.second;  // weight of the u -> v edge
       if (dist[u] != kInf && dist[u] + w < dist[v]) {
-        dist[v] = dist[u] + w;      // relax: found a cheaper path to v
-        pq.push({dist[v], v});      // lazy: old entry stays, gets skipped later
+        dist[v] = dist[u] + w;    // relax: found a cheaper path to v
+        pq.push({dist[v], v});    // lazy: old entry stays, gets skipped later
       }
     }
   }

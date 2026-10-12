@@ -56,9 +56,12 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 namespace {
 
-bool isPalindrome(const std::string& s, int left, int right) {
+bool isPalindrome(const string& s, int left, int right) {
   while (left < right) {
     if (s[left] != s[right]) return false;
     ++left;
@@ -67,8 +70,8 @@ bool isPalindrome(const std::string& s, int left, int right) {
   return true;
 }
 
-void backtrack(const std::string& s, int pos, std::vector<std::string>& current,
-               std::vector<std::vector<std::string>>& allPartitions) {
+void backtrack(const string& s, int pos, vector<string>& current,
+               vector<vector<string>>& allPartitions) {
   if (pos == static_cast<int>(s.size())) {
     // Base case: consumed the entire string with only palindromic pieces
     // (every piece already passed the palindrome check before being pushed
@@ -91,17 +94,17 @@ void backtrack(const std::string& s, int pos, std::vector<std::string>& current,
 
 }  // namespace
 
-std::vector<std::vector<std::string>> partition(const std::string& s) {
-  std::vector<std::vector<std::string>> allPartitions;
-  std::vector<std::string> current;
+vector<vector<string>> partition(const string& s) {
+  vector<vector<string>> allPartitions;
+  vector<string> current;
   backtrack(s, 0, current, allPartitions);
   return allPartitions;
 }
 
 namespace {
 
-bool containsPartition(const std::vector<std::vector<std::string>>& all,
-                        const std::vector<std::string>& target) {
+bool containsPartition(const vector<vector<string>>& all,
+                        const vector<string>& target) {
   for (const auto& p : all) {
     if (p == target) return true;
   }
@@ -114,12 +117,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -157,6 +160,6 @@ int main() {
     check(containsPartition(result, {"r", "aceca", "r"}), "\"racecar\" includes [\"r\",\"aceca\",\"r\"]");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

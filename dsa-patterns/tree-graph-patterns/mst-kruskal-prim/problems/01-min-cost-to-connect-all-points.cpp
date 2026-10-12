@@ -30,6 +30,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct Edge {
   int u, v, weight;
 };
@@ -37,7 +40,7 @@ struct Edge {
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
   int find(int x) {
     if (parent_[x] != x) parent_[x] = find(parent_[x]);
@@ -46,31 +49,31 @@ class DisjointSet {
   bool unionSets(int x, int y) {
     int rootX = find(x), rootY = find(y);
     if (rootX == rootY) return false;
-    if (rank_[rootX] < rank_[rootY]) std::swap(rootX, rootY);
+    if (rank_[rootX] < rank_[rootY]) swap(rootX, rootY);
     parent_[rootY] = rootX;
     if (rank_[rootX] == rank_[rootY]) ++rank_[rootX];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
-int minCostConnectPoints(const std::vector<std::vector<int>>& points) {
+int minCostConnectPoints(const vector<vector<int>>& points) {
   int n = static_cast<int>(points.size());
-  std::vector<Edge> edges;
+  vector<Edge> edges;
   edges.reserve(static_cast<size_t>(n) * (n - 1) / 2);
 
   for (int i = 0; i < n; ++i) {
     for (int j = i + 1; j < n; ++j) {
-      int dist = std::abs(points[i][0] - points[j][0]) +
-                 std::abs(points[i][1] - points[j][1]);
+      int dist = abs(points[i][0] - points[j][0]) +
+                 abs(points[i][1] - points[j][1]);
       edges.push_back({i, j, dist});
     }
   }
 
-  std::sort(edges.begin(), edges.end(),
+  sort(edges.begin(), edges.end(),
             [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
 
   DisjointSet dsu(n);
@@ -93,12 +96,12 @@ int minCostConnectPoints(const std::vector<std::vector<int>>& points) {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -106,20 +109,20 @@ void check(bool condition, const std::string& label) {
 int main() {
   {
     // points = [[0,0],[2,2],[3,10],[5,2],[7,0]]
-    std::vector<std::vector<int>> points = {{0, 0}, {2, 2}, {3, 10}, {5, 2}, {7, 0}};
+    vector<vector<int>> points = {{0, 0}, {2, 2}, {3, 10}, {5, 2}, {7, 0}};
     check(minCostConnectPoints(points) == 20, "5-point classic example -> 20");
   }
 
   {
     // Two points: the only possible MST is the single edge between them.
-    std::vector<std::vector<int>> points = {{0, 0}, {3, 4}};
+    vector<vector<int>> points = {{0, 0}, {3, 4}};
     check(minCostConnectPoints(points) == 7,
           "two points -> Manhattan distance between them (3+4=7)");
   }
 
   {
     // Single point: no edges needed, cost is trivially 0.
-    std::vector<std::vector<int>> points = {{5, 5}};
+    vector<vector<int>> points = {{5, 5}};
     check(minCostConnectPoints(points) == 0, "single point -> 0, nothing to connect");
   }
 
@@ -127,11 +130,11 @@ int main() {
     // Collinear points: the MST must be the chain connecting them in
     // order, since any "skip ahead" edge costs strictly more than the sum
     // of the shorter segments it would replace.
-    std::vector<std::vector<int>> points = {{0, 0}, {1, 0}, {2, 0}, {3, 0}};
+    vector<vector<int>> points = {{0, 0}, {1, 0}, {2, 0}, {3, 0}};
     check(minCostConnectPoints(points) == 3,
           "collinear points -> chain of unit-distance edges, total 3");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

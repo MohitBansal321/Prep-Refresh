@@ -4,8 +4,9 @@
 > **In one line:** choose a value for the next decision slot, recurse, then undo the choice before trying the next candidate — skipping (pruning) any candidate that cannot possibly lead to a valid solution.
 
 ```cpp
-void backtrack(int n, int row, std::vector<int>& colOfRow,
-               std::vector<std::vector<std::string>>& solutions) {
+using namespace std;
+void backtrack(int n, int row, vector<int>& colOfRow,
+               vector<vector<string>>& solutions) {
   if (row == n) { solutions.push_back(buildBoard(colOfRow, n)); return; }
 
   for (int col = 0; col < n; ++col) {

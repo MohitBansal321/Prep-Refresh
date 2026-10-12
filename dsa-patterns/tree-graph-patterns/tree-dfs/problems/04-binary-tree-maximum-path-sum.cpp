@@ -64,6 +64,9 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
+
 struct TreeNode {
   int val;
   TreeNode* left;
@@ -83,20 +86,20 @@ int bestDownward(TreeNode* node, long long& bestPathSum) {
   int rightGain = bestDownward(node->right, bestPathSum);
 
   // A negative contribution can only hurt -- treat it as "skip this side."
-  leftGain = std::max(leftGain, 0);
-  rightGain = std::max(rightGain, 0);
+  leftGain = max(leftGain, 0);
+  rightGain = max(rightGain, 0);
 
   // This is the ONE place the path is allowed to bend through `node` using
   // both children at once. That candidate is valid as a complete path, but
   // it cannot be extended further upward, so it is only ever compared
   // against the running best -- never returned to the caller.
   long long throughThisNode = static_cast<long long>(node->val) + leftGain + rightGain;
-  bestPathSum = std::max(bestPathSum, throughThisNode);
+  bestPathSum = max(bestPathSum, throughThisNode);
 
   // What the PARENT is allowed to use: this node's value plus the BETTER of
   // its two children's downward contributions -- never both, since a real
   // path cannot branch once it continues upward through this node.
-  return node->val + std::max(leftGain, rightGain);
+  return node->val + max(leftGain, rightGain);
 }
 
 int maxPathSum(TreeNode* root) {
@@ -119,12 +122,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -177,6 +180,6 @@ int main() {
     deleteTree(root);
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

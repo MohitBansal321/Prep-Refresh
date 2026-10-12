@@ -45,10 +45,13 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
 
   int find(int x) {
@@ -65,18 +68,18 @@ class DisjointSet {
     int root_y = find(y);
     if (root_x == root_y) return false;
 
-    if (rank_[root_x] < rank_[root_y]) std::swap(root_x, root_y);
+    if (rank_[root_x] < rank_[root_y]) swap(root_x, root_y);
     parent_[root_y] = root_x;
     if (rank_[root_x] == rank_[root_y]) ++rank_[root_x];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
-std::vector<int> findRedundantConnection(const std::vector<std::vector<int>>& edges) {
+vector<int> findRedundantConnection(const vector<vector<int>>& edges) {
   int n = static_cast<int>(edges.size());  // n nodes labeled 1..n, n edges given
   DisjointSet dsu(n + 1);                  // index 0 unused; nodes are 1-indexed
 
@@ -98,45 +101,45 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::vector<int>> edges = {{1, 2}, {1, 3}, {2, 3}};
-    std::vector<int> expected = {2, 3};
+    vector<vector<int>> edges = {{1, 2}, {1, 3}, {2, 3}};
+    vector<int> expected = {2, 3};
     check(findRedundantConnection(edges) == expected,
           "[[1,2],[1,3],[2,3]] -> [2,3]");
   }
 
   {
-    std::vector<std::vector<int>> edges = {{1, 2}, {2, 3}, {3, 4}, {1, 4}, {1, 5}};
-    std::vector<int> expected = {1, 4};
+    vector<vector<int>> edges = {{1, 2}, {2, 3}, {3, 4}, {1, 4}, {1, 5}};
+    vector<int> expected = {1, 4};
     check(findRedundantConnection(edges) == expected,
           "[[1,2],[2,3],[3,4],[1,4],[1,5]] -> [1,4]");
   }
 
   {
     // Simplest possible cycle: two nodes, two edges between them.
-    std::vector<std::vector<int>> edges = {{1, 2}, {2, 1}};
-    std::vector<int> expected = {2, 1};
+    vector<vector<int>> edges = {{1, 2}, {2, 1}};
+    vector<int> expected = {2, 1};
     check(findRedundantConnection(edges) == expected, "[[1,2],[2,1]] -> [2,1]");
   }
 
   {
     // Star topology plus one extra closing edge among leaves.
-    std::vector<std::vector<int>> edges = {{1, 2}, {1, 3}, {1, 4}, {1, 5}, {3, 4}};
-    std::vector<int> expected = {3, 4};
+    vector<vector<int>> edges = {{1, 2}, {1, 3}, {1, 4}, {1, 5}, {3, 4}};
+    vector<int> expected = {3, 4};
     check(findRedundantConnection(edges) == expected,
           "star graph with one closing leaf edge -> [3,4]");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

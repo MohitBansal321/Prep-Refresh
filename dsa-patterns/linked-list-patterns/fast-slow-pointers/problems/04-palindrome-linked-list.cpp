@@ -7,7 +7,7 @@
 //   palindrome (reads the same forwards and backwards), false otherwise.
 //   The follow-up constraint that makes this interesting: do it in O(n)
 //   time and O(1) extra space (i.e. do NOT copy the values into a
-//   std::vector and check it there, which would be O(n) space).
+//   vector and check it there, which would be O(n) space).
 //
 // APPROACH (Fast & Slow Pointers COMBINED with In-place Reversal):
 //   This problem is the textbook example of two Linked List patterns
@@ -35,7 +35,7 @@
 //          overall (3 * O(n) = O(n)).
 //   Space: O(1) — only a constant number of pointers. Contrast with the
 //          brute-force approach of copying all values into a
-//          std::vector<int> and checking it with two converging indices,
+//          vector<int> and checking it with two converging indices,
 //          which is O(n) time AND O(n) space.
 //
 // Compile:
@@ -45,13 +45,16 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 struct ListNode {
   int val;
   ListNode* next;
   ListNode(int x) : val(x), next(nullptr) {}
 };
 
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
   ListNode* head = new ListNode(values[0]);
   ListNode* tail = head;
@@ -146,14 +149,14 @@ bool isPalindrome(ListNode* head) {
 // ----------------------------------------------------------------------------
 // Test harness.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, bool actual, bool expected) {
-  std::cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
-             << " (got " << std::boolalpha << actual << ", expected "
+void check(const string& name, bool actual, bool expected) {
+  cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
+             << " (got " << boolalpha << actual << ", expected "
              << expected << ")\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 234: Palindrome Linked List ===\n\n";
+  cout << "=== LeetCode 234: Palindrome Linked List ===\n\n";
 
   // Case 1: even-length palindrome.
   {
@@ -195,7 +198,7 @@ int main() {
     ListNode* head = build_list({1, 2, 3, 4});
     isPalindrome(head);  // mutate-and-restore internally
     bool restored_correctly = true;
-    std::vector<int> expected = {1, 2, 3, 4};
+    vector<int> expected = {1, 2, 3, 4};
     ListNode* curr = head;
     for (int v : expected) {
       if (curr == nullptr || curr->val != v) {

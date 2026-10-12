@@ -85,6 +85,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // The solution: sorted candidates, start index, unbounded reuse, break-prune.
 //
@@ -92,10 +95,10 @@
 // it plays no part in the algorithm and would not appear in an interview
 // answer.
 // ----------------------------------------------------------------------------
-void combinationSumHelper(const std::vector<int>& candidates /* SORTED asc */,
+void combinationSumHelper(const vector<int>& candidates /* SORTED asc */,
                           size_t start, int remaining,
-                          std::vector<int>& current,
-                          std::vector<std::vector<int>>& result,
+                          vector<int>& current,
+                          vector<vector<int>>& result,
                           long& nodes_visited) {
   ++nodes_visited;
 
@@ -126,26 +129,26 @@ void combinationSumHelper(const std::vector<int>& candidates /* SORTED asc */,
   }
 }
 
-std::vector<std::vector<int>> combinationSum(std::vector<int> candidates,
+vector<vector<int>> combinationSum(vector<int> candidates,
                                              int target,
                                              long& nodes_visited) {
   // Sorting is what makes the `break` legal. Without it the prune would have
   // to be a `continue` (correct but far weaker), since a large candidate
   // could be followed by a small usable one.
-  std::sort(candidates.begin(), candidates.end());
+  sort(candidates.begin(), candidates.end());
 
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+  vector<vector<int>> result;
+  vector<int> current;
   nodes_visited = 0;
   combinationSumHelper(candidates, 0, target, current, result, nodes_visited);
   return result;
 }
 
 // Convenience overload for callers that do not care about the node count.
-std::vector<std::vector<int>> combinationSum(std::vector<int> candidates,
+vector<vector<int>> combinationSum(vector<int> candidates,
                                              int target) {
   long ignored = 0;
-  return combinationSum(std::move(candidates), target, ignored);
+  return combinationSum(move(candidates), target, ignored);
 }
 
 // ----------------------------------------------------------------------------
@@ -156,10 +159,10 @@ std::vector<std::vector<int>> combinationSum(std::vector<int> candidates,
 // measurably more work. Kept so the test suite can show the prune's value as a
 // number instead of an assertion.
 // ----------------------------------------------------------------------------
-void combinationSumUnprunedHelper(const std::vector<int>& candidates,
+void combinationSumUnprunedHelper(const vector<int>& candidates,
                                   size_t start, int remaining,
-                                  std::vector<int>& current,
-                                  std::vector<std::vector<int>>& result,
+                                  vector<int>& current,
+                                  vector<vector<int>>& result,
                                   long& nodes_visited) {
   ++nodes_visited;
 
@@ -177,12 +180,12 @@ void combinationSumUnprunedHelper(const std::vector<int>& candidates,
   }
 }
 
-std::vector<std::vector<int>> combinationSumUnpruned(std::vector<int> candidates,
+vector<vector<int>> combinationSumUnpruned(vector<int> candidates,
                                                      int target,
                                                      long& nodes_visited) {
-  std::sort(candidates.begin(), candidates.end());
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+  sort(candidates.begin(), candidates.end());
+  vector<vector<int>> result;
+  vector<int> current;
   nodes_visited = 0;
   combinationSumUnprunedHelper(candidates, 0, target, current, result,
                                nodes_visited);
@@ -194,10 +197,10 @@ std::vector<std::vector<int>> combinationSumUnpruned(std::vector<int> candidates
 // recursing from `i + 1` retires each candidate after one use, turning this
 // into "each candidate at most once" (a different problem entirely).
 // ----------------------------------------------------------------------------
-void combinationSumNoReuseHelper(const std::vector<int>& candidates,
+void combinationSumNoReuseHelper(const vector<int>& candidates,
                                  size_t start, int remaining,
-                                 std::vector<int>& current,
-                                 std::vector<std::vector<int>>& result) {
+                                 vector<int>& current,
+                                 vector<vector<int>>& result) {
   if (remaining == 0) {
     result.push_back(current);
     return;
@@ -211,11 +214,11 @@ void combinationSumNoReuseHelper(const std::vector<int>& candidates,
   }
 }
 
-std::vector<std::vector<int>> combinationSumNoReuse(std::vector<int> candidates,
+vector<vector<int>> combinationSumNoReuse(vector<int> candidates,
                                                     int target) {
-  std::sort(candidates.begin(), candidates.end());
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+  sort(candidates.begin(), candidates.end());
+  vector<vector<int>> result;
+  vector<int> current;
   combinationSumNoReuseHelper(candidates, 0, target, current, result);
   return result;
 }
@@ -229,11 +232,11 @@ std::vector<std::vector<int>> combinationSumNoReuse(std::vector<int> candidates,
 // it), so only the outer vector needs sorting -- but the inner sort is kept
 // anyway so a regression that breaks the ordering guarantee still compares
 // correctly on content, and is caught by its own dedicated test instead.
-std::vector<std::vector<int>> normalized(std::vector<std::vector<int>> v) {
+vector<vector<int>> normalized(vector<vector<int>> v) {
   for (size_t i = 0; i < v.size(); ++i) {
-    std::sort(v[i].begin(), v[i].end());
+    sort(v[i].begin(), v[i].end());
   }
-  std::sort(v.begin(), v.end());
+  sort(v.begin(), v.end());
   return v;
 }
 
@@ -241,50 +244,50 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // --- LeetCode example 1: candidates = [2,3,6,7], target = 7 ---
   {
-    std::vector<int> candidates;
+    vector<int> candidates;
     candidates.push_back(2);
     candidates.push_back(3);
     candidates.push_back(6);
     candidates.push_back(7);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>{2, 2, 3});
-    expected.push_back(std::vector<int>{7});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>{2, 2, 3});
+    expected.push_back(vector<int>{7});
 
-    std::vector<std::vector<int>> got = combinationSum(candidates, 7);
+    vector<vector<int>> got = combinationSum(candidates, 7);
     check(normalized(got) == normalized(expected),
           "[2,3,6,7] target 7 -> exactly [[2,2,3],[7]]");
 
     // The i-vs-(i+1) bug: 2 gets retired after one use, so [2,2,3] vanishes
     // and only [7] survives. A missing answer, not a malformed one.
-    std::vector<std::vector<int>> buggy = combinationSumNoReuse(candidates, 7);
+    vector<vector<int>> buggy = combinationSumNoReuse(candidates, 7);
     check(buggy.size() == 1 && buggy[0].size() == 1 && buggy[0][0] == 7,
           "recursing from i+1 silently drops [2,2,3] -- reuse requires i, not i+1");
   }
 
   // --- LeetCode example 2: candidates = [2,3,5], target = 8 ---
   {
-    std::vector<int> candidates;
+    vector<int> candidates;
     candidates.push_back(2);
     candidates.push_back(3);
     candidates.push_back(5);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>{2, 2, 2, 2});
-    expected.push_back(std::vector<int>{2, 3, 3});
-    expected.push_back(std::vector<int>{3, 5});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>{2, 2, 2, 2});
+    expected.push_back(vector<int>{2, 3, 3});
+    expected.push_back(vector<int>{3, 5});
 
     check(normalized(combinationSum(candidates, 8)) == normalized(expected),
           "[2,3,5] target 8 -> exactly [[2,2,2,2],[2,3,3],[3,5]]");
@@ -292,34 +295,34 @@ int main() {
 
   // --- LeetCode example 3: no combination is possible ---
   {
-    std::vector<int> candidates;
+    vector<int> candidates;
     candidates.push_back(2);
     check(combinationSum(candidates, 1).empty(),
           "[2] target 1 -> empty (no combination reaches an odd target from 2s)");
     check(combinationSum(candidates, 3).empty(),
           "[2] target 3 -> empty (2 and 4 straddle it; overshoot is permanent)");
 
-    std::vector<std::vector<int>> got = combinationSum(candidates, 2);
+    vector<vector<int>> got = combinationSum(candidates, 2);
     check(got.size() == 1 && got[0].size() == 1 && got[0][0] == 2,
           "[2] target 2 -> exactly [[2]]");
 
-    std::vector<std::vector<int>> six = combinationSum(candidates, 6);
+    vector<vector<int>> six = combinationSum(candidates, 6);
     check(six.size() == 1 && six[0].size() == 3,
           "[2] target 6 -> exactly [[2,2,2]] -- unbounded reuse of a single candidate");
   }
 
   // --- Unsorted input must still work: the function sorts internally ---
   {
-    std::vector<int> unsorted;
+    vector<int> unsorted;
     unsorted.push_back(8);
     unsorted.push_back(7);
     unsorted.push_back(4);
     unsorted.push_back(3);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>{3, 4, 4});
-    expected.push_back(std::vector<int>{3, 8});
-    expected.push_back(std::vector<int>{4, 7});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>{3, 4, 4});
+    expected.push_back(vector<int>{3, 8});
+    expected.push_back(vector<int>{4, 7});
 
     check(normalized(combinationSum(unsorted, 11)) == normalized(expected),
           "unsorted [8,7,4,3] target 11 -> [[3,4,4],[3,8],[4,7]] (sorted internally)");
@@ -328,12 +331,12 @@ int main() {
   // --- Every returned combination must actually sum to the target, and be ---
   // --- built in non-decreasing order (the start-index guarantee).          ---
   {
-    std::vector<int> candidates;
+    vector<int> candidates;
     candidates.push_back(7);
     candidates.push_back(3);
     candidates.push_back(2);
 
-    std::vector<std::vector<int>> got = combinationSum(candidates, 18);
+    vector<vector<int>> got = combinationSum(candidates, 18);
 
     bool all_sum_correctly = true;
     bool all_non_decreasing = true;
@@ -357,7 +360,7 @@ int main() {
 
     // No two combinations may be identical: the start index is what rules out
     // the reordered duplicates [2,3,2] / [3,2,2] that a from-zero loop emits.
-    std::vector<std::vector<int>> norm = normalized(got);
+    vector<vector<int>> norm = normalized(got);
     bool has_duplicate = false;
     for (size_t i = 1; i < norm.size(); ++i) {
       if (norm[i] == norm[i - 1]) has_duplicate = true;
@@ -367,22 +370,22 @@ int main() {
 
   // --- Edge cases: empty candidate list, and target 0 ---
   {
-    std::vector<int> none;
+    vector<int> none;
     check(combinationSum(none, 5).empty(), "empty candidate list -> empty result");
 
-    std::vector<int> candidates;
+    vector<int> candidates;
     candidates.push_back(2);
     candidates.push_back(3);
     // LeetCode guarantees target >= 1, but remaining == 0 at the root is
     // handled correctly for free: the empty combination sums to 0.
-    std::vector<std::vector<int>> zero = combinationSum(candidates, 0);
+    vector<vector<int>> zero = combinationSum(candidates, 0);
     check(zero.size() == 1 && zero[0].empty(),
           "target 0 -> exactly one combination, the empty one (base case at the root)");
   }
 
   // --- The prune's value, measured: same answers, strictly fewer nodes ---
   {
-    std::vector<int> candidates;
+    vector<int> candidates;
     candidates.push_back(2);
     candidates.push_back(3);
     candidates.push_back(5);
@@ -391,8 +394,8 @@ int main() {
 
     long pruned_nodes = 0;
     long unpruned_nodes = 0;
-    std::vector<std::vector<int>> pruned = combinationSum(candidates, 30, pruned_nodes);
-    std::vector<std::vector<int>> unpruned =
+    vector<vector<int>> pruned = combinationSum(candidates, 30, pruned_nodes);
+    vector<vector<int>> unpruned =
         combinationSumUnpruned(candidates, 30, unpruned_nodes);
 
     check(normalized(pruned) == normalized(unpruned),
@@ -400,7 +403,7 @@ int main() {
     check(pruned_nodes < unpruned_nodes,
           "the sorted-break prune visits strictly fewer nodes than remaining<0 detection");
 
-    std::cout << "       (pruned visited " << pruned_nodes << " nodes, unpruned visited "
+    cout << "       (pruned visited " << pruned_nodes << " nodes, unpruned visited "
               << unpruned_nodes << " -- "
               << (100 - (100 * pruned_nodes) / unpruned_nodes) << "% avoided)\n";
 
@@ -410,6 +413,6 @@ int main() {
     check(!pruned.empty(), "target 30 has at least one combination");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

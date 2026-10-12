@@ -22,8 +22,9 @@ A handful of bitwise identities do most of the work in this pattern:
 ## Template
 
 ```cpp
+using namespace std;
 // XOR cancels pairs: find the single number where every other appears twice.
-int singleNumber(const std::vector<int>& nums) {
+int singleNumber(const vector<int>& nums) {
   int result = 0;
   for (int n : nums) result ^= n;
   return result;
@@ -37,11 +38,11 @@ int countSetBits(unsigned int n) {
 }
 
 // Enumerate all subset masks of an n-element set.
-std::vector<std::vector<int>> allSubsetsViaBitmask(const std::vector<int>& nums) {
+vector<vector<int>> allSubsetsViaBitmask(const vector<int>& nums) {
   int n = nums.size();
-  std::vector<std::vector<int>> result;
+  vector<vector<int>> result;
   for (int mask = 0; mask < (1 << n); ++mask) {
-    std::vector<int> subset;
+    vector<int> subset;
     for (int i = 0; i < n; ++i)
       if (mask & (1 << i)) subset.push_back(nums[i]);
     result.push_back(subset);

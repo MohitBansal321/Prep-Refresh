@@ -16,9 +16,10 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 struct Edge { int from, to, weight; };
 
-std::vector<long long> dist(n, kInf);
+vector<long long> dist(n, kInf);
 dist[src] = 0;
 
 for (int pass = 0; pass < n - 1; ++pass) {

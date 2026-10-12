@@ -75,20 +75,23 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the maximum final capital achievable by completing at most k
 // projects, starting with capital w.
-long long findMaximizedCapital(int k, long long w, const std::vector<int>& profits,
-                                const std::vector<int>& capital) {
+long long findMaximizedCapital(int k, long long w, const vector<int>& profits,
+                                const vector<int>& capital) {
   int n = static_cast<int>(profits.size());
 
   // Min-heap of {required_capital, profit} for projects not yet affordable,
-  // ordered by required_capital ascending (std::greater on the pair, which
+  // ordered by required_capital ascending (greater on the pair, which
   // compares required_capital first by default pair ordering).
-  using Project = std::pair<long long, long long>;  // {capital_needed, profit}
-  std::priority_queue<Project, std::vector<Project>, std::greater<Project>> not_affordable;
+  using Project = pair<long long, long long>;  // {capital_needed, profit}
+  priority_queue<Project, vector<Project>, greater<Project>> not_affordable;
 
   // Max-heap of profits for currently-affordable projects.
-  std::priority_queue<long long> affordable;
+  priority_queue<long long> affordable;
 
   for (int i = 0; i < n; ++i) {
     not_affordable.push({capital[i], profits[i]});
@@ -121,28 +124,28 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     // Classic LeetCode example.
-    std::vector<int> profits = {1, 2, 3};
-    std::vector<int> capital = {0, 1, 1};
+    vector<int> profits = {1, 2, 3};
+    vector<int> capital = {0, 1, 1};
     check(findMaximizedCapital(2, 0, profits, capital) == 4,
           "k=2, w=0, profits=[1,2,3], capital=[0,1,1] -> 4");
   }
 
   {
     // Second classic LeetCode example.
-    std::vector<int> profits = {1, 2, 3};
-    std::vector<int> capital = {0, 1, 2};
+    vector<int> profits = {1, 2, 3};
+    vector<int> capital = {0, 1, 2};
     check(findMaximizedCapital(3, 0, profits, capital) == 6,
           "k=3, w=0, profits=[1,2,3], capital=[0,1,2] -> 6");
   }
@@ -150,24 +153,24 @@ int main() {
   {
     // Starting capital already covers every project immediately -- should
     // just pick the k most profitable projects overall.
-    std::vector<int> profits = {5, 1, 9, 3};
-    std::vector<int> capital = {0, 0, 0, 0};
+    vector<int> profits = {5, 1, 9, 3};
+    vector<int> capital = {0, 0, 0, 0};
     check(findMaximizedCapital(2, 0, profits, capital) == 14,
           "all affordable immediately, k=2 -> pick top 2 profits (9+5) = 14");
   }
 
   {
     // Not enough capital to ever afford anything.
-    std::vector<int> profits = {5, 10};
-    std::vector<int> capital = {100, 200};
+    vector<int> profits = {5, 10};
+    vector<int> capital = {100, 200};
     check(findMaximizedCapital(2, 0, profits, capital) == 0,
           "nothing affordable ever -> capital stays 0");
   }
 
   {
     // k = 0: no rounds should ever execute.
-    std::vector<int> profits = {5, 10};
-    std::vector<int> capital = {0, 0};
+    vector<int> profits = {5, 10};
+    vector<int> capital = {0, 0};
     check(findMaximizedCapital(0, 3, profits, capital) == 3,
           "k=0 -> capital unchanged at starting w=3");
   }
@@ -175,12 +178,12 @@ int main() {
   {
     // A single project exactly at the affordability boundary (capital ==
     // requirement should count as affordable, per the problem's <= rule).
-    std::vector<int> profits = {7};
-    std::vector<int> capital = {5};
+    vector<int> profits = {7};
+    vector<int> capital = {5};
     check(findMaximizedCapital(1, 5, profits, capital) == 12,
           "capital exactly equals requirement -> project is affordable");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

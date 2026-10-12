@@ -16,7 +16,7 @@
 //   2. lengthOfLIS_NLogN — O(n log n) "patience sorting". Maintains a
 //                          `tails` array (the smallest possible tail value
 //                          for each achievable subsequence length) and uses
-//                          binary search (std::lower_bound) to place each
+//                          binary search (lower_bound) to place each
 //                          new element in O(log n). This is the classical,
 //                          much less obvious trick — see the README for the
 //                          full correctness argument.
@@ -34,6 +34,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Variant 1: O(n^2) DP.
 //
@@ -49,21 +52,21 @@
 // last element.
 // ----------------------------------------------------------------------------
 template <typename T>
-int lengthOfLIS_On2(const std::vector<T>& nums) {
+int lengthOfLIS_On2(const vector<T>& nums) {
   const size_t n = nums.size();
   if (n == 0) return 0;
 
-  std::vector<int> dp(n, 1);  // Every single element is a subsequence of length 1.
+  vector<int> dp(n, 1);  // Every single element is a subsequence of length 1.
   int best = 1;
 
   for (size_t i = 1; i < n; ++i) {
     for (size_t j = 0; j < i; ++j) {
       if (nums[j] < nums[i]) {
         // We could place nums[i] right after whatever subsequence ends at j.
-        dp[i] = std::max(dp[i], dp[j] + 1);
+        dp[i] = max(dp[i], dp[j] + 1);
       }
     }
-    best = std::max(best, dp[i]);
+    best = max(best, dp[i]);
   }
 
   return best;
@@ -80,7 +83,7 @@ int lengthOfLIS_On2(const std::vector<T>& nums) {
 // subsequence, not just its length).
 //
 // For each new number x:
-//   - std::lower_bound finds the first element in `tails` that is >= x
+//   - lower_bound finds the first element in `tails` that is >= x
 //     (the leftmost position x could occupy while keeping `tails` sorted
 //     and respecting strict increase).
 //   - If no such element exists (x is bigger than every tail so far), x
@@ -93,21 +96,21 @@ int lengthOfLIS_On2(const std::vector<T>& nums) {
 //
 // `tails.size()` at the end is the answer: the length of the LIS.
 //
-// NOTE on strict vs non-strict increase: this uses std::lower_bound, which
+// NOTE on strict vs non-strict increase: this uses lower_bound, which
 // finds the first element NOT LESS THAN x (i.e. >= x). That is correct for
 // STRICT increase (no repeated values allowed in the subsequence). If the
 // problem instead wants a NON-DECREASING subsequence (repeats allowed),
-// swap in std::upper_bound (first element STRICTLY GREATER than x) instead
+// swap in upper_bound (first element STRICTLY GREATER than x) instead
 // — see the README's Common Mistakes section for why mixing these up is a
 // classic off-by-one bug.
 // ----------------------------------------------------------------------------
 template <typename T>
-int lengthOfLIS_NLogN(const std::vector<T>& nums) {
-  std::vector<T> tails;
+int lengthOfLIS_NLogN(const vector<T>& nums) {
+  vector<T> tails;
   tails.reserve(nums.size());
 
   for (const auto& x : nums) {
-    auto it = std::lower_bound(tails.begin(), tails.end(), x);
+    auto it = lower_bound(tails.begin(), tails.end(), x);
     if (it == tails.end()) {
       tails.push_back(x);  // x is larger than every current tail: extend.
     } else {
@@ -126,8 +129,8 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check_both_agree = [&](const std::vector<int>& nums, int expected,
-                               const std::string& label) {
+  auto check_both_agree = [&](const vector<int>& nums, int expected,
+                               const string& label) {
     int result_on2 = lengthOfLIS_On2(nums);
     int result_nlogn = lengthOfLIS_NLogN(nums);
 
@@ -135,16 +138,16 @@ int main() {
               (result_on2 == result_nlogn);
 
     if (ok) {
-      std::cout << "[PASS] " << label << " -> both report " << result_on2 << "\n";
+      cout << "[PASS] " << label << " -> both report " << result_on2 << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << " -> On2=" << result_on2
+      cout << "[FAIL] " << label << " -> On2=" << result_on2
                 << " NLogN=" << result_nlogn << " expected=" << expected << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- lengthOfLIS_On2 vs lengthOfLIS_NLogN equivalence checks ---\n";
+  cout << "--- lengthOfLIS_On2 vs lengthOfLIS_NLogN equivalence checks ---\n";
 
   check_both_agree({10, 9, 2, 5, 3, 7, 101, 18}, 4,
                     "classic example [10,9,2,5,3,7,101,18]");
@@ -171,6 +174,6 @@ int main() {
   // version — this is the whole point of running both side by side.
   check_both_agree({3, 4, -1, 0, 6, 2, 3}, 4, "[3,4,-1,0,6,2,3]");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

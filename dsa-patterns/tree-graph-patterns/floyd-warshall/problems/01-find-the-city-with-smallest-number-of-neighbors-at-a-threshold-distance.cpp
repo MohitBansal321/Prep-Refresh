@@ -30,14 +30,17 @@
 #include <string>
 #include <vector>
 
-int findTheCity(int n, const std::vector<std::vector<int>>& edges,
+using namespace std;
+
+
+int findTheCity(int n, const vector<vector<int>>& edges,
                  int distanceThreshold) {
-  const long long kInf = std::numeric_limits<long long>::max() / 4;
-  std::vector<std::vector<long long>> dist(n, std::vector<long long>(n, kInf));
+  const long long kInf = numeric_limits<long long>::max() / 4;
+  vector<vector<long long>> dist(n, vector<long long>(n, kInf));
   for (int i = 0; i < n; ++i) dist[i][i] = 0;
   for (const auto& e : edges) {
-    dist[e[0]][e[1]] = std::min(dist[e[0]][e[1]], static_cast<long long>(e[2]));
-    dist[e[1]][e[0]] = std::min(dist[e[1]][e[0]], static_cast<long long>(e[2]));
+    dist[e[0]][e[1]] = min(dist[e[0]][e[1]], static_cast<long long>(e[2]));
+    dist[e[1]][e[0]] = min(dist[e[1]][e[0]], static_cast<long long>(e[2]));
   }
 
   for (int k = 0; k < n; ++k) {
@@ -78,12 +81,12 @@ int findTheCity(int n, const std::vector<std::vector<int>>& edges,
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -94,7 +97,7 @@ int main() {
     // direct edge to 1 (weight 4) is beaten by the two-hop route 3->2->1
     // (1+1=2) -- exactly the kind of improvement only the waypoint
     // relaxation discovers, not a distance a single direct-edge scan would.
-    std::vector<std::vector<int>> edges = {{0, 1, 3}, {1, 2, 1}, {1, 3, 4}, {2, 3, 1}};
+    vector<vector<int>> edges = {{0, 1, 3}, {1, 2, 1}, {1, 3, 4}, {2, 3, 1}};
     int result = findTheCity(4, edges, 4);
     check(result == 3, "4-city example with threshold 4 -> city 3 has fewest reachable neighbors");
   }
@@ -104,7 +107,7 @@ int main() {
     // threshold 2. Only immediate neighbors are reachable for every city
     // except the two endpoints (which have only 1 neighbor within range),
     // so cities 0 and 4 tie on count=1 -- the larger id (4) wins the tie.
-    std::vector<std::vector<int>> edges = {{0, 1, 2}, {1, 2, 2}, {2, 3, 2}, {3, 4, 2}};
+    vector<vector<int>> edges = {{0, 1, 2}, {1, 2, 2}, {2, 3, 2}, {3, 4, 2}};
     int result = findTheCity(5, edges, 2);
     check(result == 4, "chain graph, tie on fewest-neighbors -> larger city id (4) wins");
   }
@@ -112,11 +115,11 @@ int main() {
   {
     // A fully disconnected pair of cities: each has zero reachable
     // neighbors, tying at the minimum possible count -- larger id wins.
-    std::vector<std::vector<int>> edges = {{0, 1, 1}};
+    vector<vector<int>> edges = {{0, 1, 1}};
     int result = findTheCity(3, edges, 1);
     check(result == 2, "city 2 is fully disconnected -> 0 neighbors, wins the tie by id");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

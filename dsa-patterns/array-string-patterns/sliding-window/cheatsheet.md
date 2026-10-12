@@ -18,6 +18,7 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Fixed-size window
 long long windowSum = 0;
 for (int i = 0; i < k; ++i) windowSum += arr[i];
@@ -25,7 +26,7 @@ long long best = windowSum;
 for (int right = k; right < n; ++right) {
     windowSum += arr[right];          // entering element
     windowSum -= arr[right - k];      // leaving element
-    best = std::max(best, windowSum);
+    best = max(best, windowSum);
 }
 
 // Variable-size window (grow, shrink while invalid, record when valid)
@@ -37,7 +38,7 @@ for (int right = 0; right < n; ++right) {
         /* shrink: remove arr[left] from aggregate */
         ++left;
     }
-    best = std::max(best, right - left + 1); // or track shortest, per problem
+    best = max(best, right - left + 1); // or track shortest, per problem
 }
 ```
 

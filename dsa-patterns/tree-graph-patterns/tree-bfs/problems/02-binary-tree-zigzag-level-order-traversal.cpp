@@ -42,6 +42,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct TreeNode {
   int val;
   TreeNode* left;
@@ -58,19 +61,19 @@ void freeTree(TreeNode* root) {
   delete root;
 }
 
-std::vector<std::vector<int>> zigzagLevelOrder(TreeNode* root) {
-  std::vector<std::vector<int>> result;
+vector<vector<int>> zigzagLevelOrder(TreeNode* root) {
+  vector<vector<int>> result;
   if (root == nullptr) {
     return result;
   }
 
-  std::queue<TreeNode*> q;
+  queue<TreeNode*> q;
   q.push(root);
   bool left_to_right = true;
 
   while (!q.empty()) {
     size_t level_size = q.size();  // Same snapshot trick as plain level order.
-    std::vector<int> level_values;
+    vector<int> level_values;
     level_values.reserve(level_size);
 
     for (size_t i = 0; i < level_size; ++i) {
@@ -89,9 +92,9 @@ std::vector<std::vector<int>> zigzagLevelOrder(TreeNode* root) {
     // The queue always yields a level in natural left-to-right order.
     // Zigzag only changes how we STORE that level, not how we traverse it.
     if (!left_to_right) {
-      std::reverse(level_values.begin(), level_values.end());
+      reverse(level_values.begin(), level_values.end());
     }
-    result.push_back(std::move(level_values));
+    result.push_back(move(level_values));
 
     left_to_right = !left_to_right;  // Alternate direction for the next level.
   }
@@ -103,12 +106,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -121,7 +124,7 @@ int main() {
     root->right->left = new TreeNode(15);
     root->right->right = new TreeNode(7);
 
-    std::vector<std::vector<int>> expected = {{3}, {20, 9}, {15, 7}};
+    vector<vector<int>> expected = {{3}, {20, 9}, {15, 7}};
     check(zigzagLevelOrder(root) == expected, "classic example -> [[3],[20,9],[15,7]]");
 
     freeTree(root);
@@ -133,7 +136,7 @@ int main() {
 
   {
     TreeNode* root = new TreeNode(1);
-    std::vector<std::vector<int>> expected = {{1}};
+    vector<vector<int>> expected = {{1}};
     check(zigzagLevelOrder(root) == expected, "single node -> [[1]]");
     freeTree(root);
   }
@@ -160,7 +163,7 @@ int main() {
     root->right->right->left = new TreeNode(14);
     root->right->right->right = new TreeNode(15);
 
-    std::vector<std::vector<int>> expected = {
+    vector<vector<int>> expected = {
         {1}, {3, 2}, {4, 5, 6, 7}, {15, 14, 13, 12, 11, 10, 9, 8}};
     check(zigzagLevelOrder(root) == expected,
           "perfect tree depth 4 -> alternating direction on every level");
@@ -168,6 +171,6 @@ int main() {
     freeTree(root);
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

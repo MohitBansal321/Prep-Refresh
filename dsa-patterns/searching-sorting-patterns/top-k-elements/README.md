@@ -4,7 +4,8 @@
 > **In one line:** keep a heap of exactly size `k`, evicting the weakest candidate every time a new one arrives — a **min-heap** for \"top K largest\" (the weakest of the K is the smallest), inverted for \"top K smallest.\"
 
 ```cpp
-std::priority_queue<T, std::vector<T>, std::greater<T>> minHeap;
+using namespace std;
+priority_queue<T, vector<T>, greater<T>> minHeap;
 
 for (const T& value : nums) {
   minHeap.push(value);

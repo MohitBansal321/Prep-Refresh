@@ -23,6 +23,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // unboundedKnapsack — maximize total value packed into `capacity`, where each
 // item i (weight[i], value[i]) may be used any number of times (including
 // zero).
@@ -41,18 +44,18 @@
 // value computed BEFORE item i was considered at all, guaranteeing at most
 // one use per row — which is exactly the 0/1 (bounded) recurrence, not this
 // one.
-long long unboundedKnapsack(const std::vector<int>& weights,
-                            const std::vector<long long>& values,
+long long unboundedKnapsack(const vector<int>& weights,
+                            const vector<long long>& values,
                             int capacity) {
     const int n = static_cast<int>(weights.size());
-    std::vector<long long> dp(capacity + 1, 0);
+    vector<long long> dp(capacity + 1, 0);
 
     // Base case: dp[0] = 0 — with zero capacity, no item fits, so the best
     // achievable value is 0 (a "0 items chosen" state, not an error state).
     for (int w = 1; w <= capacity; ++w) {
         for (int i = 0; i < n; ++i) {
             if (weights[i] <= w) {
-                dp[w] = std::max(dp[w], dp[w - weights[i]] + values[i]);
+                dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
             }
         }
     }
@@ -72,15 +75,15 @@ long long unboundedKnapsack(const std::vector<int>& weights,
 // only the aggregation (min + 1 instead of max + value) and the base/sentinel
 // handling differ, because this variant asks "can we hit this sum exactly"
 // rather than "what's the best value up to this capacity."
-int coinChangeMinCoins(const std::vector<int>& coins, int amount) {
+int coinChangeMinCoins(const vector<int>& coins, int amount) {
     const int UNREACHABLE = INT_MAX / 2; // avoid overflow when we add 1 to it
-    std::vector<int> dp(amount + 1, UNREACHABLE);
+    vector<int> dp(amount + 1, UNREACHABLE);
     dp[0] = 0; // base case: 0 coins needed to make amount 0
 
     for (int w = 1; w <= amount; ++w) {
         for (int c : coins) {
             if (c <= w && dp[w - c] != UNREACHABLE) {
-                dp[w] = std::min(dp[w], dp[w - c] + 1);
+                dp[w] = min(dp[w], dp[w - c] + 1);
             }
         }
     }
@@ -94,12 +97,12 @@ namespace {
 int g_pass = 0;
 int g_fail = 0;
 
-void expectEq(const std::string& label, long long actual, long long expected) {
+void expectEq(const string& label, long long actual, long long expected) {
     if (actual == expected) {
-        std::cout << "[PASS] " << label << " => " << actual << "\n";
+        cout << "[PASS] " << label << " => " << actual << "\n";
         ++g_pass;
     } else {
-        std::cout << "[FAIL] " << label << " => got " << actual
+        cout << "[FAIL] " << label << " => got " << actual
                    << ", expected " << expected << "\n";
         ++g_fail;
     }
@@ -115,16 +118,16 @@ int main() {
     // the optimum is eight length-1 pieces -> value 8 * 2 = 16 (beating, e.g.,
     // two length-4 pieces at 7 + 7 = 14).
     {
-        std::vector<int> weights{1, 3, 4};
-        std::vector<long long> values{2, 5, 7};
+        vector<int> weights{1, 3, 4};
+        vector<long long> values{2, 5, 7};
         expectEq("unboundedKnapsack(rod length 8)",
                  unboundedKnapsack(weights, values, 8), 16);
     }
 
     // unboundedKnapsack: capacity 0 -> value 0 (base case).
     {
-        std::vector<int> weights{2, 3};
-        std::vector<long long> values{3, 4};
+        vector<int> weights{2, 3};
+        vector<long long> values{3, 4};
         expectEq("unboundedKnapsack(capacity 0)",
                  unboundedKnapsack(weights, values, 0), 0);
     }
@@ -132,33 +135,33 @@ int main() {
     // unboundedKnapsack: a single reusable item that fits many times.
     // weight 2, value 3, capacity 10 -> 5 copies -> value 15.
     {
-        std::vector<int> weights{2};
-        std::vector<long long> values{3};
+        vector<int> weights{2};
+        vector<long long> values{3};
         expectEq("unboundedKnapsack(single reusable item)",
                  unboundedKnapsack(weights, values, 10), 15);
     }
 
     // coinChangeMinCoins: coins [1, 2, 5], amount 11 -> 5 + 5 + 1 = 3 coins.
     {
-        std::vector<int> coins{1, 2, 5};
+        vector<int> coins{1, 2, 5};
         expectEq("coinChangeMinCoins([1,2,5], 11)",
                  coinChangeMinCoins(coins, 11), 3);
     }
 
     // coinChangeMinCoins: amount 0 -> 0 coins.
     {
-        std::vector<int> coins{1, 2, 5};
+        vector<int> coins{1, 2, 5};
         expectEq("coinChangeMinCoins([1,2,5], 0)",
                  coinChangeMinCoins(coins, 0), 0);
     }
 
     // coinChangeMinCoins: unreachable amount -> -1.
     {
-        std::vector<int> coins{2};
+        vector<int> coins{2};
         expectEq("coinChangeMinCoins([2], 3) unreachable",
                  coinChangeMinCoins(coins, 3), -1);
     }
 
-    std::cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
+    cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
     return g_fail == 0 ? 0 : 1;
 }

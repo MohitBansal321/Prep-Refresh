@@ -16,11 +16,12 @@
 ### Template Skeleton
 
 ```cpp
-using HeapEntry = std::tuple<int, int, int>;  // {value, list_index, element_index}
-// std::priority_queue is a MAX-heap by default -- std::greater<> inverts it.
-using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<> >;
+using namespace std;
+using HeapEntry = tuple<int, int, int>;  // {value, list_index, element_index}
+// priority_queue is a MAX-heap by default -- greater<> inverts it.
+using MinHeap = priority_queue<HeapEntry, vector<HeapEntry>, greater<> >;
 
-std::vector<int> mergeK(const std::vector<std::vector<int> >& lists) {
+vector<int> mergeK(const vector<vector<int> >& lists) {
     MinHeap heap;
 
     // SEED: one representative per non-empty list. Must complete BEFORE the
@@ -31,12 +32,12 @@ std::vector<int> mergeK(const std::vector<std::vector<int> >& lists) {
         }
     }
 
-    std::vector<int> out;
+    vector<int> out;
     while (!heap.empty()) {
         const HeapEntry top = heap.top();
-        const int value = std::get<0>(top);
-        const int li    = std::get<1>(top);   // WHICH list -- tells you where to refill
-        const int ei    = std::get<2>(top);   // WHERE in it -- tells you the next index
+        const int value = get<0>(top);
+        const int li    = get<1>(top);   // WHICH list -- tells you where to refill
+        const int ei    = get<2>(top);   // WHERE in it -- tells you the next index
         heap.pop();
 
         out.push_back(value);                 // or: ++popped; if (popped == k) return value;

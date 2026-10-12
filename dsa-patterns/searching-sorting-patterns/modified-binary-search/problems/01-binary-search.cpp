@@ -25,7 +25,10 @@
 #include <iostream>
 #include <vector>
 
-int search(const std::vector<int>& nums, int target) {
+using namespace std;
+
+
+int search(const vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
 
@@ -50,12 +53,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -68,6 +71,6 @@ int main() {
   check(search({1, 2, 3, 4, 5}, 1) == 0, "target is first element -> index 0");
   check(search({1, 2, 3, 4, 5}, 5) == 4, "target is last element -> index 4");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

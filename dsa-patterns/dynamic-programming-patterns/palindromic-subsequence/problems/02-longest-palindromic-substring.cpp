@@ -52,7 +52,10 @@
 #include <iostream>
 #include <string>
 
-std::string longestPalindrome(const std::string& s) {
+using namespace std;
+
+
+string longestPalindrome(const string& s) {
   if (s.empty()) return "";
 
   int n = static_cast<int>(s.size());
@@ -86,19 +89,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // Two equally long answers exist ("bab" / "aba"); accept either.
   {
-    std::string result = longestPalindrome("babad");
+    string result = longestPalindrome("babad");
     check(result == "bab" || result == "aba",
           "\"babad\" -> \"bab\" or \"aba\"");
   }
@@ -121,7 +124,7 @@ int main() {
 
   {
     // Two distinct single chars, no palindrome longer than 1 — accept either.
-    std::string result = longestPalindrome("ac");
+    string result = longestPalindrome("ac");
     check(result == "a" || result == "c", "\"ac\" -> \"a\" or \"c\"");
   }
 
@@ -134,7 +137,7 @@ int main() {
   {
     // Longest palindrome buried mid-string with longer non-palindromic
     // prefixes/suffixes on both sides.
-    std::string result = longestPalindrome("forgeeksskeegfor");
+    string result = longestPalindrome("forgeeksskeegfor");
     check(result == "geeksskeeg",
           "\"forgeeksskeegfor\" -> \"geeksskeeg\"");
   }
@@ -147,6 +150,6 @@ int main() {
           "\"abba\" -> \"abba\" (even-length wins)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

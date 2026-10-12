@@ -6,7 +6,7 @@
 // core "build once, query many times" idea in two forms:
 //
 //   1. PrefixSum (1D)  — a class wrapping a running-total array over a
-//      std::vector<int>, answering any inclusive range-sum query in O(1)
+//      vector<int>, answering any inclusive range-sum query in O(1)
 //      after an O(n) build. Includes rebuild() to make the "mutation forces
 //      an O(n) rebuild" cost explicit rather than hidden.
 //
@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
 // ----------------------------------------------------------------------------
 // PrefixSum — 1D running-total array with O(1) range-sum queries.
@@ -45,17 +46,17 @@
 // ----------------------------------------------------------------------------
 class PrefixSum {
  public:
-  explicit PrefixSum(const std::vector<int>& arr) { build(arr); }
+  explicit PrefixSum(const vector<int>& arr) { build(arr); }
 
   // Sum of arr[i..j] inclusive, 0-indexed. O(1).
-  // Throws std::out_of_range for an invalid range so a bug surfaces loudly
+  // Throws out_of_range for an invalid range so a bug surfaces loudly
   // instead of silently returning a wrong number.
   long long rangeSum(size_t i, size_t j) const {
     const size_t n = prefix_.size() - 1;  // original array length
     if (n == 0 || i > j || j >= n) {
-      throw std::out_of_range("PrefixSum::rangeSum: invalid range [" +
-                               std::to_string(i) + ", " + std::to_string(j) +
-                               "] for array of length " + std::to_string(n));
+      throw out_of_range("PrefixSum::rangeSum: invalid range [" +
+                               to_string(i) + ", " + to_string(j) +
+                               "] for array of length " + to_string(n));
     }
     return prefix_[j + 1] - prefix_[i];
   }
@@ -64,19 +65,19 @@ class PrefixSum {
   // data. This is the ONLY way to keep queries correct after a mutation —
   // named explicitly (rather than hidden behind an "update" that looks cheap)
   // to make the O(n) mutability cost visible in code, not just in prose.
-  void rebuild(const std::vector<int>& arr) { build(arr); }
+  void rebuild(const vector<int>& arr) { build(arr); }
 
   size_t size() const { return prefix_.size() - 1; }
 
  private:
-  void build(const std::vector<int>& arr) {
+  void build(const vector<int>& arr) {
     prefix_.assign(arr.size() + 1, 0LL);
     for (size_t i = 1; i <= arr.size(); ++i) {
       prefix_[i] = prefix_[i - 1] + arr[i - 1];
     }
   }
 
-  std::vector<long long> prefix_;  // length arr.size() + 1
+  vector<long long> prefix_;  // length arr.size() + 1
 };
 
 // ----------------------------------------------------------------------------
@@ -93,13 +94,13 @@ class PrefixSum {
 // The subtraction undoes double-counting of the top-left rectangle, which
 // both "everything above" and "everything to the left" include once each.
 // ----------------------------------------------------------------------------
-std::vector<std::vector<long long>> buildPrefixSum2D(
-    const std::vector<std::vector<int>>& matrix) {
+vector<vector<long long>> buildPrefixSum2D(
+    const vector<vector<int>>& matrix) {
   const size_t rows = matrix.size();
   const size_t cols = rows == 0 ? 0 : matrix[0].size();
 
-  std::vector<std::vector<long long>> prefix(rows + 1,
-                                              std::vector<long long>(cols + 1, 0LL));
+  vector<vector<long long>> prefix(rows + 1,
+                                              vector<long long>(cols + 1, 0LL));
 
   for (size_t r = 1; r <= rows; ++r) {
     for (size_t c = 1; c <= cols; ++c) {
@@ -123,13 +124,13 @@ std::vector<std::vector<long long>> buildPrefixSum2D(
 //          - P[r2+1][c1]     // remove: everything left of column c1 (too far left)
 //          + P[r1][c1]       // add back: the top-left region subtracted twice above
 // ----------------------------------------------------------------------------
-long long rangeSum2D(const std::vector<std::vector<long long>>& prefix, size_t r1,
+long long rangeSum2D(const vector<vector<long long>>& prefix, size_t r1,
                       size_t c1, size_t r2, size_t c2) {
   const size_t rows = prefix.size() - 1;
   const size_t cols = rows == 0 ? 0 : prefix[0].size() - 1;
 
   if (r1 > r2 || c1 > c2 || r2 >= rows || c2 >= cols) {
-    throw std::out_of_range("rangeSum2D: invalid rectangle");
+    throw out_of_range("rangeSum2D: invalid rectangle");
   }
 
   return prefix[r2 + 1][c2 + 1] - prefix[r1][c2 + 1] - prefix[r2 + 1][c1] +
@@ -144,19 +145,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- PrefixSum (1D) ---\n";
+  cout << "--- PrefixSum (1D) ---\n";
   {
-    std::vector<int> arr = {2, 4, 5, 3, 6, 7, 1, 9};
+    vector<int> arr = {2, 4, 5, 3, 6, 7, 1, 9};
     PrefixSum ps(arr);
 
     check(ps.rangeSum(0, 7) == 37, "sum of entire array -> 37");
@@ -167,22 +168,22 @@ int main() {
     bool threw = false;
     try {
       ps.rangeSum(5, 2);  // i > j: invalid
-    } catch (const std::out_of_range&) {
+    } catch (const out_of_range&) {
       threw = true;
     }
     check(threw, "invalid range (i > j) throws std::out_of_range");
 
     // Simulate a mutation: arr[3] changes from 3 to 100. Queries against the
     // OLD prefix array would now be silently wrong -- rebuild() is required.
-    std::vector<int> mutated = arr;
+    vector<int> mutated = arr;
     mutated[3] = 100;
     ps.rebuild(mutated);
     check(ps.rangeSum(2, 5) == 118, "after rebuild, sum of arr[2..5] (5+100+6+7) -> 118");
   }
 
-  std::cout << "\n--- 2D Prefix Sum (submatrix sums) ---\n";
+  cout << "\n--- 2D Prefix Sum (submatrix sums) ---\n";
   {
-    std::vector<std::vector<int>> matrix = {
+    vector<vector<int>> matrix = {
         {3, 0, 1, 4, 2},
         {5, 6, 3, 2, 1},
         {1, 2, 0, 1, 5},
@@ -210,6 +211,6 @@ int main() {
           "whole-matrix submatrix sum matches manual total");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

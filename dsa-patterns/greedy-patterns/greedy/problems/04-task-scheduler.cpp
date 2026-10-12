@@ -51,34 +51,37 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns the minimum number of time units to finish all tasks.
-int leastTime(const std::vector<char>& tasks, int n) {
+int leastTime(const vector<char>& tasks, int n) {
   // Count frequencies across the fixed 26-letter alphabet.
-  std::array<int, 26> freq{};
+  array<int, 26> freq{};
   for (char t : tasks) {
     ++freq[static_cast<size_t>(t - 'A')];
   }
 
   // Most frequent task and how many tasks tie with it.
-  int maxFreq = *std::max_element(freq.begin(), freq.end());
-  int maxCount = static_cast<int>(std::count(freq.begin(), freq.end(), maxFreq));
+  int maxFreq = *max_element(freq.begin(), freq.end());
+  int maxCount = static_cast<int>(count(freq.begin(), freq.end(), maxFreq));
 
   // Forced-idle case vs. enough-work-to-fill-the-gaps case -- see header.
   int skeleton = (maxFreq - 1) * (n + 1) + maxCount;
   int totalTasks = static_cast<int>(tasks.size());
-  return std::max(totalTasks, skeleton);
+  return max(totalTasks, skeleton);
 }
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -86,7 +89,7 @@ int main() {
   {
     // Skeleton wins: (3-1)*(2+1)+1 = 7... but TWO tasks tie at freq 3, so
     // maxCount = 2 -> (3-1)*3+2 = 8 > 6 tasks. Idles forced in the middle gaps.
-    std::vector<char> tasks = {'A', 'A', 'A', 'B', 'B', 'B'};
+    vector<char> tasks = {'A', 'A', 'A', 'B', 'B', 'B'};
     check(leastTime(tasks, 2) == 8,
           "[A,A,A,B,B,B], n=2 -> 8 (skeleton with forced idles)");
   }
@@ -137,6 +140,6 @@ int main() {
           "[A,A,A,B,B,B], n=1 -> 6 (interleave exactly)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

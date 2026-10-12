@@ -103,13 +103,16 @@
 #include <string>
 #include <vector>
 
-bool isBipartite(const std::vector<std::vector<int> >& graph) {
+using namespace std;
+
+
+bool isBipartite(const vector<vector<int> >& graph) {
   int n = static_cast<int>(graph.size());
 
   // -1 = uncoloured/unvisited, 0 = set A, 1 = set B. This single array is both
   // the answer being constructed AND the visited guard that makes the
   // traversal terminate on a cyclic graph.
-  std::vector<int> color(n, -1);
+  vector<int> color(n, -1);
 
   for (int start = 0; start < n; ++start) {
     if (color[start] != -1) continue;  // Already handled by an earlier component.
@@ -118,7 +121,7 @@ bool isBipartite(const std::vector<std::vector<int> >& graph) {
     // interchangeable, so starting every component at 0 loses no generality.
     color[start] = 0;
 
-    std::queue<int> frontier;
+    queue<int> frontier;
     frontier.push(start);
 
     while (!frontier.empty()) {
@@ -158,19 +161,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // Helper: build a symmetric adjacency list from a list of undirected edges.
-  auto buildGraph = [](int n, const std::vector<std::pair<int, int> >& edges) {
-    std::vector<std::vector<int> > g(n);
+  auto buildGraph = [](int n, const vector<pair<int, int> >& edges) {
+    vector<vector<int> > g(n);
     for (size_t e = 0; e < edges.size(); ++e) {
       g[edges[e].first].push_back(edges[e].second);
       g[edges[e].second].push_back(edges[e].first);
@@ -179,69 +182,69 @@ int main() {
   };
 
   {
-    std::vector<std::vector<int> > g;
-    g.push_back(std::vector<int>{1, 2, 3});
-    g.push_back(std::vector<int>{0, 2});
-    g.push_back(std::vector<int>{0, 1, 3});
-    g.push_back(std::vector<int>{0, 2});
+    vector<vector<int> > g;
+    g.push_back(vector<int>{1, 2, 3});
+    g.push_back(vector<int>{0, 2});
+    g.push_back(vector<int>{0, 1, 3});
+    g.push_back(vector<int>{0, 2});
     check(isBipartite(g) == false, "LeetCode example 1: contains a triangle 0-1-2 -> false");
   }
 
   {
-    std::vector<std::vector<int> > g;
-    g.push_back(std::vector<int>{1, 3});
-    g.push_back(std::vector<int>{0, 2});
-    g.push_back(std::vector<int>{1, 3});
-    g.push_back(std::vector<int>{0, 2});
+    vector<vector<int> > g;
+    g.push_back(vector<int>{1, 3});
+    g.push_back(vector<int>{0, 2});
+    g.push_back(vector<int>{1, 3});
+    g.push_back(vector<int>{0, 2});
     check(isBipartite(g) == true, "LeetCode example 2: 4-cycle, sets {0,2}/{1,3} -> true");
   }
 
   {
-    std::vector<std::vector<int> > g;  // zero nodes
+    vector<vector<int> > g;  // zero nodes
     check(isBipartite(g) == true, "empty graph -> true (vacuously bipartite)");
   }
 
   {
-    std::vector<std::vector<int> > g(1);
+    vector<vector<int> > g(1);
     check(isBipartite(g) == true, "single node, no edges -> true");
   }
 
   {
-    std::vector<std::vector<int> > g(5);  // five isolated nodes
+    vector<vector<int> > g(5);  // five isolated nodes
     check(isBipartite(g) == true, "five isolated nodes -> true (every node its own component)");
   }
 
   {
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
     check(isBipartite(buildGraph(2, edges)) == true, "single edge 0-1 -> true");
   }
 
   {
     // THE ODD CYCLE. A triangle is the smallest non-bipartite graph: colour 0
     // as A, 1 as B, then 2 is adjacent to both and has nowhere to go.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(1, 2));
-    edges.push_back(std::pair<int, int>(2, 0));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(1, 2));
+    edges.push_back(pair<int, int>(2, 0));
     check(isBipartite(buildGraph(3, edges)) == false, "triangle (3-cycle, odd) -> false");
   }
 
   {
     // A 5-cycle is odd too -> false. Confirms it is cycle PARITY that matters,
     // not cycle length or the mere presence of a cycle.
-    std::vector<std::pair<int, int> > edges;
+    vector<pair<int, int> > edges;
     for (int i = 0; i < 5; ++i) {
-      edges.push_back(std::pair<int, int>(i, (i + 1) % 5));
+      edges.push_back(pair<int, int>(i, (i + 1) % 5));
     }
     check(isBipartite(buildGraph(5, edges)) == false, "5-cycle (odd) -> false");
   }
 
   {
     // A 6-cycle is even -> true. Same shape as above, one more node.
-    std::vector<std::pair<int, int> > edges;
+    vector<pair<int, int> > edges;
     for (int i = 0; i < 6; ++i) {
-      edges.push_back(std::pair<int, int>(i, (i + 1) % 6));
+      edges.push_back(pair<int, int>(i, (i + 1) % 6));
     }
     check(isBipartite(buildGraph(6, edges)) == true, "6-cycle (even) -> true");
   }
@@ -249,20 +252,20 @@ int main() {
   {
     // A tree has no cycles at all, so it is ALWAYS bipartite — colour by depth
     // parity. Here: a star, node 0 joined to 1,2,3,4.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(0, 2));
-    edges.push_back(std::pair<int, int>(0, 3));
-    edges.push_back(std::pair<int, int>(0, 4));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(0, 2));
+    edges.push_back(pair<int, int>(0, 3));
+    edges.push_back(pair<int, int>(0, 4));
     check(isBipartite(buildGraph(5, edges)) == true, "star graph (a tree, no cycles) -> true");
   }
 
   {
     // A long path is also a tree -> true, and it is the case that would make a
     // recursive DFS version recurse deepest.
-    std::vector<std::pair<int, int> > edges;
+    vector<pair<int, int> > edges;
     for (int i = 0; i + 1 < 40; ++i) {
-      edges.push_back(std::pair<int, int>(i, i + 1));
+      edges.push_back(pair<int, int>(i, i + 1));
     }
     check(isBipartite(buildGraph(40, edges)) == true, "40-node path -> true (deepest-traversal case)");
   }
@@ -271,11 +274,11 @@ int main() {
     // THE DISCONNECTED TEST. Component {0,1} is a harmless single edge;
     // component {2,3,4} is a triangle. A solution that only ran BFS from node 0
     // and stopped would answer true. The outer loop is what catches this.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(2, 3));
-    edges.push_back(std::pair<int, int>(3, 4));
-    edges.push_back(std::pair<int, int>(4, 2));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(2, 3));
+    edges.push_back(pair<int, int>(3, 4));
+    edges.push_back(pair<int, int>(4, 2));
     check(isBipartite(buildGraph(5, edges)) == false,
           "odd cycle hidden in a SECOND component -> still false (outer loop required)");
   }
@@ -283,9 +286,9 @@ int main() {
   {
     // Two separate bipartite components -> true. The mirror of the case above:
     // the outer loop must not invent a conflict ACROSS components either.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(2, 3));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(2, 3));
     check(isBipartite(buildGraph(4, edges)) == true, "two disjoint edges -> true");
   }
 
@@ -293,7 +296,7 @@ int main() {
     // A self-loop is an odd cycle of length 1: node 0 would have to be in a
     // different set from itself. The colour-match branch catches it, since
     // color[0] == color[0] trivially.
-    std::vector<std::vector<int> > g(1);
+    vector<vector<int> > g(1);
     g[0].push_back(0);
     check(isBipartite(g) == false, "self-loop (odd cycle of length 1) -> false");
   }
@@ -302,15 +305,15 @@ int main() {
     // Complete bipartite K(2,3): every node in {0,1} joined to every node in
     // {2,3,4}. Dense, many revisits of already-coloured nodes, zero conflicts —
     // exercises the "already coloured, opposite colour, skip" branch heavily.
-    std::vector<std::pair<int, int> > edges;
+    vector<pair<int, int> > edges;
     for (int a = 0; a < 2; ++a) {
       for (int b = 2; b < 5; ++b) {
-        edges.push_back(std::pair<int, int>(a, b));
+        edges.push_back(pair<int, int>(a, b));
       }
     }
     check(isBipartite(buildGraph(5, edges)) == true, "complete bipartite K(2,3) -> true");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

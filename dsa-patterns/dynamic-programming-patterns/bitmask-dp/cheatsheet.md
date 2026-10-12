@@ -16,11 +16,12 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // A. TSP-shaped: dp[mask][j] = min cost, visited exactly `mask`, now standing at j.
-int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
+int minHamiltonianCost(const vector<vector<int>>& cost) {
     int n = cost.size();
-    const int kInf = std::numeric_limits<int>::max() / 2;   // /2 so dp + cost cannot overflow
-    std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, kInf));
+    const int kInf = numeric_limits<int>::max() / 2;   // /2 so dp + cost cannot overflow
+    vector<vector<int>> dp(1 << n, vector<int>(n, kInf));
 
     dp[1][0] = 0;   // mask 0b1 = "only node 0 visited", standing at node 0
 
@@ -32,14 +33,14 @@ int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
             for (int k = 0; k < n; ++k) {
                 if (mask & (1 << k)) continue;      // k already visited — skip
                 int next = mask | (1 << k);         // add k to the set
-                dp[next][k] = std::min(dp[next][k], dp[mask][j] + cost[j][k]);
+                dp[next][k] = min(dp[next][k], dp[mask][j] + cost[j][k]);
             }
         }
     }
     int full = (1 << n) - 1;
     int best = kInf;
     for (int j = 0; j < n; ++j)                     // close the tour: + return leg j -> 0
-        if (dp[full][j] < kInf) best = std::min(best, dp[full][j] + cost[j][0]);
+        if (dp[full][j] < kInf) best = min(best, dp[full][j] + cost[j][0]);
     return best;
 }
 

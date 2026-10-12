@@ -15,6 +15,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Fenwick Tree (Binary Indexed Tree), 0-indexed externally, 1-indexed
 // internally. update adds a delta at a position; query returns the prefix
@@ -39,7 +42,7 @@ class FenwickTree {
   }
 
  private:
-  std::vector<long long> tree_;
+  vector<long long> tree_;
   int n_;
 };
 
@@ -49,7 +52,7 @@ class FenwickTree {
 // ----------------------------------------------------------------------------
 class SegmentTreeMin {
  public:
-  explicit SegmentTreeMin(const std::vector<int>& nums)
+  explicit SegmentTreeMin(const vector<int>& nums)
       : n_(static_cast<int>(nums.size())), tree_(4 * n_, INT_MAX) {
     if (n_ > 0) build(nums, 1, 0, n_ - 1);
   }
@@ -60,9 +63,9 @@ class SegmentTreeMin {
 
  private:
   int n_;
-  std::vector<int> tree_;
+  vector<int> tree_;
 
-  void build(const std::vector<int>& nums, int node, int lo, int hi) {
+  void build(const vector<int>& nums, int node, int lo, int hi) {
     if (lo == hi) {
       tree_[node] = nums[lo];
       return;
@@ -70,7 +73,7 @@ class SegmentTreeMin {
     int mid = lo + (hi - lo) / 2;
     build(nums, 2 * node, lo, mid);
     build(nums, 2 * node + 1, mid + 1, hi);
-    tree_[node] = std::min(tree_[2 * node], tree_[2 * node + 1]);
+    tree_[node] = min(tree_[2 * node], tree_[2 * node + 1]);
   }
 
   void updateHelper(int node, int lo, int hi, int index, int value) {
@@ -81,14 +84,14 @@ class SegmentTreeMin {
     int mid = lo + (hi - lo) / 2;
     if (index <= mid) updateHelper(2 * node, lo, mid, index, value);
     else updateHelper(2 * node + 1, mid + 1, hi, index, value);
-    tree_[node] = std::min(tree_[2 * node], tree_[2 * node + 1]);
+    tree_[node] = min(tree_[2 * node], tree_[2 * node + 1]);
   }
 
   int queryHelper(int node, int lo, int hi, int l, int r) const {
     if (r < lo || hi < l) return INT_MAX;          // no overlap
     if (l <= lo && hi <= r) return tree_[node];     // fully covered
     int mid = lo + (hi - lo) / 2;
-    return std::min(queryHelper(2 * node, lo, mid, l, r),
+    return min(queryHelper(2 * node, lo, mid, l, r),
                      queryHelper(2 * node + 1, mid + 1, hi, l, r));
   }
 };
@@ -97,19 +100,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     FenwickTree ft(8);
-    std::vector<int> nums = {1, 2, 3, 4, 5, 6, 7, 8};
+    vector<int> nums = {1, 2, 3, 4, 5, 6, 7, 8};
     for (int i = 0; i < 8; ++i) ft.update(i, nums[i]);
 
     check(ft.rangeSum(0, 7) == 36, "Fenwick: full range sum -> 36");
@@ -130,6 +133,6 @@ int main() {
     check(st.queryMin(0, 5) == 2, "SegmentTree: after update, full range min -> 2");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

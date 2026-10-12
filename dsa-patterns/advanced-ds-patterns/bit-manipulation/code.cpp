@@ -14,7 +14,10 @@
 #include <string>
 #include <vector>
 
-int singleNumber(const std::vector<int>& nums) {
+using namespace std;
+
+
+int singleNumber(const vector<int>& nums) {
   int result = 0;
   for (int n : nums) result ^= n;
   return result;
@@ -33,16 +36,16 @@ bool isPowerOfTwo(unsigned int n) {
   return n != 0 && (n & (n - 1)) == 0;
 }
 
-std::vector<std::vector<int>> allSubsetsViaBitmask(const std::vector<int>& nums) {
+vector<vector<int>> allSubsetsViaBitmask(const vector<int>& nums) {
   int n = static_cast<int>(nums.size());
-  std::vector<std::vector<int>> result;
+  vector<vector<int>> result;
 
   for (int mask = 0; mask < (1 << n); ++mask) {
-    std::vector<int> subset;
+    vector<int> subset;
     for (int i = 0; i < n; ++i) {
       if (mask & (1 << i)) subset.push_back(nums[i]);
     }
-    result.push_back(std::move(subset));
+    result.push_back(move(subset));
   }
 
   return result;
@@ -52,12 +55,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -79,9 +82,9 @@ int main() {
     auto result = allSubsetsViaBitmask({1, 2, 3});
     check(result.size() == 8, "allSubsetsViaBitmask({1,2,3}) -> 8 subsets (2^3)");
     check(result[0].empty(), "mask 0 -> empty subset");
-    check(result[7] == std::vector<int>({1, 2, 3}), "mask 7 (0b111) -> full set");
+    check(result[7] == vector<int>({1, 2, 3}), "mask 7 (0b111) -> full set");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

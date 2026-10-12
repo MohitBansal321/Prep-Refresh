@@ -31,11 +31,14 @@
 #include <tuple>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // A tiny "maybe an int" type, used as the return type of
 // kthSmallestInKSortedLists below: the k-th smallest may not exist at all if
 // k exceeds the total element count, and returning a sentinel like -1 would
-// be ambiguous (-1 is a perfectly valid element value). std::optional<int>
+// be ambiguous (-1 is a perfectly valid element value). optional<int>
 // would be the idiomatic C++17 choice, but the <optional> header is not
 // available on every toolchain this repo is compiled with, so this three-line
 // stand-in provides the same has_value() / operator* interface.
@@ -53,20 +56,20 @@ struct MaybeInt {
 
 // ----------------------------------------------------------------------------
 // The heap entry shared by both functions below: {value, list_index,
-// element_index}. std::tuple's comparison operators compare element-by-
+// element_index}. tuple's comparison operators compare element-by-
 // element in declaration order, so ordering these tuples orders primarily by
 // `value` (exactly what merging needs) and only falls back to list_index /
 // element_index to break ties between equal values — a tie-break that never
 // changes correctness, since any order among equal values is a valid sorted
 // output.
 // ----------------------------------------------------------------------------
-using HeapEntry = std::tuple<int, int, int>;  // {value, list_index, element_index}
+using HeapEntry = tuple<int, int, int>;  // {value, list_index, element_index}
 
-// A min-heap: std::priority_queue is a MAX-heap by default, so we must
-// explicitly supply std::greater<> as the comparator to invert it. Forgetting
+// A min-heap: priority_queue is a MAX-heap by default, so we must
+// explicitly supply greater<> as the comparator to invert it. Forgetting
 // this is the single most common bug when building a min-heap in C++ (see
 // the README's Common Mistakes section).
-using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::greater<>>;
+using MinHeap = priority_queue<HeapEntry, vector<HeapEntry>, greater<>>;
 
 // ----------------------------------------------------------------------------
 // Generic template #1: merge K already-sorted lists into one sorted vector.
@@ -77,7 +80,7 @@ using MinHeap = std::priority_queue<HeapEntry, std::vector<HeapEntry>, std::grea
 // remains). This is the "advance the source pointer" step described in the
 // README's Architecture section — forgetting it silently drops elements.
 // ----------------------------------------------------------------------------
-std::vector<int> mergeKSortedLists(const std::vector<std::vector<int>>& lists) {
+vector<int> mergeKSortedLists(const vector<vector<int>>& lists) {
   MinHeap heap;
   const int k = static_cast<int>(lists.size());
 
@@ -89,18 +92,18 @@ std::vector<int> mergeKSortedLists(const std::vector<std::vector<int>>& lists) {
     }
   }
 
-  std::vector<int> result;
+  vector<int> result;
   result.reserve(64);  // Small non-zero hint; exact total size isn't known
                         // up front without a separate pass over all lists.
 
   while (!heap.empty()) {
-    // Unpack the tuple field by field with std::get<>. A C++17 structured
+    // Unpack the tuple field by field with get<>. A C++17 structured
     // binding (`auto [value, list_index, element_index] = heap.top();`) reads
     // better but is not available on every toolchain this repo targets.
     const HeapEntry top = heap.top();
-    const int value = std::get<0>(top);
-    const int list_index = std::get<1>(top);
-    const int element_index = std::get<2>(top);
+    const int value = get<0>(top);
+    const int list_index = get<1>(top);
+    const int element_index = get<2>(top);
     heap.pop();
     result.push_back(value);
 
@@ -131,7 +134,7 @@ std::vector<int> mergeKSortedLists(const std::vector<std::vector<int>>& lists) {
 // Returns an empty MaybeInt if k exceeds the total number of elements
 // available.
 // ----------------------------------------------------------------------------
-MaybeInt kthSmallestInKSortedLists(const std::vector<std::vector<int>>& lists, int k) {
+MaybeInt kthSmallestInKSortedLists(const vector<vector<int>>& lists, int k) {
   if (k <= 0) return MaybeInt();
 
   MinHeap heap;
@@ -146,9 +149,9 @@ MaybeInt kthSmallestInKSortedLists(const std::vector<std::vector<int>>& lists, i
   int popped_count = 0;
   while (!heap.empty()) {
     const HeapEntry top = heap.top();
-    const int value = std::get<0>(top);
-    const int list_index = std::get<1>(top);
-    const int element_index = std::get<2>(top);
+    const int value = get<0>(top);
+    const int list_index = get<1>(top);
+    const int element_index = get<2>(top);
     heap.pop();
     ++popped_count;
 
@@ -168,93 +171,93 @@ MaybeInt kthSmallestInKSortedLists(const std::vector<std::vector<int>>& lists, i
 // ----------------------------------------------------------------------------
 // Small helper for readable test output.
 // ----------------------------------------------------------------------------
-void print_vector(const std::vector<int>& v) {
-  std::cout << "[";
+void print_vector(const vector<int>& v) {
+  cout << "[";
   for (size_t i = 0; i < v.size(); ++i) {
-    std::cout << v[i];
-    if (i + 1 < v.size()) std::cout << ", ";
+    cout << v[i];
+    if (i + 1 < v.size()) cout << ", ";
   }
-  std::cout << "]";
+  cout << "]";
 }
 
 int main() {
-  std::cout << "=== K-way Merge: generic template demo ===\n\n";
+  cout << "=== K-way Merge: generic template demo ===\n\n";
 
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // ---- Test 1: three sorted lists of equal length ---------------------------
   {
-    std::vector<std::vector<int>> lists = {{1, 4, 7}, {2, 5, 8}, {3, 6, 9}};
+    vector<vector<int>> lists = {{1, 4, 7}, {2, 5, 8}, {3, 6, 9}};
     auto merged = mergeKSortedLists(lists);
-    std::vector<int> expected = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    std::cout << "Test 1: merge [1,4,7], [2,5,8], [3,6,9] -> ";
+    vector<int> expected = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    cout << "Test 1: merge [1,4,7], [2,5,8], [3,6,9] -> ";
     print_vector(merged);
-    std::cout << "\n";
+    cout << "\n";
     check(merged == expected, "three equal-length lists merge correctly");
   }
 
   // ---- Test 2: lists of uneven length ----------------------------------------
   {
-    std::vector<std::vector<int>> lists = {{1, 10, 20, 30}, {2}, {3, 4, 5}};
+    vector<vector<int>> lists = {{1, 10, 20, 30}, {2}, {3, 4, 5}};
     auto merged = mergeKSortedLists(lists);
-    std::vector<int> expected = {1, 2, 3, 4, 5, 10, 20, 30};
-    std::cout << "Test 2: merge uneven-length lists -> ";
+    vector<int> expected = {1, 2, 3, 4, 5, 10, 20, 30};
+    cout << "Test 2: merge uneven-length lists -> ";
     print_vector(merged);
-    std::cout << "\n";
+    cout << "\n";
     check(merged == expected, "uneven-length lists merge correctly");
   }
 
   // ---- Test 3: some lists are empty ------------------------------------------
   {
-    std::vector<std::vector<int>> lists = {{}, {5, 6}, {}, {1, 2, 3}};
+    vector<vector<int>> lists = {{}, {5, 6}, {}, {1, 2, 3}};
     auto merged = mergeKSortedLists(lists);
-    std::vector<int> expected = {1, 2, 3, 5, 6};
-    std::cout << "Test 3: merge with some empty lists -> ";
+    vector<int> expected = {1, 2, 3, 5, 6};
+    cout << "Test 3: merge with some empty lists -> ";
     print_vector(merged);
-    std::cout << "\n";
+    cout << "\n";
     check(merged == expected, "empty lists are skipped without affecting the result");
   }
 
   // ---- Test 4: all lists empty ------------------------------------------------
   {
-    std::vector<std::vector<int>> lists = {{}, {}, {}};
+    vector<vector<int>> lists = {{}, {}, {}};
     auto merged = mergeKSortedLists(lists);
     check(merged.empty(), "all-empty input produces an empty merged result");
   }
 
   // ---- Test 5: single list (K = 1) --------------------------------------------
   {
-    std::vector<std::vector<int>> lists = {{1, 2, 3}};
+    vector<vector<int>> lists = {{1, 2, 3}};
     auto merged = mergeKSortedLists(lists);
-    std::vector<int> expected = {1, 2, 3};
+    vector<int> expected = {1, 2, 3};
     check(merged == expected, "K=1 degenerates to returning the single list unchanged");
   }
 
   // ---- Test 6: duplicate values across lists ---------------------------------
   {
-    std::vector<std::vector<int>> lists = {{1, 3, 3}, {2, 3, 4}};
+    vector<vector<int>> lists = {{1, 3, 3}, {2, 3, 4}};
     auto merged = mergeKSortedLists(lists);
-    std::vector<int> expected = {1, 2, 3, 3, 3, 4};
-    std::cout << "Test 6: merge with duplicate values -> ";
+    vector<int> expected = {1, 2, 3, 3, 3, 4};
+    cout << "Test 6: merge with duplicate values -> ";
     print_vector(merged);
-    std::cout << "\n";
+    cout << "\n";
     check(merged == expected, "duplicate values across lists are preserved and ordered");
   }
 
   // ---- Test 7: kth smallest, early exit before heap empties ------------------
   {
-    std::vector<std::vector<int>> lists = {{1, 5, 9}, {2, 6, 10}, {3, 7, 11}};
+    vector<vector<int>> lists = {{1, 5, 9}, {2, 6, 10}, {3, 7, 11}};
     // Full merge would be [1,2,3,5,6,7,9,10,11]; k=4 -> 5.
     auto result = kthSmallestInKSortedLists(lists, 4);
     check(result.has_value() && *result == 5, "kth smallest (k=4) -> 5");
@@ -262,26 +265,26 @@ int main() {
 
   // ---- Test 8: kth smallest, k = 1 (smallest overall) ------------------------
   {
-    std::vector<std::vector<int>> lists = {{10, 20}, {1, 30}, {5, 6}};
+    vector<vector<int>> lists = {{10, 20}, {1, 30}, {5, 6}};
     auto result = kthSmallestInKSortedLists(lists, 1);
     check(result.has_value() && *result == 1, "kth smallest (k=1) -> smallest overall value");
   }
 
   // ---- Test 9: kth smallest, k larger than total element count --------------
   {
-    std::vector<std::vector<int>> lists = {{1, 2}, {3}};
+    vector<vector<int>> lists = {{1, 2}, {3}};
     auto result = kthSmallestInKSortedLists(lists, 10);
     check(!result.has_value(), "kth smallest with out-of-range k returns an empty result");
   }
 
   // ---- Test 10: kth smallest, k equal to total element count -----------------
   {
-    std::vector<std::vector<int>> lists = {{1, 4}, {2, 3}};
+    vector<vector<int>> lists = {{1, 4}, {2, 3}};
     // Full merge is [1,2,3,4]; k=4 -> the largest element, 4.
     auto result = kthSmallestInKSortedLists(lists, 4);
     check(result.has_value() && *result == 4, "kth smallest (k = total count) -> largest element");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

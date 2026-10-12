@@ -66,14 +66,17 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class BrowserHistory {
  public:
-  explicit BrowserHistory(const std::string& homepage) {
+  explicit BrowserHistory(const string& homepage) {
     history_.push_back(homepage);
     cur_ = 0;
   }
 
-  void visit(const std::string& url) {
+  void visit(const string& url) {
     // Clear forward history: everything after the cursor is unreachable the
     // moment we navigate elsewhere. resize() both logically removes and
     // actually frees them — no stale tail lingers off to the right.
@@ -82,19 +85,19 @@ class BrowserHistory {
     ++cur_;
   }
 
-  std::string back(int steps) {
-    cur_ = std::max(0, cur_ - steps);  // clamp at the homepage
+  string back(int steps) {
+    cur_ = max(0, cur_ - steps);  // clamp at the homepage
     return history_[static_cast<size_t>(cur_)];
   }
 
-  std::string forward(int steps) {
+  string forward(int steps) {
     int last = static_cast<int>(history_.size()) - 1;
-    cur_ = std::min(last, cur_ + steps);  // clamp at the newest page
+    cur_ = min(last, cur_ + steps);  // clamp at the newest page
     return history_[static_cast<size_t>(cur_)];
   }
 
  private:
-  std::vector<std::string> history_;
+  vector<string> history_;
   int cur_;  // index of the current page in history_
 };
 
@@ -102,12 +105,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -158,6 +161,6 @@ int main() {
           "old forward pages are unreachable after branching visit");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

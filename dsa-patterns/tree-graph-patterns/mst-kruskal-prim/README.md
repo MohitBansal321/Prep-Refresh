@@ -3,7 +3,8 @@
 > **In one line:** sort every edge cheapest-first and add each one unless it would close a cycle (Kruskal's) — or grow one tree outward, always adding the cheapest edge leaving it (Prim's) — either way, the cheapest edge available can always be added safely.
 
 ```cpp
-std::sort(edges.begin(), edges.end(),
+using namespace std;
+sort(edges.begin(), edges.end(),
           [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
 
 DisjointSet dsu(n);

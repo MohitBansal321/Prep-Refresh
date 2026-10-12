@@ -50,6 +50,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Standard singly linked list node, matching the convention used throughout
 // this repo's linked-list-pattern modules (see
@@ -62,10 +65,10 @@ struct ListNode {
 };
 
 // ----------------------------------------------------------------------------
-// Helper: build a singly linked list from a std::vector<int>. Returns the
+// Helper: build a singly linked list from a vector<int>. Returns the
 // head pointer, or nullptr for an empty vector. Caller owns the memory.
 // ----------------------------------------------------------------------------
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
 
   ListNode* head = new ListNode(values[0]);
@@ -89,11 +92,11 @@ void free_list(ListNode* head) {
 }
 
 // ----------------------------------------------------------------------------
-// Helper: collect a list's values into a std::vector<int>, for comparison
+// Helper: collect a list's values into a vector<int>, for comparison
 // against expected output in tests.
 // ----------------------------------------------------------------------------
-std::vector<int> list_to_vector(ListNode* head) {
-  std::vector<int> result;
+vector<int> list_to_vector(ListNode* head) {
+  vector<int> result;
   while (head != nullptr) {
     result.push_back(head->val);
     head = head->next;
@@ -102,11 +105,11 @@ std::vector<int> list_to_vector(ListNode* head) {
 }
 
 // ----------------------------------------------------------------------------
-// Comparator that makes std::priority_queue<ListNode*> behave as a MIN-heap
-// ordered by node->val. std::priority_queue is a max-heap by default; this
+// Comparator that makes priority_queue<ListNode*> behave as a MIN-heap
+// ordered by node->val. priority_queue is a max-heap by default; this
 // struct's operator() is used as the "is a lower priority than" test, and
 // returning (a->val > b->val) inverts the default max-heap into a min-heap —
-// the same effect as std::greater<> in ../code.cpp, spelled out explicitly
+// the same effect as greater<> in ../code.cpp, spelled out explicitly
 // here because we are comparing pointers by a field, not comparing plain
 // values directly.
 // ----------------------------------------------------------------------------
@@ -119,8 +122,8 @@ struct CompareNodeVal {
 // ----------------------------------------------------------------------------
 // Merge k sorted linked lists into one sorted linked list.
 // ----------------------------------------------------------------------------
-ListNode* mergeKLists(std::vector<ListNode*>& lists) {
-  std::priority_queue<ListNode*, std::vector<ListNode*>, CompareNodeVal> heap;
+ListNode* mergeKLists(vector<ListNode*>& lists) {
+  priority_queue<ListNode*, vector<ListNode*>, CompareNodeVal> heap;
 
   // Seed: push the head of every non-empty list.
   for (ListNode* head : lists) {
@@ -153,32 +156,32 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // ---- Test 1: three lists, the classic example ------------------------------
   {
-    std::vector<ListNode*> lists = {
+    vector<ListNode*> lists = {
         build_list({1, 4, 5}),
         build_list({1, 3, 4}),
         build_list({2, 6}),
     };
     ListNode* merged = mergeKLists(lists);
-    std::vector<int> expected = {1, 1, 2, 3, 4, 4, 5, 6};
+    vector<int> expected = {1, 1, 2, 3, 4, 4, 5, 6};
     check(list_to_vector(merged) == expected, "[1,4,5],[1,3,4],[2,6] -> [1,1,2,3,4,4,5,6]");
     free_list(merged);
   }
 
   // ---- Test 2: empty input array ----------------------------------------------
   {
-    std::vector<ListNode*> lists = {};
+    vector<ListNode*> lists = {};
     ListNode* merged = mergeKLists(lists);
     check(merged == nullptr, "empty lists array -> nullptr");
     // Nothing allocated, nothing to free.
@@ -186,46 +189,46 @@ int main() {
 
   // ---- Test 3: array containing only empty lists (nullptr entries) -----------
   {
-    std::vector<ListNode*> lists = {nullptr, nullptr};
+    vector<ListNode*> lists = {nullptr, nullptr};
     ListNode* merged = mergeKLists(lists);
     check(merged == nullptr, "array of only nullptr lists -> nullptr");
   }
 
   // ---- Test 4: a mix of empty and non-empty lists -----------------------------
   {
-    std::vector<ListNode*> lists = {
+    vector<ListNode*> lists = {
         nullptr,
         build_list({5, 10}),
         build_list({}),  // nullptr, same as an empty list
         build_list({1, 2, 3}),
     };
     ListNode* merged = mergeKLists(lists);
-    std::vector<int> expected = {1, 2, 3, 5, 10};
+    vector<int> expected = {1, 2, 3, 5, 10};
     check(list_to_vector(merged) == expected, "mix of empty/non-empty lists merges correctly");
     free_list(merged);
   }
 
   // ---- Test 5: a single list (k = 1) -------------------------------------------
   {
-    std::vector<ListNode*> lists = {build_list({7, 8, 9})};
+    vector<ListNode*> lists = {build_list({7, 8, 9})};
     ListNode* merged = mergeKLists(lists);
-    std::vector<int> expected = {7, 8, 9};
+    vector<int> expected = {7, 8, 9};
     check(list_to_vector(merged) == expected, "k=1 returns the single list unchanged");
     free_list(merged);
   }
 
   // ---- Test 6: duplicate values across lists -----------------------------------
   {
-    std::vector<ListNode*> lists = {
+    vector<ListNode*> lists = {
         build_list({1, 1, 1}),
         build_list({1, 1}),
     };
     ListNode* merged = mergeKLists(lists);
-    std::vector<int> expected = {1, 1, 1, 1, 1};
+    vector<int> expected = {1, 1, 1, 1, 1};
     check(list_to_vector(merged) == expected, "all-duplicate values merge to the right count/order");
     free_list(merged);
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

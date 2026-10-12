@@ -16,16 +16,17 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Vanilla Kadane's core (sum-based, no fixed window size)
 long long current_sum = nums[0];   // NEVER initialize from 0 -- breaks all-negative arrays
 long long best_sum = nums[0];
 
 for (size_t i = 1; i < nums.size(); ++i) {
     // Extend the previous run, or abandon it and restart at nums[i] alone.
-    current_sum = std::max(static_cast<long long>(nums[i]), current_sum + nums[i]);
+    current_sum = max(static_cast<long long>(nums[i]), current_sum + nums[i]);
 
     // best_sum is checked on EVERY iteration, not just at a restart.
-    best_sum = std::max(best_sum, current_sum);
+    best_sum = max(best_sum, current_sum);
 }
 // best_sum now holds the maximum-sum contiguous subarray's total.
 ```

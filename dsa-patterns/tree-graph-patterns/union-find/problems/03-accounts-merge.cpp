@@ -45,7 +45,7 @@
 //      this account and that earlier one are the same person. Otherwise,
 //      record email_to_account[email] = i.
 //   4. After all unions, group every email by its account's ROOT
-//      (find(i)), using an ordered structure (std::map<std::string,...> or
+//      (find(i)), using an ordered structure (map<string,...> or
 //      a set) so the final emails per person come out sorted for free.
 //   5. For each root group, the output row is
 //      [accounts[root][0] (the name), sorted emails...].
@@ -80,10 +80,13 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace std;
+
+
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
 
   int find(int x) {
@@ -98,27 +101,27 @@ class DisjointSet {
     int root_y = find(y);
     if (root_x == root_y) return;
 
-    if (rank_[root_x] < rank_[root_y]) std::swap(root_x, root_y);
+    if (rank_[root_x] < rank_[root_y]) swap(root_x, root_y);
     parent_[root_y] = root_x;
     if (rank_[root_x] == rank_[root_y]) ++rank_[root_x];
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
-std::vector<std::vector<std::string>> accountsMerge(
-    const std::vector<std::vector<std::string>>& accounts) {
+vector<vector<string>> accountsMerge(
+    const vector<vector<string>>& accounts) {
   int n = static_cast<int>(accounts.size());
   DisjointSet dsu(n);
 
   // email -> index of the first account seen owning it.
-  std::unordered_map<std::string, int> email_to_account;
+  unordered_map<string, int> email_to_account;
 
   for (int i = 0; i < n; ++i) {
     for (size_t e = 1; e < accounts[i].size(); ++e) {  // index 0 is the name
-      const std::string& email = accounts[i][e];
+      const string& email = accounts[i][e];
       auto it = email_to_account.find(email);
       if (it == email_to_account.end()) {
         email_to_account[email] = i;
@@ -128,10 +131,10 @@ std::vector<std::vector<std::string>> accountsMerge(
     }
   }
 
-  // Group emails by root account. std::map keeps emails sorted per group
+  // Group emails by root account. map keeps emails sorted per group
   // automatically (it is a sorted associative container), which is exactly
   // the output format the problem requires.
-  std::unordered_map<int, std::set<std::string>> root_to_emails;
+  unordered_map<int, set<string>> root_to_emails;
   for (int i = 0; i < n; ++i) {
     int root = dsu.find(i);
     for (size_t e = 1; e < accounts[i].size(); ++e) {
@@ -139,17 +142,17 @@ std::vector<std::vector<std::string>> accountsMerge(
     }
   }
 
-  std::vector<std::vector<std::string>> result;
+  vector<vector<string>> result;
   result.reserve(root_to_emails.size());
   for (const auto& group : root_to_emails) {
     const int root = group.first;
-    const std::set<std::string>& emails = group.second;
-    std::vector<std::string> row;
+    const set<string>& emails = group.second;
+    vector<string> row;
     row.push_back(accounts[root][0]);  // the person's name
     for (const auto& email : emails) {
       row.push_back(email);
     }
-    result.push_back(std::move(row));
+    result.push_back(move(row));
   }
 
   return result;
@@ -159,11 +162,11 @@ std::vector<std::vector<std::string>> accountsMerge(
 // allows any order), but each row's own emails must already be sorted (the
 // grouping step guarantees that) and the row's own contents must match
 // exactly one expected row.
-bool sameMergedAccounts(std::vector<std::vector<std::string>> actual,
-                         std::vector<std::vector<std::string>> expected) {
+bool sameMergedAccounts(vector<vector<string>> actual,
+                         vector<vector<string>> expected) {
   if (actual.size() != expected.size()) return false;
-  std::sort(actual.begin(), actual.end());
-  std::sort(expected.begin(), expected.end());
+  sort(actual.begin(), actual.end());
+  sort(expected.begin(), expected.end());
   return actual == expected;
 }
 
@@ -171,24 +174,24 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<std::vector<std::string>> accounts = {
+    vector<vector<string>> accounts = {
         {"John", "johnsmith@mail.com", "john_newyork@mail.com"},
         {"John", "johnsmith@mail.com", "john00@mail.com"},
         {"Mary", "mary@mail.com"},
         {"John", "johnnybravo@mail.com"},
     };
-    std::vector<std::vector<std::string>> expected = {
+    vector<vector<string>> expected = {
         {"John", "john00@mail.com", "john_newyork@mail.com", "johnsmith@mail.com"},
         {"Mary", "mary@mail.com"},
         {"John", "johnnybravo@mail.com"},
@@ -200,7 +203,7 @@ int main() {
   {
     // Chain merge: A shares with B, B shares with C, but A and C share
     // nothing directly -- Union Find must merge all three transitively.
-    std::vector<std::vector<std::string>> accounts = {
+    vector<vector<string>> accounts = {
         {"A", "a@mail.com", "shared1@mail.com"},
         {"A", "shared1@mail.com", "shared2@mail.com"},
         {"A", "shared2@mail.com", "z@mail.com"},
@@ -208,9 +211,9 @@ int main() {
     auto result = accountsMerge(accounts);
     check(result.size() == 1, "transitive chain of 3 accounts merges into exactly 1");
     if (result.size() == 1) {
-      std::vector<std::string> expected_emails = {"a@mail.com", "shared1@mail.com",
+      vector<string> expected_emails = {"a@mail.com", "shared1@mail.com",
                                                     "shared2@mail.com", "z@mail.com"};
-      std::vector<std::string> actual_emails(result[0].begin() + 1, result[0].end());
+      vector<string> actual_emails(result[0].begin() + 1, result[0].end());
       check(actual_emails == expected_emails,
             "merged account's emails are the union of all three, sorted");
     } else {
@@ -220,7 +223,7 @@ int main() {
 
   {
     // No shared emails at all: every account stays its own person.
-    std::vector<std::vector<std::string>> accounts = {
+    vector<vector<string>> accounts = {
         {"Alice", "alice@mail.com"},
         {"Bob", "bob@mail.com"},
         {"Carol", "carol@mail.com"},
@@ -230,7 +233,7 @@ int main() {
   }
 
   {
-    std::vector<std::vector<std::string>> accounts = {
+    vector<vector<string>> accounts = {
         {"Gabe", "Gabe0@m.co", "Gabe3@m.co", "Gabe1@m.co"},
         {"Kevin", "Kevin3@m.co", "Kevin5@m.co", "Kevin0@m.co"},
         {"Ethan", "Ethan5@m.co", "Ethan4@m.co", "Ethan0@m.co"},
@@ -241,6 +244,6 @@ int main() {
     check(result.size() == 5, "five accounts with no overlapping emails -> 5 groups");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

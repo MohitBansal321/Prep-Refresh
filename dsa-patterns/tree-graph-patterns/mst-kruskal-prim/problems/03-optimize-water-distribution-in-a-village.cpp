@@ -42,6 +42,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 struct Edge {
   int u, v, weight;
 };
@@ -49,7 +52,7 @@ struct Edge {
 class DisjointSet {
  public:
   explicit DisjointSet(int n) : parent_(n), rank_(n, 0) {
-    std::iota(parent_.begin(), parent_.end(), 0);
+    iota(parent_.begin(), parent_.end(), 0);
   }
   int find(int x) {
     if (parent_[x] != x) parent_[x] = find(parent_[x]);
@@ -58,20 +61,20 @@ class DisjointSet {
   bool unionSets(int x, int y) {
     int rootX = find(x), rootY = find(y);
     if (rootX == rootY) return false;
-    if (rank_[rootX] < rank_[rootY]) std::swap(rootX, rootY);
+    if (rank_[rootX] < rank_[rootY]) swap(rootX, rootY);
     parent_[rootY] = rootX;
     if (rank_[rootX] == rank_[rootY]) ++rank_[rootX];
     return true;
   }
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> rank_;
+  vector<int> parent_;
+  vector<int> rank_;
 };
 
-int minCostToSupplyWater(int n, const std::vector<int>& wells,
-                          const std::vector<std::vector<int>>& pipes) {
-  std::vector<Edge> edges;
+int minCostToSupplyWater(int n, const vector<int>& wells,
+                          const vector<vector<int>>& pipes) {
+  vector<Edge> edges;
   edges.reserve(wells.size() + pipes.size());
 
   // Every well becomes an edge from the VIRTUAL node 0 to house i.
@@ -82,7 +85,7 @@ int minCostToSupplyWater(int n, const std::vector<int>& wells,
     edges.push_back({p[0], p[1], p[2]});
   }
 
-  std::sort(edges.begin(), edges.end(),
+  sort(edges.begin(), edges.end(),
             [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
 
   // n+1 nodes: node 0 (the virtual water source) plus houses 1..n.
@@ -106,12 +109,12 @@ int minCostToSupplyWater(int n, const std::vector<int>& wells,
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -119,8 +122,8 @@ void check(bool condition, const std::string& label) {
 int main() {
   {
     // n=3, wells=[1,2,2], pipes=[[1,2,1],[2,3,1]].
-    std::vector<int> wells = {1, 2, 2};
-    std::vector<std::vector<int>> pipes = {{1, 2, 1}, {2, 3, 1}};
+    vector<int> wells = {1, 2, 2};
+    vector<vector<int>> pipes = {{1, 2, 1}, {2, 3, 1}};
     check(minCostToSupplyWater(3, wells, pipes) == 3,
           "classic example -> 3 (well at house 1, pipes to 2 and 3)");
   }
@@ -128,8 +131,8 @@ int main() {
   {
     // All wells are cheaper than any pipe -- every house gets its own
     // well, no pipes are used at all.
-    std::vector<int> wells = {1, 1, 1};
-    std::vector<std::vector<int>> pipes = {{1, 2, 100}, {2, 3, 100}};
+    vector<int> wells = {1, 1, 1};
+    vector<vector<int>> pipes = {{1, 2, 100}, {2, 3, 100}};
     check(minCostToSupplyWater(3, wells, pipes) == 3,
           "wells cheaper than any pipe -> every house gets its own well");
   }
@@ -137,8 +140,8 @@ int main() {
   {
     // A single house: always just its own well, no pipes possible or
     // needed.
-    std::vector<int> wells = {5};
-    std::vector<std::vector<int>> pipes = {};
+    vector<int> wells = {5};
+    vector<vector<int>> pipes = {};
     check(minCostToSupplyWater(1, wells, pipes) == 5,
           "single house -> cost is just that house's well");
   }
@@ -147,12 +150,12 @@ int main() {
     // A cheap pipe network with one expensive well: only ONE well is
     // needed (as the "entry point" for water), and every other house
     // connects via cheap pipes instead of also building a well.
-    std::vector<int> wells = {100, 100, 100};
-    std::vector<std::vector<int>> pipes = {{1, 2, 1}, {2, 3, 1}};
+    vector<int> wells = {100, 100, 100};
+    vector<vector<int>> pipes = {{1, 2, 1}, {2, 3, 1}};
     check(minCostToSupplyWater(3, wells, pipes) == 102,
           "one well (100) plus two cheap pipes (1+1) beats three wells (300)");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

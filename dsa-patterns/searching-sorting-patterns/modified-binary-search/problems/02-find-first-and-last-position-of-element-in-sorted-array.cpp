@@ -28,7 +28,10 @@
 #include <iostream>
 #include <vector>
 
-int findFirst(const std::vector<int>& nums, int target) {
+using namespace std;
+
+
+int findFirst(const vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
   int result = -1;
@@ -47,7 +50,7 @@ int findFirst(const std::vector<int>& nums, int target) {
   return result;
 }
 
-int findLast(const std::vector<int>& nums, int target) {
+int findLast(const vector<int>& nums, int target) {
   int lo = 0;
   int hi = static_cast<int>(nums.size()) - 1;
   int result = -1;
@@ -66,7 +69,7 @@ int findLast(const std::vector<int>& nums, int target) {
   return result;
 }
 
-std::vector<int> searchRange(const std::vector<int>& nums, int target) {
+vector<int> searchRange(const vector<int>& nums, int target) {
   return {findFirst(nums, target), findLast(nums, target)};
 }
 
@@ -74,12 +77,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -105,6 +108,6 @@ int main() {
     check(r[0] == 0 && r[1] == 0, "single occurrence -> [0, 0]");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

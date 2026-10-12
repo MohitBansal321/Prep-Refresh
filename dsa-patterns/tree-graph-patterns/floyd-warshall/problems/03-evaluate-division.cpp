@@ -34,13 +34,16 @@
 #include <unordered_map>
 #include <vector>
 
-std::vector<double> calcEquation(
-    const std::vector<std::vector<std::string>>& equations,
-    const std::vector<double>& values,
-    const std::vector<std::vector<std::string>>& queries) {
-  std::unordered_map<std::string, int> index;
+using namespace std;
+
+
+vector<double> calcEquation(
+    const vector<vector<string>>& equations,
+    const vector<double>& values,
+    const vector<vector<string>>& queries) {
+  unordered_map<string, int> index;
   for (const auto& eq : equations) {
-    for (const std::string& var : eq) {
+    for (const string& var : eq) {
       if (index.find(var) == index.end()) {
         int next = static_cast<int>(index.size());
         index[var] = next;
@@ -50,7 +53,7 @@ std::vector<double> calcEquation(
   int n = static_cast<int>(index.size());
 
   // quotient[i][j] = value of (variable i) / (variable j), or -1 if unknown.
-  std::vector<std::vector<double>> quotient(n, std::vector<double>(n, -1.0));
+  vector<vector<double>> quotient(n, vector<double>(n, -1.0));
   for (int i = 0; i < n; ++i) quotient[i][i] = 1.0;  // any variable over itself is 1
 
   for (size_t i = 0; i < equations.size(); ++i) {
@@ -76,7 +79,7 @@ std::vector<double> calcEquation(
     }
   }
 
-  std::vector<double> answers;
+  vector<double> answers;
   answers.reserve(queries.size());
   for (const auto& q : queries) {
     auto itA = index.find(q[0]);
@@ -102,12 +105,12 @@ bool approxEqual(double a, double b) {
   return a < 0 && b < 0 ? true : (a - b < 1e-5 && b - a < 1e-5);
 }
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -116,11 +119,11 @@ int main() {
   {
     // equations = [a/b=2, b/c=3], queries = [a/c, c/a, a/e (unknown var),
     // a/a, x/x (both unknown)].
-    std::vector<std::vector<std::string>> equations = {{"a", "b"}, {"b", "c"}};
-    std::vector<double> values = {2.0, 3.0};
-    std::vector<std::vector<std::string>> queries = {
+    vector<vector<string>> equations = {{"a", "b"}, {"b", "c"}};
+    vector<double> values = {2.0, 3.0};
+    vector<vector<string>> queries = {
         {"a", "c"}, {"c", "a"}, {"a", "e"}, {"a", "a"}, {"x", "x"}};
-    std::vector<double> result = calcEquation(equations, values, queries);
+    vector<double> result = calcEquation(equations, values, queries);
     check(approxEqual(result[0], 6.0), "a/c == 6.0 (a/b * b/c = 2 * 3, via waypoint b)");
     check(approxEqual(result[1], 1.0 / 6.0), "c/a == 1/6 (the reverse direction)");
     check(approxEqual(result[2], -1.0), "a/e -> -1.0 (e is an unknown variable)");
@@ -132,14 +135,14 @@ int main() {
     // Two disconnected equation chains: a/b and x/y are never linked by
     // any equation, so querying across them must return -1, not a
     // nonsensical computed value.
-    std::vector<std::vector<std::string>> equations = {{"a", "b"}, {"x", "y"}};
-    std::vector<double> values = {2.0, 5.0};
-    std::vector<std::vector<std::string>> queries = {{"a", "x"}, {"a", "b"}};
-    std::vector<double> result = calcEquation(equations, values, queries);
+    vector<vector<string>> equations = {{"a", "b"}, {"x", "y"}};
+    vector<double> values = {2.0, 5.0};
+    vector<vector<string>> queries = {{"a", "x"}, {"a", "b"}};
+    vector<double> result = calcEquation(equations, values, queries);
     check(approxEqual(result[0], -1.0), "a/x -> -1.0, no equation chain connects the two groups");
     check(approxEqual(result[1], 2.0), "a/b == 2.0, the direct equation value");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

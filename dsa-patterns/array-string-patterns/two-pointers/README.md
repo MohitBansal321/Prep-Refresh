@@ -4,13 +4,14 @@
 > **In one line:** start one pointer at each end and close the gap, always moving the pointer that provably cannot be part of a better answer.
 
 ```cpp
+using namespace std;
 size_t left = 0, right = heights.size() - 1;
 long long best = 0;
 
 while (left < right) {
   long long width = static_cast<long long>(right - left);
-  long long shorter_wall = std::min(heights[left], heights[right]);
-  best = std::max(best, width * shorter_wall);
+  long long shorter_wall = min(heights[left], heights[right]);
+  best = max(best, width * shorter_wall);
 
   // Move the SHORTER wall: keeping it in place can never beat what we
   // already have, since width can only shrink from here.

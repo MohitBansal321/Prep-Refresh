@@ -24,16 +24,19 @@
 #include <unordered_map>
 #include <vector>
 
-std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
-    std::unordered_map<int, int> frequency;
+using namespace std;
+
+
+vector<int> topKFrequent(const vector<int>& nums, int k) {
+    unordered_map<int, int> frequency;
     for (int value : nums) {
         ++frequency[value];
     }
 
     // Min-heap of (frequency, value) pairs, ordered by frequency ascending so the
     // least-frequent value currently held is always the cheap-to-evict top element.
-    using FreqValue = std::pair<int, int>;
-    std::priority_queue<FreqValue, std::vector<FreqValue>, std::greater<FreqValue>> minHeap;
+    using FreqValue = pair<int, int>;
+    priority_queue<FreqValue, vector<FreqValue>, greater<FreqValue>> minHeap;
 
     for (const auto& entry : frequency) {
         minHeap.push({entry.second, entry.first});  // (frequency, value)
@@ -42,7 +45,7 @@ std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
         }
     }
 
-    std::vector<int> result;
+    vector<int> result;
     result.reserve(minHeap.size());
     while (!minHeap.empty()) {
         result.push_back(minHeap.top().second);
@@ -53,14 +56,14 @@ std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
 
 namespace {
 
-bool sameElementsIgnoringOrder(std::vector<int> a, std::vector<int> b) {
-    std::sort(a.begin(), a.end());
-    std::sort(b.begin(), b.end());
+bool sameElementsIgnoringOrder(vector<int> a, vector<int> b) {
+    sort(a.begin(), a.end());
+    sort(b.begin(), b.end());
     return a == b;
 }
 
-void check(bool condition, const std::string& label) {
-    std::cout << (condition ? "[PASS] " : "[FAIL] ") << label << '\n';
+void check(bool condition, const string& label) {
+    cout << (condition ? "[PASS] " : "[FAIL] ") << label << '\n';
 }
 
 }  // namespace
@@ -81,6 +84,6 @@ int main() {
 
     check(topKFrequent({}, 0).empty(), "topKFrequent on empty input with k == 0");
 
-    std::cout << "\nAll topKFrequent checks executed.\n";
+    cout << "\nAll topKFrequent checks executed.\n";
     return 0;
 }

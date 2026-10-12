@@ -21,9 +21,10 @@ The problem needs repeated range queries interleaved with updates to individual 
 ## Template
 
 ```cpp
+using namespace std;
 // Fenwick Tree (1-indexed internally).
 class FenwickTree {
-  std::vector<long long> tree;
+  vector<long long> tree;
   int n;
  public:
   explicit FenwickTree(int size) : tree(size + 1, 0), n(size) {}

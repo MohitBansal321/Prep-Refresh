@@ -73,6 +73,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // lastStoneWeightII2D — the literal 2D table, kept for readability.
 //
@@ -80,14 +83,14 @@
 //            stones. Identical in shape to knapsack01 in ../code.cpp, with
 //            values[i] replaced by weights[i].
 // ----------------------------------------------------------------------------
-int lastStoneWeightII2D(const std::vector<int>& stones) {
+int lastStoneWeightII2D(const vector<int>& stones) {
   int total = 0;
   for (size_t k = 0; k < stones.size(); ++k) total += stones[k];
 
   int half = total / 2;  // Deliberate floor -- see header comment.
   int n = static_cast<int>(stones.size());
 
-  std::vector<std::vector<int> > dp(n + 1, std::vector<int>(half + 1, 0));
+  vector<vector<int> > dp(n + 1, vector<int>(half + 1, 0));
 
   for (int i = 1; i <= n; ++i) {
     int w = stones[i - 1];  // Row i means "first i stones" -> index i - 1.
@@ -96,7 +99,7 @@ int lastStoneWeightII2D(const std::vector<int>& stones) {
       if (w <= cap) {
         // Put stone i in THIS pile. Both reads come from row i - 1, so the
         // stone cannot be placed twice.
-        dp[i][cap] = std::max(dp[i][cap], dp[i - 1][cap - w] + w);
+        dp[i][cap] = max(dp[i][cap], dp[i - 1][cap - w] + w);
       }
     }
   }
@@ -110,12 +113,12 @@ int lastStoneWeightII2D(const std::vector<int>& stones) {
 // lastStoneWeightII1D — the version to actually write in an interview.
 // One row of length half + 1, capacity swept BACKWARD.
 // ----------------------------------------------------------------------------
-int lastStoneWeightII1D(const std::vector<int>& stones) {
+int lastStoneWeightII1D(const vector<int>& stones) {
   int total = 0;
   for (size_t k = 0; k < stones.size(); ++k) total += stones[k];
 
   int half = total / 2;
-  std::vector<int> dp(half + 1, 0);
+  vector<int> dp(half + 1, 0);
 
   for (size_t k = 0; k < stones.size(); ++k) {
     int w = stones[k];
@@ -125,7 +128,7 @@ int lastStoneWeightII1D(const std::vector<int>& stones) {
     // sum of 2 built from one stone. Backward reads dp[cap - w] before this
     // stone's pass can touch it.
     for (int cap = half; cap >= w; --cap) {
-      dp[cap] = std::max(dp[cap], dp[cap - w] + w);
+      dp[cap] = max(dp[cap], dp[cap - w] + w);
     }
   }
 
@@ -139,18 +142,18 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  auto checkBoth = [&](const std::vector<int>& stones, int expected,
-                       const std::string& label) {
+  auto checkBoth = [&](const vector<int>& stones, int expected,
+                       const string& label) {
     check(lastStoneWeightII2D(stones) == expected, "2D: " + label);
     check(lastStoneWeightII1D(stones) == expected, "1D: " + label);
   };
@@ -159,7 +162,7 @@ int main() {
     // LeetCode's own first example. total = 23, half = 11, and 11 is exactly
     // reachable as 7 + 4, so the split is [7,4] (=11) vs [2,1,8,1] (=12) and
     // the answer is 23 - 2*11 = 1.
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(2); stones.push_back(7); stones.push_back(4);
     stones.push_back(1); stones.push_back(8); stones.push_back(1);
     checkBoth(stones, 1, "[2,7,4,1,8,1] -> 1 (total 23, best pile 11)");
@@ -167,7 +170,7 @@ int main() {
 
   {
     // LeetCode's second example. total = 151, half = 75, best pile 73.
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(31); stones.push_back(26); stones.push_back(33);
     stones.push_back(21); stones.push_back(40);
     checkBoth(stones, 5, "[31,26,33,21,40] -> 5 (total 151, best pile 73)");
@@ -177,33 +180,33 @@ int main() {
     // Single stone: nothing to smash it against, so it survives intact.
     // half = 0 here, so the capacity loop never runs at all -- the base case
     // of an empty table must still produce the right answer.
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(1);
     checkBoth(stones, 1, "[1] -> 1 (one stone, nothing to smash it with)");
   }
 
   {
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(100);
     checkBoth(stones, 100, "[100] -> 100 (single large stone survives whole)");
   }
 
   {
     // Two equal stones annihilate each other exactly.
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(1); stones.push_back(1);
     checkBoth(stones, 0, "[1,1] -> 0 (equal pair destroys itself)");
   }
 
   {
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(1); stones.push_back(2);
     checkBoth(stones, 1, "[1,2] -> 1 (total 3, best pile 1)");
   }
 
   {
     // All-same, even count -> perfect split, answer 0.
-    std::vector<int> stones;
+    vector<int> stones;
     for (int k = 0; k < 4; ++k) stones.push_back(10);
     checkBoth(stones, 0, "[10,10,10,10] -> 0 (all-same, even count)");
   }
@@ -211,7 +214,7 @@ int main() {
   {
     // All-same, ODD count -> one stone is always left over.
     // total 15, half 7, best reachable pile <= 7 is 5, so 15 - 10 = 5.
-    std::vector<int> stones;
+    vector<int> stones;
     for (int k = 0; k < 3; ++k) stones.push_back(5);
     checkBoth(stones, 5, "[5,5,5] -> 5 (all-same, odd count leaves one behind)");
   }
@@ -221,14 +224,14 @@ int main() {
     // 3 itself is unreachable, so the best pile <= 3 is 2 and the answer is
     // 6 - 4 = 2. This is the case that proves the DP is doing real work
     // rather than just returning total % 2.
-    std::vector<int> stones;
+    vector<int> stones;
     for (int k = 0; k < 3; ++k) stones.push_back(2);
     checkBoth(stones, 2, "[2,2,2] -> 2 (half = 3 is UNREACHABLE, best pile 2)");
   }
 
   {
     // total 15, half 7, and 7 = 3 + 4 is exactly reachable -> answer 1.
-    std::vector<int> stones;
+    vector<int> stones;
     for (int k = 1; k <= 5; ++k) stones.push_back(k);
     checkBoth(stones, 1, "[1,2,3,4,5] -> 1 (3+4 = 7 hits the floor of 15/2)");
   }
@@ -236,7 +239,7 @@ int main() {
   {
     // Cross-check against problem 416: a perfectly partitionable array must
     // report 0 here, since an equal split has difference 0.
-    std::vector<int> stones;
+    vector<int> stones;
     stones.push_back(1); stones.push_back(5);
     stones.push_back(11); stones.push_back(5);
     checkBoth(stones, 0, "[1,5,11,5] -> 0 (the LC 416 'true' case, seen here as 0)");
@@ -244,10 +247,10 @@ int main() {
 
   {
     // Empty input: no stones, no last stone. half = 0, loops do not run.
-    std::vector<int> stones;
+    vector<int> stones;
     checkBoth(stones, 0, "[] -> 0 (no stones at all)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

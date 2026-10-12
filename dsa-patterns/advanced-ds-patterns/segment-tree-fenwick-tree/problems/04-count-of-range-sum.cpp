@@ -61,6 +61,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Fenwick Tree storing occurrence counts over compressed value-ranks.
 class FenwickCount {
  public:
@@ -78,43 +81,43 @@ class FenwickCount {
   }
 
  private:
-  std::vector<int> tree_;
+  vector<int> tree_;
   int n_;
 };
 
-int countRangeSum(const std::vector<int>& nums, int lower, int upper) {
+int countRangeSum(const vector<int>& nums, int lower, int upper) {
   const int n = static_cast<int>(nums.size());
   if (n == 0) return 0;
 
   // ---- Prefix sums (long long: n * INT_MAX overflows int badly) ---------
-  std::vector<long long> pre(n + 1, 0);
+  vector<long long> pre(n + 1, 0);
   for (int k = 0; k < n; ++k) pre[k + 1] = pre[k] + nums[k];
 
   // ---- Coordinate compression over ALL indexed values -------------------
   // Only the prefix sums themselves ever get inserted; the window endpoints
   // (S[j]-lower / S[j]-upper) are located by binary search against these
   // keys, so compressing just the prefixes suffices.
-  std::vector<long long> keys(pre.begin(), pre.end());
-  std::sort(keys.begin(), keys.end());
-  keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+  vector<long long> keys(pre.begin(), pre.end());
+  sort(keys.begin(), keys.end());
+  keys.erase(unique(keys.begin(), keys.end()), keys.end());
   const int m = static_cast<int>(keys.size());
 
   // Number of distinct keys strictly less than x (via lower_bound).
   auto countLess = [&](long long x) -> int {
     return static_cast<int>(
-        std::lower_bound(keys.begin(), keys.end(), x) - keys.begin());
+        lower_bound(keys.begin(), keys.end(), x) - keys.begin());
   };
   // Number of distinct keys <= x (via upper_bound).
   auto countLeq = [&](long long x) -> int {
     return static_cast<int>(
-        std::upper_bound(keys.begin(), keys.end(), x) - keys.begin());
+        upper_bound(keys.begin(), keys.end(), x) - keys.begin());
   };
 
   FenwickCount ft(m);
 
   // Insert S[0] = 0 first: it stands for the empty prefix, enabling
   // single-element ranges to be found by later iterations.
-  int r0 = static_cast<int>(std::lower_bound(keys.begin(), keys.end(), 0LL) -
+  int r0 = static_cast<int>(lower_bound(keys.begin(), keys.end(), 0LL) -
                             keys.begin());
   ft.update(r0, 1);
 
@@ -129,7 +132,7 @@ int countRangeSum(const std::vector<int>& nums, int lower, int upper) {
 
     // Insert S[j] AFTER counting so that i < j strictly.
     int rj =
-        static_cast<int>(std::lower_bound(keys.begin(), keys.end(), pre[j]) -
+        static_cast<int>(lower_bound(keys.begin(), keys.end(), pre[j]) -
                          keys.begin());
     ft.update(rj, 1);
   }
@@ -138,7 +141,7 @@ int countRangeSum(const std::vector<int>& nums, int lower, int upper) {
 }
 
 // O(n^2) reference implementation used only to cross-check the Fenwick result.
-int countRangeSumBrute(const std::vector<int>& nums, int lower, int upper) {
+int countRangeSumBrute(const vector<int>& nums, int lower, int upper) {
   const int n = static_cast<int>(nums.size());
   int count = 0;
   for (int i = 0; i < n; ++i) {
@@ -155,12 +158,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -198,10 +201,10 @@ int main() {
     // Cross-check battery against brute force: assorted shapes, negative
     // windows, duplicates, mixed signs.
     struct Case {
-      std::vector<int> nums;
+      vector<int> nums;
       int lower, upper;
     };
-    std::vector<Case> batteries = {
+    vector<Case> batteries = {
         {{-2, 5, -1}, -2, 2},
         {{1, 2, 3}, 0, 100},
         {{1, 2, 3}, 100, 200},
@@ -221,6 +224,6 @@ int main() {
     check(all_match, "battery of 7 cases matches O(n^2) brute force");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

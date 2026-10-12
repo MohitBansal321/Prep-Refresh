@@ -48,7 +48,10 @@
 #include <iostream>
 #include <vector>
 
-int minSubArrayLen(int target, const std::vector<int>& nums) {
+using namespace std;
+
+
+int minSubArrayLen(int target, const vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     long long windowSum = 0;
     int left = 0;
@@ -60,7 +63,7 @@ int minSubArrayLen(int target, const std::vector<int>& nums) {
         // Shrink while the window already satisfies sum >= target — we want
         // the shortest such window, so keep trying to shrink further.
         while (windowSum >= target) {
-            best = std::min(best, right - left + 1);
+            best = min(best, right - left + 1);
             windowSum -= nums[left];  // leaving element must update the sum
             ++left;
         }
@@ -74,15 +77,15 @@ int minSubArrayLen(int target, const std::vector<int>& nums) {
 // ----------------------------------------------------------------------------
 static int failures = 0;
 
-static void check(int actual, int expected, const std::string& label) {
+static void check(int actual, int expected, const string& label) {
     bool pass = (actual == expected);
-    std::cout << (pass ? "[PASS] " : "[FAIL] ") << label
+    cout << (pass ? "[PASS] " : "[FAIL] ") << label
               << " -> got " << actual << ", expected " << expected << '\n';
     if (!pass) ++failures;
 }
 
 int main() {
-    std::cout << "=== Minimum Size Subarray Sum (LC 209) ===\n\n";
+    cout << "=== Minimum Size Subarray Sum (LC 209) ===\n\n";
 
     check(minSubArrayLen(7, {2, 3, 1, 2, 4, 3}), 2, "target=7, [2,3,1,2,4,3]");
     check(minSubArrayLen(4, {1, 4, 4}), 1, "target=4, [1,4,4]");
@@ -91,6 +94,6 @@ int main() {
     check(minSubArrayLen(100, {1, 2, 3}), 0, "target=100, sum too small (impossible)");
     check(minSubArrayLen(3, {3}), 1, "target=3, single element equals target");
 
-    std::cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
+    cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
     return failures == 0 ? 0 : 1;
 }

@@ -22,6 +22,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Result of a topological sort attempt.
 //
@@ -34,7 +37,7 @@
 //              the graph.
 // ----------------------------------------------------------------------------
 struct TopoResult {
-  std::vector<int> order;
+  vector<int> order;
   bool hasCycle;
 };
 
@@ -55,12 +58,12 @@ struct TopoResult {
 //                   plus O(V) for inDegree, the queue, and the output order.
 // ----------------------------------------------------------------------------
 TopoResult topologicalSort(int numNodes,
-                            const std::vector<std::pair<int, int>>& edges) {
+                            const vector<pair<int, int>>& edges) {
   // adj[u] holds every node that directly depends on u — i.e. every v such
   // that the edge u -> v exists. inDegree[v] counts how many not-yet-placed
   // prerequisites node v currently has.
-  std::vector<std::vector<int>> adj(numNodes);
-  std::vector<int> inDegree(numNodes, 0);
+  vector<vector<int>> adj(numNodes);
+  vector<int> inDegree(numNodes, 0);
 
   for (const auto& edge : edges) {
     int u = edge.first;
@@ -71,14 +74,14 @@ TopoResult topologicalSort(int numNodes,
 
   // Seed the queue with every node that has no prerequisites at all — these
   // are safe to place first, in any order relative to each other.
-  std::queue<int> readyQueue;
+  queue<int> readyQueue;
   for (int node = 0; node < numNodes; ++node) {
     if (inDegree[node] == 0) {
       readyQueue.push(node);
     }
   }
 
-  std::vector<int> order;
+  vector<int> order;
   order.reserve(static_cast<size_t>(numNodes));
 
   while (!readyQueue.empty()) {
@@ -109,9 +112,9 @@ TopoResult topologicalSort(int numNodes,
 // since Kahn's algorithm only guarantees "a" valid order when multiple nodes
 // share in-degree 0 at the same time.
 // ----------------------------------------------------------------------------
-bool respectsAllEdges(const std::vector<int>& order,
-                       const std::vector<std::pair<int, int>>& edges) {
-  std::vector<int> position(order.size());
+bool respectsAllEdges(const vector<int>& order,
+                       const vector<pair<int, int>>& edges) {
+  vector<int> position(order.size());
   for (size_t i = 0; i < order.size(); ++i) {
     position[static_cast<size_t>(order[i])] = static_cast<int>(i);
   }
@@ -128,17 +131,17 @@ int main() {
   int passCount = 0;
   int failCount = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++passCount;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++failCount;
     }
   };
 
-  std::cout << "--- Case 1: valid DAG (course-prerequisite style graph) ---\n";
+  cout << "--- Case 1: valid DAG (course-prerequisite style graph) ---\n";
   {
     // 0: Intro to Programming
     // 1: Data Structures       (requires 0)
@@ -147,7 +150,7 @@ int main() {
     // 4: Operating Systems     (requires 1)
     // Edges mean "u must come before v".
     int numNodes = 5;
-    std::vector<std::pair<int, int>> edges = {
+    vector<pair<int, int>> edges = {
         {0, 1}, {1, 3}, {2, 3}, {1, 4}};
 
     TopoResult result = topologicalSort(numNodes, edges);
@@ -157,17 +160,17 @@ int main() {
     check(respectsAllEdges(result.order, edges),
           "5-course DAG order respects every prerequisite edge");
 
-    std::cout << "  computed order: ";
-    for (int node : result.order) std::cout << node << " ";
-    std::cout << "\n";
+    cout << "  computed order: ";
+    for (int node : result.order) cout << node << " ";
+    cout << "\n";
   }
 
-  std::cout << "\n--- Case 2: graph containing a cycle ---\n";
+  cout << "\n--- Case 2: graph containing a cycle ---\n";
   {
     // 0 -> 1 -> 2 -> 0 forms a cycle; node 3 depends on 2 but can never be
     // placed because 2 itself never reaches in-degree 0.
     int numNodes = 4;
-    std::vector<std::pair<int, int>> edges = {
+    vector<pair<int, int>> edges = {
         {0, 1}, {1, 2}, {2, 0}, {2, 3}};
 
     TopoResult result = topologicalSort(numNodes, edges);
@@ -176,12 +179,12 @@ int main() {
     check(result.order.size() < 4,
           "4-node cyclic graph's partial order is shorter than numNodes");
 
-    std::cout << "  partial order (unusable, cycle detected): ";
-    for (int node : result.order) std::cout << node << " ";
-    std::cout << "\n";
+    cout << "  partial order (unusable, cycle detected): ";
+    for (int node : result.order) cout << node << " ";
+    cout << "\n";
   }
 
-  std::cout << "\n--- Case 3: edge cases ---\n";
+  cout << "\n--- Case 3: edge cases ---\n";
   {
     // No edges at all: every node has in-degree 0, any permutation is valid.
     TopoResult result = topologicalSort(3, {});
@@ -195,6 +198,6 @@ int main() {
     check(selfLoop.order.empty(), "self-loop node is never placed");
   }
 
-  std::cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
+  cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
   return failCount == 0 ? 0 : 1;
 }

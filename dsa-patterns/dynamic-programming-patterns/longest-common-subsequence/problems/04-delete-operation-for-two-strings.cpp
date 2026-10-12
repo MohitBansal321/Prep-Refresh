@@ -44,24 +44,27 @@
 #include <string>
 #include <vector>
 
-int longestCommonSubsequenceLength(const std::string& a, const std::string& b) {
+using namespace std;
+
+
+int longestCommonSubsequenceLength(const string& a, const string& b) {
   const size_t n = a.size();
   const size_t m = b.size();
 
-  std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+  vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
   for (size_t i = 1; i <= n; ++i) {
     for (size_t j = 1; j <= m; ++j) {
       if (a[i - 1] == b[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1] + 1;
       } else {
-        dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+        dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
       }
     }
   }
   return dp[n][m];
 }
 
-int minDistance(const std::string& word1, const std::string& word2) {
+int minDistance(const string& word1, const string& word2) {
   int lcs_len = longestCommonSubsequenceLength(word1, word2);
   return static_cast<int>(word1.size() + word2.size()) - 2 * lcs_len;
 }
@@ -70,12 +73,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -87,6 +90,6 @@ int main() {
   check(minDistance("", "abc") == 3, "empty vs \"abc\" -> delete all 3 from word2");
   check(minDistance("a", "a") == 0, "single matching character -> 0");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

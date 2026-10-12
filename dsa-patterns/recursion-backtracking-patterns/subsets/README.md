@@ -4,9 +4,10 @@
 > **In one line:** for each element, recurse once *without* it and once *with* it — the recursion tree's `2^n` leaves are exactly the `2^n` subsets.
 
 ```cpp
-void subsetsRecursiveHelper(const std::vector<int>& nums, size_t index,
-                            std::vector<int>& current,
-                            std::vector<std::vector<int>>& result) {
+using namespace std;
+void subsetsRecursiveHelper(const vector<int>& nums, size_t index,
+                            vector<int>& current,
+                            vector<vector<int>>& result) {
   if (index == nums.size()) { result.push_back(current); return; }
 
   subsetsRecursiveHelper(nums, index + 1, current, result);   // exclude nums[index]

@@ -65,19 +65,22 @@
 #include <string>
 #include <vector>
 
-int findLongestChain(std::vector<std::vector<int>> pairs) {
+using namespace std;
+
+
+int findLongestChain(vector<vector<int>> pairs) {
   const size_t n = pairs.size();
   if (n == 0) return 0;
 
   // Sort by left value ascending -- mirrors sorting by width in Russian
   // Doll Envelopes, so a left-to-right scan can only see non-decreasing
   // left values.
-  std::sort(pairs.begin(), pairs.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
+  sort(pairs.begin(), pairs.end(),
+            [](const vector<int>& a, const vector<int>& b) {
               return a[0] < b[0];
             });
 
-  std::vector<int> dp(n, 1);
+  vector<int> dp(n, 1);
   int best = 1;
 
   for (size_t i = 1; i < n; ++i) {
@@ -85,10 +88,10 @@ int findLongestChain(std::vector<std::vector<int>> pairs) {
       if (pairs[j][1] < pairs[i][0]) {
         // pair j's right value is strictly less than pair i's left value:
         // pair i can validly follow pair j in a chain.
-        dp[i] = std::max(dp[i], dp[j] + 1);
+        dp[i] = max(dp[i], dp[j] + 1);
       }
     }
-    best = std::max(best, dp[i]);
+    best = max(best, dp[i]);
   }
 
   return best;
@@ -98,14 +101,14 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](std::vector<std::vector<int>> pairs, int expected,
-                    const std::string& label) {
+  auto check = [&](vector<vector<int>> pairs, int expected,
+                    const string& label) {
     int result = findLongestChain(pairs);
     if (result == expected) {
-      std::cout << "[PASS] " << label << " -> " << result << "\n";
+      cout << "[PASS] " << label << " -> " << result << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << " -> got " << result
+      cout << "[FAIL] " << label << " -> got " << result
                 << ", expected " << expected << "\n";
       ++fail_count;
     }
@@ -125,6 +128,6 @@ int main() {
   check({{-10, -8}, {8, 9}, {-5, 0}, {6, 10}, {-6, -4}, {1, 7}, {9, 10}, {-4, -1}}, 4,
         "eight overlapping/negative pairs -> 4");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -47,13 +47,16 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 struct ListNode {
   int val;
   ListNode* next;
   ListNode(int x) : val(x), next(nullptr) {}
 };
 
-ListNode* build_list(const std::vector<int>& values) {
+ListNode* build_list(const vector<int>& values) {
   if (values.empty()) return nullptr;
   ListNode* head = new ListNode(values[0]);
   ListNode* tail = head;
@@ -72,8 +75,8 @@ void free_list(ListNode* head) {
   }
 }
 
-std::vector<int> to_vector(ListNode* head) {
-  std::vector<int> out;
+vector<int> to_vector(ListNode* head) {
+  vector<int> out;
   while (head != nullptr) {
     out.push_back(head->val);
     head = head->next;
@@ -123,22 +126,22 @@ ListNode* reverseKGroup(ListNode* head, int k) {
 // ----------------------------------------------------------------------------
 // Test harness.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, const std::vector<int>& actual,
-           const std::vector<int>& expected) {
+void check(const string& name, const vector<int>& actual,
+           const vector<int>& expected) {
   bool pass = (actual == expected);
-  std::cout << (pass ? "PASS" : "FAIL") << " — " << name << " (got [";
+  cout << (pass ? "PASS" : "FAIL") << " — " << name << " (got [";
   for (size_t i = 0; i < actual.size(); ++i) {
-    std::cout << actual[i] << (i + 1 < actual.size() ? "," : "");
+    cout << actual[i] << (i + 1 < actual.size() ? "," : "");
   }
-  std::cout << "], expected [";
+  cout << "], expected [";
   for (size_t i = 0; i < expected.size(); ++i) {
-    std::cout << expected[i] << (i + 1 < expected.size() ? "," : "");
+    cout << expected[i] << (i + 1 < expected.size() ? "," : "");
   }
-  std::cout << "])\n";
+  cout << "])\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 25: Reverse Nodes in k-Group ===\n\n";
+  cout << "=== LeetCode 25: Reverse Nodes in k-Group ===\n\n";
 
   // Case 1: the canonical LeetCode example, k=2 (length is a multiple of k).
   {

@@ -16,6 +16,7 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // Expand around center -- longest palindromic SUBSTRING (contiguous only).
 int start = 0, maxLen = 1;
 auto expand = [&](int left, int right) {
@@ -29,12 +30,12 @@ for (int c = 0; c < n; ++c) {
 }
 
 // Interval DP -- longest palindromic SUBSEQUENCE (gaps allowed).
-std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
+vector<vector<int>> dp(n, vector<int>(n, 0));
 for (int i = n - 1; i >= 0; --i) {         // i DESCENDING guarantees
   dp[i][i] = 1;                            //   [i+1][*] is ready before [i][*]
   for (int j = i + 1; j < n; ++j) {
     dp[i][j] = (s[i] == s[j]) ? dp[i + 1][j - 1] + 2
-                              : std::max(dp[i + 1][j], dp[i][j - 1]);
+                              : max(dp[i + 1][j], dp[i][j - 1]);
   }
 }
 return dp[0][n - 1];

@@ -23,8 +23,11 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 int numSquares(int n) {
-    std::vector<int> dp(n + 1, n + 1); // n+1 is a safe "unreachable" sentinel:
+    vector<int> dp(n + 1, n + 1); // n+1 is a safe "unreachable" sentinel:
                                         // worst case is n copies of 1*1, so
                                         // the true answer never exceeds n.
     dp[0] = 0; // base case: 0 squares needed to make 0
@@ -32,7 +35,7 @@ int numSquares(int n) {
     for (int w = 1; w <= n; ++w) {
         for (int root = 1; root * root <= w; ++root) {
             int square = root * root;
-            dp[w] = std::min(dp[w], dp[w - square] + 1);
+            dp[w] = min(dp[w], dp[w - square] + 1);
         }
     }
     return dp[n];
@@ -42,12 +45,12 @@ namespace {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(const std::string& label, int actual, int expected) {
+void check(const string& label, int actual, int expected) {
     if (actual == expected) {
-        std::cout << "[PASS] " << label << " => " << actual << "\n";
+        cout << "[PASS] " << label << " => " << actual << "\n";
         ++g_pass;
     } else {
-        std::cout << "[FAIL] " << label << " => got " << actual
+        cout << "[FAIL] " << label << " => got " << actual
                    << ", expected " << expected << "\n";
         ++g_fail;
     }
@@ -62,6 +65,6 @@ int main() {
     check("n=4 (a perfect square itself)", numSquares(4), 1);
     check("n=7292", numSquares(7292), 4);
 
-    std::cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
+    cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
     return g_fail == 0 ? 0 : 1;
 }

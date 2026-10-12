@@ -52,7 +52,10 @@
 #include <string>
 #include <vector>
 
-bool canPartitionIntoKSubsets(const std::vector<int>& nums, int k) {
+using namespace std;
+
+
+bool canPartitionIntoKSubsets(const vector<int>& nums, int k) {
   int n = static_cast<int>(nums.size());
   long long total = 0;
   for (int x : nums) total += x;
@@ -63,7 +66,7 @@ bool canPartitionIntoKSubsets(const std::vector<int>& nums, int k) {
   long long target = total / k;
 
   // -1 marks "this subset has never been reached by a valid placement".
-  std::vector<int> dp(1 << n, -1);
+  vector<int> dp(1 << n, -1);
   dp[0] = 0;  // empty set: fresh group, running sum 0
 
   for (int mask = 0; mask < (1 << n); ++mask) {
@@ -89,12 +92,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -133,6 +136,6 @@ int main() {
           "{9}, k=2 -> false (total not divisible by k)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

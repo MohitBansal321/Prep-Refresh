@@ -92,6 +92,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // dfsMarkProvince — plain recursive DFS over an adjacency MATRIX.
 //
@@ -100,8 +103,8 @@
 // row, testing each entry. Everything else — mark on entry, recurse into
 // unvisited neighbours — is identical.
 // ----------------------------------------------------------------------------
-void dfsMarkProvince(const std::vector<std::vector<int> >& isConnected,
-                     std::vector<bool>& visited,
+void dfsMarkProvince(const vector<vector<int> >& isConnected,
+                     vector<bool>& visited,
                      int city) {
   visited[city] = true;  // MARK ON ENTRY, before looking at any neighbour.
 
@@ -120,11 +123,11 @@ void dfsMarkProvince(const std::vector<std::vector<int> >& isConnected,
   }
 }
 
-int findCircleNum(const std::vector<std::vector<int> >& isConnected) {
+int findCircleNum(const vector<vector<int> >& isConnected) {
   int n = static_cast<int>(isConnected.size());
   if (n == 0) return 0;
 
-  std::vector<bool> visited(n, false);
+  vector<bool> visited(n, false);
   int provinces = 0;
 
   // The outer loop over EVERY city is the non-negotiable part. A single DFS
@@ -147,12 +150,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -161,8 +164,8 @@ int main() {
   // a list of undirected edges, so the test cases below stay readable.
   // (Written as a plain lambda returning by value; no CTAD, no structured
   // bindings — this file targets a C++11-era library.)
-  auto buildMatrix = [](int n, const std::vector<std::pair<int, int> >& edges) {
-    std::vector<std::vector<int> > m(n, std::vector<int>(n, 0));
+  auto buildMatrix = [](int n, const vector<pair<int, int> >& edges) {
+    vector<vector<int> > m(n, vector<int>(n, 0));
     for (int i = 0; i < n; ++i) m[i][i] = 1;
     for (size_t e = 0; e < edges.size(); ++e) {
       m[edges[e].first][edges[e].second] = 1;
@@ -172,30 +175,30 @@ int main() {
   };
 
   {
-    std::vector<std::vector<int> > m;
-    m.push_back(std::vector<int>{1, 1, 0});
-    m.push_back(std::vector<int>{1, 1, 0});
-    m.push_back(std::vector<int>{0, 0, 1});
+    vector<vector<int> > m;
+    m.push_back(vector<int>{1, 1, 0});
+    m.push_back(vector<int>{1, 1, 0});
+    m.push_back(vector<int>{0, 0, 1});
     check(findCircleNum(m) == 2, "LeetCode example 1: {0,1} and {2} -> 2");
   }
 
   {
-    std::vector<std::vector<int> > m;
-    m.push_back(std::vector<int>{1, 0, 0});
-    m.push_back(std::vector<int>{0, 1, 0});
-    m.push_back(std::vector<int>{0, 0, 1});
+    vector<vector<int> > m;
+    m.push_back(vector<int>{1, 0, 0});
+    m.push_back(vector<int>{0, 1, 0});
+    m.push_back(vector<int>{0, 0, 1});
     check(findCircleNum(m) == 3, "LeetCode example 2: no connections -> 3 provinces");
   }
 
   {
     // Degenerate input: the n == 0 early return must fire before indexing.
-    std::vector<std::vector<int> > m;
+    vector<vector<int> > m;
     check(findCircleNum(m) == 0, "empty matrix -> 0 provinces");
   }
 
   {
-    std::vector<std::vector<int> > m;
-    m.push_back(std::vector<int>{1});
+    vector<vector<int> > m;
+    m.push_back(vector<int>{1});
     check(findCircleNum(m) == 1, "single city -> 1 province (the self-edge is not a second one)");
   }
 
@@ -203,22 +206,22 @@ int main() {
     // TRANSITIVITY: 0-1 and 1-2 are the only direct edges, but 0 and 2 are in
     // the same province because DFS reaches 2 through 1. A solution that only
     // grouped DIRECTLY connected cities would answer 2 here.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(1, 2));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(1, 2));
     check(findCircleNum(buildMatrix(3, edges)) == 1,
           "chain 0-1-2: indirect connection still counts -> 1 province");
   }
 
   {
     // Fully connected: every city reachable from every other.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(0, 2));
-    edges.push_back(std::pair<int, int>(0, 3));
-    edges.push_back(std::pair<int, int>(1, 2));
-    edges.push_back(std::pair<int, int>(1, 3));
-    edges.push_back(std::pair<int, int>(2, 3));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(0, 2));
+    edges.push_back(pair<int, int>(0, 3));
+    edges.push_back(pair<int, int>(1, 2));
+    edges.push_back(pair<int, int>(1, 3));
+    edges.push_back(pair<int, int>(2, 3));
     check(findCircleNum(buildMatrix(4, edges)) == 1, "complete graph on 4 cities -> 1 province");
   }
 
@@ -226,10 +229,10 @@ int main() {
     // A CYCLE inside one province. The extra edge 2-0 closes a triangle: a
     // cycle changes nothing about the component count, and (critically) the
     // visited guard means the traversal does not loop around it forever.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(1, 2));
-    edges.push_back(std::pair<int, int>(2, 0));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(1, 2));
+    edges.push_back(pair<int, int>(2, 0));
     check(findCircleNum(buildMatrix(3, edges)) == 1, "triangle (a cycle) is still 1 province");
   }
 
@@ -237,19 +240,19 @@ int main() {
     // Two provinces of different sizes plus one isolated city -> 3. This is
     // the case that fails outright if the outer loop over all start nodes is
     // dropped: a DFS from city 0 alone would report 1.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(0, 1));
-    edges.push_back(std::pair<int, int>(1, 2));
-    edges.push_back(std::pair<int, int>(3, 4));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(0, 1));
+    edges.push_back(pair<int, int>(1, 2));
+    edges.push_back(pair<int, int>(3, 4));
     check(findCircleNum(buildMatrix(6, edges)) == 3,
           "{0,1,2}, {3,4}, {5} -> 3 (isolated city 5 is its own province)");
   }
 
   {
     // Long chain: the deepest recursion in this file (n frames).
-    std::vector<std::pair<int, int> > edges;
+    vector<pair<int, int> > edges;
     for (int i = 0; i + 1 < 50; ++i) {
-      edges.push_back(std::pair<int, int>(i, i + 1));
+      edges.push_back(pair<int, int>(i, i + 1));
     }
     check(findCircleNum(buildMatrix(50, edges)) == 1, "50-city chain -> 1 province (max recursion depth)");
   }
@@ -257,11 +260,11 @@ int main() {
   {
     // The province found LAST, not first, is the one with the edges. Exercises
     // the same outer-loop requirement from the opposite direction.
-    std::vector<std::pair<int, int> > edges;
-    edges.push_back(std::pair<int, int>(2, 3));
+    vector<pair<int, int> > edges;
+    edges.push_back(pair<int, int>(2, 3));
     check(findCircleNum(buildMatrix(4, edges)) == 3, "{0}, {1}, {2,3} -> 3 (edges live at the end)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

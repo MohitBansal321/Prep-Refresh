@@ -65,6 +65,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // 1. Recursive include/exclude.
 //
@@ -76,9 +79,9 @@
 // `current` being full here. (Contrast 03-permutations.cpp, whose base case
 // genuinely is current.size() == nums.size().)
 // ----------------------------------------------------------------------------
-void subsetsRecursiveHelper(const std::vector<int>& nums, size_t index,
-                            std::vector<int>& current,
-                            std::vector<std::vector<int>>& result) {
+void subsetsRecursiveHelper(const vector<int>& nums, size_t index,
+                            vector<int>& current,
+                            vector<vector<int>>& result) {
   if (index == nums.size()) {
     // Every element decided -> `current` is one complete subset.
     // push_back COPIES the vector by value. That copy is mandatory: `current`
@@ -101,9 +104,9 @@ void subsetsRecursiveHelper(const std::vector<int>& nums, size_t index,
   current.pop_back();
 }
 
-std::vector<std::vector<int>> subsetsRecursive(const std::vector<int>& nums) {
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+vector<vector<int>> subsetsRecursive(const vector<int>& nums) {
+  vector<vector<int>> result;
+  vector<int> current;
   subsetsRecursiveHelper(nums, 0, current, result);
   return result;
 }
@@ -117,11 +120,11 @@ std::vector<std::vector<int>> subsetsRecursive(const std::vector<int>& nums) {
 // the untouched entries cover "does not," the freshly appended copies cover
 // "does," and the two halves cannot overlap.
 // ----------------------------------------------------------------------------
-std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
+vector<vector<int>> subsetsIterative(const vector<int>& nums) {
   // Starting from {{}} rather than {} is what puts the empty subset in the
   // answer. Start from {} and the outer loop has nothing to double, so the
   // function returns an empty list no matter what the input is.
-  std::vector<std::vector<int>> result = {{}};
+  vector<vector<int>> result = {{}};
 
   for (size_t k = 0; k < nums.size(); ++k) {
     // THE critical line. `result` grows inside the inner loop below, so its
@@ -131,9 +134,9 @@ std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
     const size_t existing_count = result.size();
 
     for (size_t i = 0; i < existing_count; ++i) {
-      std::vector<int> extended = result[i];  // copy, do NOT mutate result[i]
+      vector<int> extended = result[i];  // copy, do NOT mutate result[i]
       extended.push_back(nums[k]);
-      result.push_back(std::move(extended));
+      result.push_back(move(extended));
     }
   }
 
@@ -152,22 +155,22 @@ std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
 // which is not a real restriction, because 2^31 subsets is already far beyond
 // what any machine could materialize.
 // ----------------------------------------------------------------------------
-std::vector<std::vector<int>> subsetsBitmask(const std::vector<int>& nums) {
+vector<vector<int>> subsetsBitmask(const vector<int>& nums) {
   const unsigned n = static_cast<unsigned>(nums.size());
   const unsigned total = 1u << n;  // 2^n; note 1u (UNSIGNED) -- 1 << 31 on a
                                    // signed int is undefined behaviour.
 
-  std::vector<std::vector<int>> result;
+  vector<vector<int>> result;
   result.reserve(total);
 
   for (unsigned mask = 0; mask < total; ++mask) {
-    std::vector<int> subset;
+    vector<int> subset;
     for (unsigned i = 0; i < n; ++i) {
       if (mask & (1u << i)) {
         subset.push_back(nums[i]);
       }
     }
-    result.push_back(std::move(subset));
+    result.push_back(move(subset));
   }
 
   return result;
@@ -181,11 +184,11 @@ std::vector<std::vector<int>> subsetsBitmask(const std::vector<int>& nums) {
 // also appear in any order, so every comparison below normalizes first: sort
 // each inner vector, then sort the outer vector. This is the only honest way
 // to compare two enumerations that are equal as SETS but differ in visit order.
-std::vector<std::vector<int>> normalized(std::vector<std::vector<int>> v) {
+vector<vector<int>> normalized(vector<vector<int>> v) {
   for (size_t i = 0; i < v.size(); ++i) {
-    std::sort(v[i].begin(), v[i].end());
+    sort(v[i].begin(), v[i].end());
   }
-  std::sort(v.begin(), v.end());
+  sort(v.begin(), v.end());
   return v;
 }
 
@@ -193,36 +196,36 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // --- The LeetCode example, checked against the exact expected power set ---
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     nums.push_back(2);
     nums.push_back(3);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>());               // {}
-    expected.push_back(std::vector<int>{1});
-    expected.push_back(std::vector<int>{2});
-    expected.push_back(std::vector<int>{3});
-    expected.push_back(std::vector<int>{1, 2});
-    expected.push_back(std::vector<int>{1, 3});
-    expected.push_back(std::vector<int>{2, 3});
-    expected.push_back(std::vector<int>{1, 2, 3});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>());               // {}
+    expected.push_back(vector<int>{1});
+    expected.push_back(vector<int>{2});
+    expected.push_back(vector<int>{3});
+    expected.push_back(vector<int>{1, 2});
+    expected.push_back(vector<int>{1, 3});
+    expected.push_back(vector<int>{2, 3});
+    expected.push_back(vector<int>{1, 2, 3});
 
-    std::vector<std::vector<int>> rec = subsetsRecursive(nums);
-    std::vector<std::vector<int>> itr = subsetsIterative(nums);
-    std::vector<std::vector<int>> bit = subsetsBitmask(nums);
+    vector<vector<int>> rec = subsetsRecursive(nums);
+    vector<vector<int>> itr = subsetsIterative(nums);
+    vector<vector<int>> bit = subsetsBitmask(nums);
 
     check(rec.size() == 8, "[1,2,3] recursive -> 2^3 = 8 subsets");
     check(itr.size() == 8, "[1,2,3] iterative -> 2^3 = 8 subsets");
@@ -248,7 +251,7 @@ int main() {
   // --- the empty one. Not zero subsets. This is the "forgot the empty    ---
   // --- subset" bug at its most visible.                                  ---
   {
-    std::vector<int> empty_input;
+    vector<int> empty_input;
     check(subsetsRecursive(empty_input).size() == 1 &&
               subsetsRecursive(empty_input)[0].empty(),
           "empty input, recursive -> exactly one subset, the empty set");
@@ -263,12 +266,12 @@ int main() {
   // --- Edge case: single element, including the value 0 (a value that is  ---
   // --- easy to confuse with "absent" if anything is falsy-tested).        ---
   {
-    std::vector<int> single;
+    vector<int> single;
     single.push_back(0);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>());
-    expected.push_back(std::vector<int>{0});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>());
+    expected.push_back(vector<int>{0});
 
     check(normalized(subsetsRecursive(single)) == normalized(expected),
           "single element [0] -> {} and {0} (zero is a value, not an absence)");
@@ -280,12 +283,12 @@ int main() {
   // --- values at all -- only positions -- so signs are irrelevant. This  ---
   // --- test exists to make that indifference explicit.                   ---
   {
-    std::vector<int> negatives;
+    vector<int> negatives;
     negatives.push_back(-3);
     negatives.push_back(0);
     negatives.push_back(7);
 
-    std::vector<std::vector<int>> rec = subsetsRecursive(negatives);
+    vector<vector<int>> rec = subsetsRecursive(negatives);
     check(rec.size() == 8, "[-3,0,7] -> 8 subsets (values never inspected, only positions)");
     check(normalized(rec) == normalized(subsetsBitmask(negatives)),
           "[-3,0,7] recursive and bitmask agree");
@@ -294,13 +297,13 @@ int main() {
   // --- Structural checks on a larger input: exact count, and no duplicate ---
   // --- subsets anywhere in the output.                                     ---
   {
-    std::vector<int> ten;
+    vector<int> ten;
     for (int i = 1; i <= 10; ++i) ten.push_back(i);
 
-    std::vector<std::vector<int>> rec = subsetsRecursive(ten);
+    vector<vector<int>> rec = subsetsRecursive(ten);
     check(rec.size() == 1024u, "10 distinct elements -> 2^10 = 1024 subsets");
 
-    std::vector<std::vector<int>> norm = normalized(rec);
+    vector<vector<int>> norm = normalized(rec);
     bool has_duplicate = false;
     for (size_t i = 1; i < norm.size(); ++i) {
       if (norm[i] == norm[i - 1]) has_duplicate = true;
@@ -312,7 +315,7 @@ int main() {
     // is the counting identity behind "each element doubles the result."
     int count_containing_first = 0;
     for (size_t i = 0; i < rec.size(); ++i) {
-      if (std::find(rec[i].begin(), rec[i].end(), 1) != rec[i].end()) {
+      if (find(rec[i].begin(), rec[i].end(), 1) != rec[i].end()) {
         ++count_containing_first;
       }
     }
@@ -320,6 +323,6 @@ int main() {
           "element 1 appears in exactly 2^(n-1) = 512 subsets (decisions are independent)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

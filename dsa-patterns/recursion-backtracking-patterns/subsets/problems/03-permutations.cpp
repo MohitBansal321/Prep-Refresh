@@ -33,7 +33,7 @@
 // elements are already spoken for on the current path. Two ways to track that,
 // both implemented below:
 //
-//   A. permuteUsedMarker — a std::vector<bool> used, parallel to nums. At each
+//   A. permuteUsedMarker — a vector<bool> used, parallel to nums. At each
 //      level, loop over every index, skip the ones already used, mark / push /
 //      recurse / pop / unmark. This is the shape in ../code.cpp and the one to
 //      write in an interview, because it survives the extension to duplicate
@@ -78,6 +78,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Formulation A — used[] marker.
 //
@@ -86,10 +89,10 @@
 // must be updated and undone together -- they are one piece of state split
 // across two containers.
 // ----------------------------------------------------------------------------
-void permuteUsedMarkerHelper(const std::vector<int>& nums,
-                             std::vector<bool>& used,
-                             std::vector<int>& current,
-                             std::vector<std::vector<int>>& result) {
+void permuteUsedMarkerHelper(const vector<int>& nums,
+                             vector<bool>& used,
+                             vector<int>& current,
+                             vector<vector<int>>& result) {
   if (current.size() == nums.size()) {
     // Every position filled -> one complete permutation. Copy, because
     // `current` is a single shared buffer that keeps mutating.
@@ -114,10 +117,10 @@ void permuteUsedMarkerHelper(const std::vector<int>& nums,
   }
 }
 
-std::vector<std::vector<int>> permuteUsedMarker(const std::vector<int>& nums) {
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
-  std::vector<bool> used(nums.size(), false);
+vector<vector<int>> permuteUsedMarker(const vector<int>& nums) {
+  vector<vector<int>> result;
+  vector<int> current;
+  vector<bool> used(nums.size(), false);
   permuteUsedMarkerHelper(nums, used, current, result);
   return result;
 }
@@ -134,25 +137,25 @@ std::vector<std::vector<int>> permuteUsedMarker(const std::vector<int>& nums) {
 // correctly represents "leave this element where it is." Skipping i == k would
 // drop every permutation that keeps the current element in place.
 // ----------------------------------------------------------------------------
-void permuteBySwappingHelper(std::vector<int>& nums, size_t k,
-                             std::vector<std::vector<int>>& result) {
+void permuteBySwappingHelper(vector<int>& nums, size_t k,
+                             vector<vector<int>>& result) {
   if (k == nums.size()) {
     result.push_back(nums);  // nums IS the completed permutation; copy it
     return;
   }
 
   for (size_t i = k; i < nums.size(); ++i) {
-    std::swap(nums[k], nums[i]);            // choose: put nums[i] at position k
+    swap(nums[k], nums[i]);            // choose: put nums[i] at position k
     permuteBySwappingHelper(nums, k + 1, result);
-    std::swap(nums[k], nums[i]);            // undo: restore for the next sibling
+    swap(nums[k], nums[i]);            // undo: restore for the next sibling
   }
 }
 
-std::vector<std::vector<int>> permuteBySwapping(std::vector<int> nums) {
+vector<vector<int>> permuteBySwapping(vector<int> nums) {
   // Taken BY VALUE: this formulation scrambles its input during the walk and
   // only restores it when the outermost call returns. Taking a copy keeps that
   // mutation from leaking out to the caller.
-  std::vector<std::vector<int>> result;
+  vector<vector<int>> result;
   permuteBySwappingHelper(nums, 0, result);
   return result;
 }
@@ -165,8 +168,8 @@ std::vector<std::vector<int>> permuteBySwapping(std::vector<int> nums) {
 // permutation is the answer itself and must never be sorted away. So only the
 // outer vector is sorted here -- deliberately unlike normalized() in
 // 01-subsets.cpp / 02-subsets-ii.cpp, which sorts both levels.
-std::vector<std::vector<int>> outerSorted(std::vector<std::vector<int>> v) {
-  std::sort(v.begin(), v.end());
+vector<vector<int>> outerSorted(vector<vector<int>> v) {
+  sort(v.begin(), v.end());
   return v;
 }
 
@@ -174,33 +177,33 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // --- The LeetCode example, checked against all 6 expected orderings ---
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     nums.push_back(2);
     nums.push_back(3);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>{1, 2, 3});
-    expected.push_back(std::vector<int>{1, 3, 2});
-    expected.push_back(std::vector<int>{2, 1, 3});
-    expected.push_back(std::vector<int>{2, 3, 1});
-    expected.push_back(std::vector<int>{3, 1, 2});
-    expected.push_back(std::vector<int>{3, 2, 1});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>{1, 2, 3});
+    expected.push_back(vector<int>{1, 3, 2});
+    expected.push_back(vector<int>{2, 1, 3});
+    expected.push_back(vector<int>{2, 3, 1});
+    expected.push_back(vector<int>{3, 1, 2});
+    expected.push_back(vector<int>{3, 2, 1});
 
-    std::vector<std::vector<int>> a = permuteUsedMarker(nums);
-    std::vector<std::vector<int>> b = permuteBySwapping(nums);
+    vector<vector<int>> a = permuteUsedMarker(nums);
+    vector<vector<int>> b = permuteBySwapping(nums);
 
     check(a.size() == 6, "[1,2,3] used-marker -> 3! = 6 permutations");
     check(b.size() == 6, "[1,2,3] swapping    -> 3! = 6 permutations");
@@ -219,26 +222,26 @@ int main() {
   // --- Every permutation must be a genuine rearrangement: right length, ---
   // --- every element exactly once, and no two permutations identical.    ---
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(7);
     nums.push_back(8);
     nums.push_back(9);
     nums.push_back(10);
 
-    std::vector<std::vector<int>> got = permuteUsedMarker(nums);
+    vector<vector<int>> got = permuteUsedMarker(nums);
     check(got.size() == 24, "[7,8,9,10] -> 4! = 24 permutations");
 
     bool all_valid = true;
-    std::vector<int> sorted_input = nums;
-    std::sort(sorted_input.begin(), sorted_input.end());
+    vector<int> sorted_input = nums;
+    sort(sorted_input.begin(), sorted_input.end());
     for (size_t i = 0; i < got.size(); ++i) {
-      std::vector<int> copy = got[i];
-      std::sort(copy.begin(), copy.end());
+      vector<int> copy = got[i];
+      sort(copy.begin(), copy.end());
       if (copy != sorted_input) all_valid = false;
     }
     check(all_valid, "every permutation uses all 4 elements exactly once (no drops, no repeats)");
 
-    std::vector<std::vector<int>> sorted_got = outerSorted(got);
+    vector<vector<int>> sorted_got = outerSorted(got);
     bool has_duplicate = false;
     for (size_t i = 1; i < sorted_got.size(); ++i) {
       if (sorted_got[i] == sorted_got[i - 1]) has_duplicate = true;
@@ -248,9 +251,9 @@ int main() {
 
   // --- Edge case: single element -> exactly one permutation ---
   {
-    std::vector<int> single;
+    vector<int> single;
     single.push_back(42);
-    std::vector<std::vector<int>> got = permuteUsedMarker(single);
+    vector<vector<int>> got = permuteUsedMarker(single);
     check(got.size() == 1 && got[0].size() == 1 && got[0][0] == 42,
           "single element [42] -> exactly one permutation, [42]");
   }
@@ -259,8 +262,8 @@ int main() {
   // --- is the empty sequence. LeetCode guarantees n >= 1, but the base    ---
   // --- case handles it correctly for free: current.size() == 0 == n.      ---
   {
-    std::vector<int> empty_input;
-    std::vector<std::vector<int>> got = permuteUsedMarker(empty_input);
+    vector<int> empty_input;
+    vector<vector<int>> got = permuteUsedMarker(empty_input);
     check(got.size() == 1 && got[0].empty(),
           "empty input -> exactly one (empty) permutation, since 0! = 1");
     check(permuteBySwapping(empty_input).size() == 1,
@@ -269,18 +272,18 @@ int main() {
 
   // --- Negatives and zero: nothing in the algorithm inspects values ---
   {
-    std::vector<int> mixed;
+    vector<int> mixed;
     mixed.push_back(-1);
     mixed.push_back(0);
     mixed.push_back(1);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>{-1, 0, 1});
-    expected.push_back(std::vector<int>{-1, 1, 0});
-    expected.push_back(std::vector<int>{0, -1, 1});
-    expected.push_back(std::vector<int>{0, 1, -1});
-    expected.push_back(std::vector<int>{1, -1, 0});
-    expected.push_back(std::vector<int>{1, 0, -1});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>{-1, 0, 1});
+    expected.push_back(vector<int>{-1, 1, 0});
+    expected.push_back(vector<int>{0, -1, 1});
+    expected.push_back(vector<int>{0, 1, -1});
+    expected.push_back(vector<int>{1, -1, 0});
+    expected.push_back(vector<int>{1, 0, -1});
 
     check(outerSorted(permuteUsedMarker(mixed)) == outerSorted(expected),
           "[-1,0,1] -> all 6 orderings (values never inspected, only positions)");
@@ -288,11 +291,11 @@ int main() {
 
   // --- The swapping formulation must leave the caller's array untouched ---
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     nums.push_back(2);
     nums.push_back(3);
-    std::vector<int> before = nums;
+    vector<int> before = nums;
     permuteBySwapping(nums);
     check(nums == before,
           "permuteBySwapping takes nums by value -- caller's array is unchanged");
@@ -303,7 +306,7 @@ int main() {
     bool all_agree = true;
     bool all_counts_correct = true;
     int factorial = 1;
-    std::vector<int> nums;
+    vector<int> nums;
 
     for (int n = 1; n <= 6; ++n) {
       nums.push_back(n);
@@ -320,6 +323,6 @@ int main() {
     check(all_counts_correct, "output count is exactly n! for n = 1..6 (up to 720)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

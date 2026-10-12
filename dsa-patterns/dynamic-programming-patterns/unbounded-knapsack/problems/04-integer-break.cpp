@@ -31,14 +31,17 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 int integerBreak(int n) {
-    std::vector<int> dp(n + 1, 0);
+    vector<int> dp(n + 1, 0);
     // dp[1] is deliberately left at 0: 1 cannot be broken into two positive
     // parts, and 1 is never a useful "remainder" to reuse further, so it is
     // simply never read for anything meaningful in the loop below.
     for (int i = 2; i <= n; ++i) {
         for (int j = 1; j < i; ++j) {
-            dp[i] = std::max({dp[i], j * (i - j), j * dp[i - j]});
+            dp[i] = max({dp[i], j * (i - j), j * dp[i - j]});
         }
     }
     return dp[n];
@@ -48,12 +51,12 @@ namespace {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(const std::string& label, int actual, int expected) {
+void check(const string& label, int actual, int expected) {
     if (actual == expected) {
-        std::cout << "[PASS] " << label << " => " << actual << "\n";
+        cout << "[PASS] " << label << " => " << actual << "\n";
         ++g_pass;
     } else {
-        std::cout << "[FAIL] " << label << " => got " << actual
+        cout << "[FAIL] " << label << " => got " << actual
                    << ", expected " << expected << "\n";
         ++g_fail;
     }
@@ -67,6 +70,6 @@ int main() {
     check("n=10 (3*3*4)", integerBreak(10), 36);
     check("n=4 (2*2, reusing part size 2)", integerBreak(4), 4);
 
-    std::cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
+    cout << "\n" << g_pass << " passed, " << g_fail << " failed\n";
     return g_fail == 0 ? 0 : 1;
 }

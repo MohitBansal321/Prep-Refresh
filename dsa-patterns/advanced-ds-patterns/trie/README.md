@@ -17,15 +17,16 @@ A Trie is a tree where each node represents one character, and a path from the r
 ## Template
 
 ```cpp
+using namespace std;
 class Trie {
   struct Node {
-    std::array<Node*, 26> children{};  // nullptr = no child for that letter
+    array<Node*, 26> children{};  // nullptr = no child for that letter
     bool isWord = false;
   };
   Node* root = new Node();
 
  public:
-  void insert(const std::string& word) {
+  void insert(const string& word) {
     Node* cur = root;
     for (char c : word) {
       int idx = c - 'a';
@@ -35,17 +36,17 @@ class Trie {
     cur->isWord = true;
   }
 
-  bool search(const std::string& word) {
+  bool search(const string& word) {
     Node* node = findNode(word);
     return node != nullptr && node->isWord;
   }
 
-  bool startsWith(const std::string& prefix) {
+  bool startsWith(const string& prefix) {
     return findNode(prefix) != nullptr;
   }
 
  private:
-  Node* findNode(const std::string& s) {
+  Node* findNode(const string& s) {
     Node* cur = root;
     for (char c : s) {
       int idx = c - 'a';

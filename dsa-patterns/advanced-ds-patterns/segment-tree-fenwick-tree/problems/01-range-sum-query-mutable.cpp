@@ -50,6 +50,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Fenwick Tree over positions 0..n-1 externally, 1-indexed internally.
 // Stores long long throughout: with n up to 3*10^4 and values up to 10^9 in
 // magnitude, any prefix sum can reach ~3*10^13 — far beyond int range.
@@ -78,13 +81,13 @@ class FenwickTree {
   }
 
  private:
-  std::vector<long long> tree_;
+  vector<long long> tree_;
   int n_;
 };
 
 class NumArray {
  public:
-  explicit NumArray(const std::vector<int>& nums)
+  explicit NumArray(const vector<int>& nums)
       : cur_(nums.begin(), nums.end()), ft_(static_cast<int>(nums.size())) {
     // Build the tree incrementally: each build-update is O(log n), so total
     // construction is O(n log n). (An O(n) linear build exists but obscures
@@ -106,7 +109,7 @@ class NumArray {
   }
 
  private:
-  std::vector<long long> cur_;  // mirror of current values, for deltas
+  vector<long long> cur_;  // mirror of current values, for deltas
   FenwickTree ft_;
 };
 
@@ -114,12 +117,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -157,7 +160,7 @@ int main() {
   {
     // Interleaved stress against a naive recompute oracle: every Fenwick
     // answer must match the brute-force sum of the mirrored array.
-    std::vector<int> nums = {5, -9, 12, 0, 33, -7, 8, 8, -20, 4};
+    vector<int> nums = {5, -9, 12, 0, 33, -7, 8, 8, -20, 4};
     NumArray na(nums);
     bool all_match = true;
     na.update(3, 50);   // 0 -> 50
@@ -175,6 +178,6 @@ int main() {
     check(all_match, "interleaved updates: all 55 ranges match brute force");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

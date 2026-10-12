@@ -28,7 +28,7 @@
 //   (1) Kahn's emits nodes in FORWARD order — the first node popped is the
 //       first course you take. DFS post-order emits them BACKWARD (a node is
 //       finished only after everything it depends on... in the reversed
-//       edge sense), so DFS needs a final std::reverse before the answer is
+//       edge sense), so DFS needs a final reverse before the answer is
 //       usable. One more step, one more thing to forget.
 //   (2) The failure contract here is "return an empty vector," and Kahn's
 //       gives that for free: if order.size() != numCourses, throw the partial
@@ -67,6 +67,9 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // findOrder — Kahn's algorithm, returning the order itself.
 //
@@ -76,11 +79,11 @@
 // ../code.cpp's topologicalSort returns an explicit `hasCycle` flag instead.
 // LeetCode's signature forces the ambiguity on us here.)
 // ----------------------------------------------------------------------------
-std::vector<int> findOrder(int numCourses,
-                           const std::vector<std::pair<int, int> >& prerequisites) {
+vector<int> findOrder(int numCourses,
+                           const vector<pair<int, int> >& prerequisites) {
   // adj[u] = every course that must come AFTER u.
-  std::vector<std::vector<int> > adj(static_cast<size_t>(numCourses));
-  std::vector<int> inDegree(static_cast<size_t>(numCourses), 0);
+  vector<vector<int> > adj(static_cast<size_t>(numCourses));
+  vector<int> inDegree(static_cast<size_t>(numCourses), 0);
 
   for (size_t i = 0; i < prerequisites.size(); ++i) {
     int after = prerequisites[i].first;    // a
@@ -89,14 +92,14 @@ std::vector<int> findOrder(int numCourses,
     ++inDegree[static_cast<size_t>(after)];
   }
 
-  std::queue<int> ready;
+  queue<int> ready;
   for (int course = 0; course < numCourses; ++course) {
     if (inDegree[static_cast<size_t>(course)] == 0) {
       ready.push(course);
     }
   }
 
-  std::vector<int> order;
+  vector<int> order;
   order.reserve(static_cast<size_t>(numCourses));
 
   while (!ready.empty()) {
@@ -106,7 +109,7 @@ std::vector<int> findOrder(int numCourses,
     // between "is it possible?" and "give me the plan."
     order.push_back(current);
 
-    const std::vector<int>& dependents = adj[static_cast<size_t>(current)];
+    const vector<int>& dependents = adj[static_cast<size_t>(current)];
     for (size_t i = 0; i < dependents.size(); ++i) {
       size_t next = static_cast<size_t>(dependents[i]);
       --inDegree[next];
@@ -119,7 +122,7 @@ std::vector<int> findOrder(int numCourses,
   if (order.size() != static_cast<size_t>(numCourses)) {
     // Cycle. The partial `order` is a valid order for the courses it does
     // contain, which is precisely what makes returning it so dangerous.
-    return std::vector<int>();
+    return vector<int>();
   }
   return order;
 }
@@ -134,11 +137,11 @@ std::vector<int> findOrder(int numCourses,
 //   (b) every prerequisite appears strictly before the course it unlocks.
 // ----------------------------------------------------------------------------
 bool isValidOrder(int numCourses,
-                  const std::vector<std::pair<int, int> >& prerequisites,
-                  const std::vector<int>& order) {
+                  const vector<pair<int, int> >& prerequisites,
+                  const vector<int>& order) {
   if (order.size() != static_cast<size_t>(numCourses)) return false;
 
-  std::vector<int> position(static_cast<size_t>(numCourses), -1);
+  vector<int> position(static_cast<size_t>(numCourses), -1);
   for (size_t i = 0; i < order.size(); ++i) {
     int course = order[i];
     if (course < 0 || course >= numCourses) return false;
@@ -160,76 +163,76 @@ int main() {
   int passCount = 0;
   int failCount = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++passCount;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++failCount;
     }
   };
 
-  typedef std::vector<std::pair<int, int> > Pairs;
+  typedef vector<pair<int, int> > Pairs;
 
   // --- LeetCode's own examples -------------------------------------------
   {
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    std::vector<int> order = findOrder(2, p);
+    p.push_back(pair<int, int>(1, 0));
+    vector<int> order = findOrder(2, p);
     check(isValidOrder(2, p, order), "LC example 1: {{1,0}} -> valid 2-course order");
     check(order.size() == 2 && order[0] == 0 && order[1] == 1,
           "LC example 1: order is forced, must be exactly {0, 1}");
   }
   {
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(2, 0));
-    p.push_back(std::pair<int, int>(3, 1));
-    p.push_back(std::pair<int, int>(3, 2));
-    std::vector<int> order = findOrder(4, p);
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(2, 0));
+    p.push_back(pair<int, int>(3, 1));
+    p.push_back(pair<int, int>(3, 2));
+    vector<int> order = findOrder(4, p);
     check(isValidOrder(4, p, order), "LC example 2: diamond graph -> valid order");
     check(order.front() == 0 && order.back() == 3,
           "LC example 2: 0 must be first and 3 must be last (only 1 vs 2 is free)");
 
-    std::cout << "  computed order: ";
-    for (size_t i = 0; i < order.size(); ++i) std::cout << order[i] << " ";
-    std::cout << "\n";
+    cout << "  computed order: ";
+    for (size_t i = 0; i < order.size(); ++i) cout << order[i] << " ";
+    cout << "\n";
   }
   {
     Pairs empty;
-    std::vector<int> order = findOrder(1, empty);
+    vector<int> order = findOrder(1, empty);
     check(order.size() == 1 && order[0] == 0, "LC example 3: single course -> {0}");
   }
 
   // --- Cycles must yield an EMPTY vector, not a partial order ------------
   {
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(0, 1));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(0, 1));
     check(findOrder(2, p).empty(), "mutual prerequisites -> empty vector");
   }
   {
     // The dangerous shape: course 0 is orderable, courses 1/2/3 form a cycle.
     // A missing length check would return {0} here and look reasonable.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(2, 1));
-    p.push_back(std::pair<int, int>(3, 2));
-    p.push_back(std::pair<int, int>(1, 3));
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(2, 1));
+    p.push_back(pair<int, int>(3, 2));
+    p.push_back(pair<int, int>(1, 3));
     check(findOrder(4, p).empty(),
           "orderable prefix + downstream cycle -> empty, NOT the partial order");
   }
   {
     Pairs p;
-    p.push_back(std::pair<int, int>(0, 0));
+    p.push_back(pair<int, int>(0, 0));
     check(findOrder(1, p).empty(), "self-loop -> empty vector");
   }
 
   // --- Edge cases --------------------------------------------------------
   {
     Pairs empty;
-    std::vector<int> order = findOrder(4, empty);
+    vector<int> order = findOrder(4, empty);
     check(isValidOrder(4, empty, order),
           "no prerequisites at all -> every course present, any permutation valid");
   }
@@ -238,10 +241,10 @@ int main() {
     // valid order is descending, which also proves the edge direction is not
     // accidentally aligned with the natural node numbering.
     Pairs p;
-    p.push_back(std::pair<int, int>(0, 1));
-    p.push_back(std::pair<int, int>(1, 2));
-    p.push_back(std::pair<int, int>(2, 3));
-    std::vector<int> order = findOrder(4, p);
+    p.push_back(pair<int, int>(0, 1));
+    p.push_back(pair<int, int>(1, 2));
+    p.push_back(pair<int, int>(2, 3));
+    vector<int> order = findOrder(4, p);
     check(isValidOrder(4, p, order), "reverse-numbered chain -> valid order");
     check(order.size() == 4 && order[0] == 3 && order[3] == 0,
           "reverse-numbered chain: order must be exactly {3, 2, 1, 0}");
@@ -251,9 +254,9 @@ int main() {
     // twice, so the two decrements cancel the two increments. Consistency
     // between the structures is what makes this safe.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(1, 0));
-    std::vector<int> order = findOrder(2, p);
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(1, 0));
+    vector<int> order = findOrder(2, p);
     check(order.size() == 2 && order[0] == 0, "duplicate edges -> still a valid order");
   }
   {
@@ -261,15 +264,15 @@ int main() {
     // permutation of 1..4 after 0 is valid, so only the constraint check
     // is meaningful.
     Pairs p;
-    p.push_back(std::pair<int, int>(1, 0));
-    p.push_back(std::pair<int, int>(2, 0));
-    p.push_back(std::pair<int, int>(3, 0));
-    p.push_back(std::pair<int, int>(4, 0));
-    std::vector<int> order = findOrder(5, p);
+    p.push_back(pair<int, int>(1, 0));
+    p.push_back(pair<int, int>(2, 0));
+    p.push_back(pair<int, int>(3, 0));
+    p.push_back(pair<int, int>(4, 0));
+    vector<int> order = findOrder(5, p);
     check(isValidOrder(5, p, order), "one root unlocking four leaves -> valid order");
     check(order[0] == 0, "one root unlocking four leaves: root comes first");
   }
 
-  std::cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
+  cout << "\n" << passCount << " passed, " << failCount << " failed.\n";
   return failCount == 0 ? 0 : 1;
 }

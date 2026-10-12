@@ -88,14 +88,17 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // Formulation A — sort + start-index loop + skip same-level duplicates.
 // This is the canonical answer and the one to be able to write from memory.
 // `nums` MUST already be sorted when this is called.
 // ----------------------------------------------------------------------------
-void subsetsWithDupHelper(const std::vector<int>& nums, size_t start,
-                          std::vector<int>& current,
-                          std::vector<std::vector<int>>& result) {
+void subsetsWithDupHelper(const vector<int>& nums, size_t start,
+                          vector<int>& current,
+                          vector<vector<int>>& result) {
   // Every node in this tree is a complete, valid subset -- record on entry.
   // (Contrast 01-subsets.cpp, where only the i == n base case is recorded,
   // because there a node means "some elements still undecided.")
@@ -115,13 +118,13 @@ void subsetsWithDupHelper(const std::vector<int>& nums, size_t start,
   }
 }
 
-std::vector<std::vector<int>> subsetsWithDup(std::vector<int> nums) {
+vector<vector<int>> subsetsWithDup(vector<int> nums) {
   // Taken by value and sorted here: duplicates must be adjacent for the skip
   // test above to see them at all.
-  std::sort(nums.begin(), nums.end());
+  sort(nums.begin(), nums.end());
 
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+  vector<vector<int>> result;
+  vector<int> current;
   subsetsWithDupHelper(nums, 0, current, result);
   return result;
 }
@@ -144,9 +147,9 @@ std::vector<std::vector<int>> subsetsWithDup(std::vector<int> nums) {
 // generalizes to combination-sum-style problems); B is what to reach for when
 // explaining WHY A is correct, or when computing the expected count in a test.
 // ----------------------------------------------------------------------------
-void subsetsByRunCountHelper(const std::vector<int>& nums, size_t run_start,
-                             std::vector<int>& current,
-                             std::vector<std::vector<int>>& result) {
+void subsetsByRunCountHelper(const vector<int>& nums, size_t run_start,
+                             vector<int>& current,
+                             vector<vector<int>>& result) {
   if (run_start == nums.size()) {
     result.push_back(current);
     return;
@@ -165,10 +168,10 @@ void subsetsByRunCountHelper(const std::vector<int>& nums, size_t run_start,
   }
 }
 
-std::vector<std::vector<int>> subsetsByRunCount(std::vector<int> nums) {
-  std::sort(nums.begin(), nums.end());
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+vector<vector<int>> subsetsByRunCount(vector<int> nums) {
+  sort(nums.begin(), nums.end());
+  vector<vector<int>> result;
+  vector<int> current;
   subsetsByRunCountHelper(nums, 0, current, result);
   return result;
 }
@@ -181,9 +184,9 @@ std::vector<std::vector<int>> subsetsByRunCount(std::vector<int> nums) {
 // distinct VALUE-subsets, so [1,2,2] yields 8 with {2} and {1,2} each
 // appearing twice. Never write this as a solution to LeetCode 90.
 // ----------------------------------------------------------------------------
-void subsetsNoDedupHelper(const std::vector<int>& nums, size_t start,
-                          std::vector<int>& current,
-                          std::vector<std::vector<int>>& result) {
+void subsetsNoDedupHelper(const vector<int>& nums, size_t start,
+                          vector<int>& current,
+                          vector<vector<int>>& result) {
   result.push_back(current);
   for (size_t i = start; i < nums.size(); ++i) {
     current.push_back(nums[i]);
@@ -192,10 +195,10 @@ void subsetsNoDedupHelper(const std::vector<int>& nums, size_t start,
   }
 }
 
-std::vector<std::vector<int>> subsetsNoDedup(std::vector<int> nums) {
-  std::sort(nums.begin(), nums.end());
-  std::vector<std::vector<int>> result;
-  std::vector<int> current;
+vector<vector<int>> subsetsNoDedup(vector<int> nums) {
+  sort(nums.begin(), nums.end());
+  vector<vector<int>> result;
+  vector<int> current;
   subsetsNoDedupHelper(nums, 0, current, result);
   return result;
 }
@@ -204,20 +207,20 @@ std::vector<std::vector<int>> subsetsNoDedup(std::vector<int> nums) {
 // Test harness
 // ============================================================================
 
-std::vector<std::vector<int>> normalized(std::vector<std::vector<int>> v) {
+vector<vector<int>> normalized(vector<vector<int>> v) {
   for (size_t i = 0; i < v.size(); ++i) {
-    std::sort(v[i].begin(), v[i].end());
+    sort(v[i].begin(), v[i].end());
   }
-  std::sort(v.begin(), v.end());
+  sort(v.begin(), v.end());
   return v;
 }
 
 // Counts how many entries survive de-duplication -- used to prove that
 // formulation A emits no duplicates in the first place, and that formulation
 // C emits several.
-size_t distinctCount(std::vector<std::vector<int>> v) {
+size_t distinctCount(vector<vector<int>> v) {
   v = normalized(v);
-  v.erase(std::unique(v.begin(), v.end()), v.end());
+  v.erase(unique(v.begin(), v.end()), v.end());
   return v.size();
 }
 
@@ -225,32 +228,32 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   // --- The LeetCode example, checked against the exact expected answer ---
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     nums.push_back(2);
     nums.push_back(2);
 
-    std::vector<std::vector<int>> expected;
-    expected.push_back(std::vector<int>());            // {}
-    expected.push_back(std::vector<int>{1});
-    expected.push_back(std::vector<int>{2});
-    expected.push_back(std::vector<int>{1, 2});
-    expected.push_back(std::vector<int>{2, 2});
-    expected.push_back(std::vector<int>{1, 2, 2});
+    vector<vector<int>> expected;
+    expected.push_back(vector<int>());            // {}
+    expected.push_back(vector<int>{1});
+    expected.push_back(vector<int>{2});
+    expected.push_back(vector<int>{1, 2});
+    expected.push_back(vector<int>{2, 2});
+    expected.push_back(vector<int>{1, 2, 2});
 
-    std::vector<std::vector<int>> got = subsetsWithDup(nums);
+    vector<vector<int>> got = subsetsWithDup(nums);
     check(got.size() == 6, "[1,2,2] -> 6 distinct subsets (not 2^3 = 8)");
     check(normalized(got) == normalized(expected),
           "[1,2,2] matches the exact expected answer, including {2,2}");
@@ -268,12 +271,12 @@ int main() {
 
   // --- The unguarded version over-generates by exactly the duplicates ---
   {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.push_back(1);
     nums.push_back(2);
     nums.push_back(2);
 
-    std::vector<std::vector<int>> bad = subsetsNoDedup(nums);
+    vector<vector<int>> bad = subsetsNoDedup(nums);
     check(bad.size() == 8, "unguarded version emits 2^3 = 8 (one per POSITION-subset)");
     check(distinctCount(bad) == 6, "of those 8, only 6 are distinct -- 2 are duplicates");
     check(normalized(subsetsWithDup(nums)).size() == distinctCount(bad),
@@ -282,19 +285,19 @@ int main() {
 
   // --- All values identical: the count collapses from 2^n to n+1 ---
   {
-    std::vector<int> ones;
+    vector<int> ones;
     ones.push_back(1);
     ones.push_back(1);
     ones.push_back(1);
 
-    std::vector<std::vector<int>> got = subsetsWithDup(ones);
+    vector<vector<int>> got = subsetsWithDup(ones);
     check(got.size() == 4, "[1,1,1] -> 4 subsets: {}, {1}, {1,1}, {1,1,1} (n+1, not 2^n)");
     check(distinctCount(got) == 4, "[1,1,1] output has no duplicates");
   }
 
   // --- Duplicates NOT adjacent in the input: proves sorting is load-bearing ---
   {
-    std::vector<int> scattered;
+    vector<int> scattered;
     scattered.push_back(4);
     scattered.push_back(4);
     scattered.push_back(4);
@@ -302,14 +305,14 @@ int main() {
     scattered.push_back(4);
 
     // Sorted -> [1,4,4,4,4]. Distinct subsets = (1+1) * (4+1) = 10.
-    std::vector<std::vector<int>> got = subsetsWithDup(scattered);
+    vector<vector<int>> got = subsetsWithDup(scattered);
     check(got.size() == 10, "[4,4,4,1,4] -> 10 subsets = (1+1)*(4+1), duplicates found only after sorting");
     check(distinctCount(got) == 10, "[4,4,4,1,4] output has no duplicates");
   }
 
   // --- Distinct input: must degenerate to the plain power set of 01-subsets ---
   {
-    std::vector<int> distinct;
+    vector<int> distinct;
     distinct.push_back(1);
     distinct.push_back(2);
     distinct.push_back(3);
@@ -319,18 +322,18 @@ int main() {
 
   // --- Edge cases: empty input and a single element ---
   {
-    std::vector<int> empty_input;
-    std::vector<std::vector<int>> got = subsetsWithDup(empty_input);
+    vector<int> empty_input;
+    vector<vector<int>> got = subsetsWithDup(empty_input);
     check(got.size() == 1 && got[0].empty(), "empty input -> exactly one subset, the empty set");
 
-    std::vector<int> single;
+    vector<int> single;
     single.push_back(0);
     check(subsetsWithDup(single).size() == 2, "single element [0] -> {} and {0}");
   }
 
   // --- Negatives mixed with duplicates ---
   {
-    std::vector<int> mixed;
+    vector<int> mixed;
     mixed.push_back(-1);
     mixed.push_back(-1);
     mixed.push_back(0);
@@ -341,13 +344,13 @@ int main() {
 
   // --- Cross-check formulations A and B on several inputs ---
   {
-    std::vector<std::vector<int>> inputs;
-    inputs.push_back(std::vector<int>{1, 2, 2});
-    inputs.push_back(std::vector<int>{1, 1, 1});
-    inputs.push_back(std::vector<int>{4, 4, 4, 1, 4});
-    inputs.push_back(std::vector<int>{5, 5, 3, 3, 3, 9});
-    inputs.push_back(std::vector<int>{1, 2, 3, 4});
-    inputs.push_back(std::vector<int>());
+    vector<vector<int>> inputs;
+    inputs.push_back(vector<int>{1, 2, 2});
+    inputs.push_back(vector<int>{1, 1, 1});
+    inputs.push_back(vector<int>{4, 4, 4, 1, 4});
+    inputs.push_back(vector<int>{5, 5, 3, 3, 3, 9});
+    inputs.push_back(vector<int>{1, 2, 3, 4});
+    inputs.push_back(vector<int>());
 
     bool all_agree = true;
     for (size_t i = 0; i < inputs.size(); ++i) {
@@ -363,6 +366,6 @@ int main() {
           "[5,5,3,3,3,9] -> 24 subsets = (3+1)*(2+1)*(1+1)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

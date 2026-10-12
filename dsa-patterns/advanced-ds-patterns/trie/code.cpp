@@ -14,13 +14,16 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class Trie {
  public:
   Trie() : root_(new Node()) {}
 
   ~Trie() { destroy(root_); }
 
-  void insert(const std::string& word) {
+  void insert(const string& word) {
     Node* cur = root_;
     for (char c : word) {
       int idx = c - 'a';
@@ -30,24 +33,24 @@ class Trie {
     cur->isWord = true;
   }
 
-  bool search(const std::string& word) const {
+  bool search(const string& word) const {
     Node* node = findNode(word);
     return node != nullptr && node->isWord;
   }
 
-  bool startsWith(const std::string& prefix) const {
+  bool startsWith(const string& prefix) const {
     return findNode(prefix) != nullptr;
   }
 
  private:
   struct Node {
-    std::array<Node*, 26> children{};
+    array<Node*, 26> children{};
     bool isWord = false;
   };
 
   Node* root_;
 
-  Node* findNode(const std::string& s) const {
+  Node* findNode(const string& s) const {
     Node* cur = root_;
     for (char c : s) {
       int idx = c - 'a';
@@ -68,12 +71,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -94,6 +97,6 @@ int main() {
   check(trie.search("") == false, "search(\"\") -> false (empty string never inserted)");
   check(trie.startsWith("") == true, "startsWith(\"\") -> true (empty prefix matches the root)");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -99,6 +99,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // LeetCode's node type for problems 116/117: the familiar TreeNode plus one
 // extra `next` pointer. This is why ../README.md's Code Walkthrough notes
@@ -121,7 +124,7 @@ Node* connectBFS(Node* root) {
     return nullptr;  // No nodes, nothing to link.
   }
 
-  std::queue<Node*> q;
+  queue<Node*> q;
   q.push(root);
 
   while (!q.empty()) {
@@ -222,13 +225,13 @@ Node* connectConstantSpace(Node* root) {
 // ----------------------------------------------------------------------------
 const int NUL = INT_MIN;
 
-Node* buildTree(const std::vector<int>& level_order) {
+Node* buildTree(const vector<int>& level_order) {
   if (level_order.empty() || level_order[0] == NUL) {
     return nullptr;
   }
 
   Node* root = new Node(level_order[0]);
-  std::queue<Node*> q;
+  queue<Node*> q;
   q.push(root);
   size_t i = 1;
 
@@ -275,12 +278,12 @@ void freeTree(Node* root) {
 // correct ones — so a mismatch against the expected level grouping catches
 // the "forgot to reset prev" bug described in the header comment.
 // ----------------------------------------------------------------------------
-std::vector<std::vector<int>> nextChains(Node* root) {
-  std::vector<std::vector<int>> result;
+vector<vector<int>> nextChains(Node* root) {
+  vector<vector<int>> result;
   Node* level_head = root;
 
   while (level_head != nullptr) {
-    std::vector<int> row;
+    vector<int> row;
     Node* next_level_head = nullptr;
 
     for (Node* cur = level_head; cur != nullptr; cur = cur->next) {
@@ -305,12 +308,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -318,9 +321,9 @@ int main() {
   // Runs BOTH implementations against a freshly built copy of the same tree
   // and checks each one independently, so a bug in either is reported on its
   // own line rather than hidden behind the other's success.
-  auto checkBoth = [&](const std::vector<int>& level_order,
-                       const std::vector<std::vector<int>>& expected,
-                       const std::string& label) {
+  auto checkBoth = [&](const vector<int>& level_order,
+                       const vector<vector<int>>& expected,
+                       const string& label) {
     Node* a = buildTree(level_order);
     connectBFS(a);
     check(nextChains(a) == expected, "BFS          | " + label);
@@ -332,7 +335,7 @@ int main() {
     freeTree(b);
   };
 
-  std::cout << "--- LeetCode 117 (arbitrary binary tree) ---\n";
+  cout << "--- LeetCode 117 (arbitrary binary tree) ---\n";
 
   // The problem statement's own example: node 3 has only a right child, so
   // level 2 is [4, 5, 7] and the link 5 -> 7 spans two different parents.
@@ -350,7 +353,7 @@ int main() {
   // stay nullptr. A solution that unconditionally writes a `next` fails here.
   checkBoth({1}, {{1}}, "single node -> [[1]], root->next stays nullptr");
 
-  std::cout << "\n--- Sparse shapes: the nodes to link are COUSINS ---\n";
+  cout << "\n--- Sparse shapes: the nodes to link are COUSINS ---\n";
 
   // Level 2's two nodes (4 and 5) hang off different parents, and neither
   // parent has two children. A solution that only ever links a parent's own
@@ -380,12 +383,12 @@ int main() {
   checkBoth({1, NUL, 2, NUL, 3}, {{1}, {2}, {3}},
             "right-skewed chain -> one node per level");
 
-  std::cout << "\n--- LeetCode 116 (perfect tree) falls out as a special case ---\n";
+  cout << "\n--- LeetCode 116 (perfect tree) falls out as a special case ---\n";
 
   checkBoth({1, 2, 3, 4, 5, 6, 7}, {{1}, {2, 3}, {4, 5, 6, 7}},
             "perfect tree depth 3 -> [[1],[2,3],[4,5,6,7]]");
 
-  std::cout << "\n--- Value-agnostic: duplicates and negatives ---\n";
+  cout << "\n--- Value-agnostic: duplicates and negatives ---\n";
 
   // The algorithm never compares or inspects `val`, only structure. All-same
   // values and negatives must behave identically to distinct positive ones.
@@ -395,6 +398,6 @@ int main() {
   checkBoth({-1, -2, -3, NUL, -4, -5, NUL}, {{-1}, {-2, -3}, {-4, -5}},
             "negative values -> [[-1],[-2,-3],[-4,-5]]");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

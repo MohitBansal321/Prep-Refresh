@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // ----------------------------------------------------------------------------
 // The tree node every function in this file (and every file in problems/)
 // operates on. Deliberately the same shape LeetCode uses, so the functions
@@ -86,19 +89,19 @@ void freeTree(TreeNode* root) {
 // consuming newly-added next-level nodes as if they belonged to the current
 // level — silently merging two levels into one.
 // ----------------------------------------------------------------------------
-std::vector<std::vector<int>> levelOrder(TreeNode* root) {
-  std::vector<std::vector<int>> result;
+vector<vector<int>> levelOrder(TreeNode* root) {
+  vector<vector<int>> result;
   if (root == nullptr) {
     return result;  // An empty tree has zero levels.
   }
 
-  std::queue<TreeNode*> q;
+  queue<TreeNode*> q;
   q.push(root);
 
   while (!q.empty()) {
     size_t level_size = q.size();  // Snapshot: exactly this many nodes belong
                                     // to the level we are about to process.
-    std::vector<int> level_values;
+    vector<int> level_values;
     level_values.reserve(level_size);
 
     for (size_t i = 0; i < level_size; ++i) {
@@ -116,7 +119,7 @@ std::vector<std::vector<int>> levelOrder(TreeNode* root) {
       }
     }
 
-    result.push_back(std::move(level_values));
+    result.push_back(move(level_values));
   }
 
   return result;
@@ -141,7 +144,7 @@ int minDepth(TreeNode* root) {
     return 0;  // An empty tree has depth 0 by convention.
   }
 
-  std::queue<TreeNode*> q;
+  queue<TreeNode*> q;
   q.push(root);
   int depth = 1;
 
@@ -180,37 +183,37 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- levelOrder ---\n";
+  cout << "--- levelOrder ---\n";
   {
     TreeNode* root = buildSampleTree();
-    std::vector<std::vector<int>> result = levelOrder(root);
-    std::vector<std::vector<int>> expected = {{3}, {9, 20}, {15, 7}};
+    vector<vector<int>> result = levelOrder(root);
+    vector<vector<int>> expected = {{3}, {9, 20}, {15, 7}};
     check(result == expected, "sample tree -> [[3],[9,20],[15,7]]");
     freeTree(root);
   }
   {
-    std::vector<std::vector<int>> result = levelOrder(nullptr);
+    vector<vector<int>> result = levelOrder(nullptr);
     check(result.empty(), "empty tree -> []");
   }
   {
     TreeNode* root = new TreeNode(42);
-    std::vector<std::vector<int>> result = levelOrder(root);
-    std::vector<std::vector<int>> expected = {{42}};
+    vector<vector<int>> result = levelOrder(root);
+    vector<vector<int>> expected = {{42}};
     check(result == expected, "single node -> [[42]]");
     freeTree(root);
   }
 
-  std::cout << "\n--- minDepth ---\n";
+  cout << "\n--- minDepth ---\n";
   {
     TreeNode* root = buildSampleTree();
     check(minDepth(root) == 2, "sample tree -> min depth 2 (root -> 9)");
@@ -232,6 +235,6 @@ int main() {
     freeTree(root);
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

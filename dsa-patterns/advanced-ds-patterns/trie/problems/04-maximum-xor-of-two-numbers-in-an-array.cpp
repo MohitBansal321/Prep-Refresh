@@ -46,6 +46,9 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 class BitTrie {
  public:
   BitTrie() : root_(new Node()) {}
@@ -96,7 +99,7 @@ class BitTrie {
   }
 };
 
-unsigned findMaximumXOR(const std::vector<int>& nums) {
+unsigned findMaximumXOR(const vector<int>& nums) {
   BitTrie trie;
 
   // Pass 1: insert every number's bit-string.
@@ -115,64 +118,64 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     // Canonical LeetCode example: 5 ^ 25 = 28.
-    std::vector<int> nums = {3, 10, 5, 25, 2, 8};
+    vector<int> nums = {3, 10, 5, 25, 2, 8};
     check(findMaximumXOR(nums) == 28u, "[3,10,5,25,2,8] -> 28");
   }
 
   {
-    std::vector<int> nums = {14, 70, 53, 83, 49, 91, 36, 80, 92, 51, 66, 70};
+    vector<int> nums = {14, 70, 53, 83, 49, 91, 36, 80, 92, 51, 66, 70};
     check(findMaximumXOR(nums) == 127u, "larger mixed array -> 127");
   }
 
   {
     // Edge: single element — i == j means x XOR x = 0.
-    std::vector<int> nums = {0};
+    vector<int> nums = {0};
     check(findMaximumXOR(nums) == 0u, "[0] -> 0");
   }
 
   {
     // Edge: single nonzero element still XORs with itself -> 0.
-    std::vector<int> nums = {7};
+    vector<int> nums = {7};
     check(findMaximumXOR(nums) == 0u, "[7] -> 0 (self-XOR)");
   }
 
   {
     // Edge: pair of two elements, direct check: 2 ^ 4 = 6.
-    std::vector<int> nums = {2, 4};
+    vector<int> nums = {2, 4};
     check(findMaximumXOR(nums) == 6u, "[2,4] -> 6");
   }
 
   {
     // Edge: all zeros — every XOR is 0.
-    std::vector<int> nums = {0, 0, 0};
+    vector<int> nums = {0, 0, 0};
     check(findMaximumXOR(nums) == 0u, "[0,0,0] -> 0");
   }
 
   {
     // Edge: duplicates are fine; the answer may come from equal values (0).
-    std::vector<int> nums = {5, 5};
+    vector<int> nums = {5, 5};
     check(findMaximumXOR(nums) == 0u, "[5,5] -> 0");
   }
 
   {
     // Edge: high-bit dominance — 2^30 beats any combination of small values.
-    std::vector<int> nums = {1, 2, 3, 1073741824};  // 2^30
+    vector<int> nums = {1, 2, 3, 1073741824};  // 2^30
     unsigned expected = 1073741824u ^ 3u;           // 2^30 paired with 3
     check(findMaximumXOR(nums) == expected, "high bit dominates -> 2^30 ^ 3");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -42,6 +42,9 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
+
 struct ListNode {
   int val;
   ListNode* next;
@@ -50,7 +53,7 @@ struct ListNode {
 
 // Standalone helper: build a list from values, optionally wiring a cycle
 // back to the node at `cycle_pos` (0-indexed). Pass -1 for no cycle.
-ListNode* build_list(const std::vector<int>& values, int cycle_pos = -1) {
+ListNode* build_list(const vector<int>& values, int cycle_pos = -1) {
   if (values.empty()) return nullptr;
 
   ListNode* head = new ListNode(values[0]);
@@ -101,14 +104,14 @@ bool hasCycle(ListNode* head) {
 // ----------------------------------------------------------------------------
 // Test harness: run against known cases and print PASS/FAIL.
 // ----------------------------------------------------------------------------
-void check(const std::string& name, bool actual, bool expected) {
-  std::cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
-             << " (got " << std::boolalpha << actual << ", expected "
+void check(const string& name, bool actual, bool expected) {
+  cout << (actual == expected ? "PASS" : "FAIL") << " — " << name
+             << " (got " << boolalpha << actual << ", expected "
              << expected << ")\n";
 }
 
 int main() {
-  std::cout << "=== LeetCode 141: Linked List Cycle ===\n\n";
+  cout << "=== LeetCode 141: Linked List Cycle ===\n\n";
 
   // Case 1: classic example, cycle back to index 1 (value 2).
   {

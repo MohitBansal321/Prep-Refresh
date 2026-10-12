@@ -62,9 +62,12 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class KthLargest {
  public:
-  KthLargest(int k, const std::vector<int>& nums) : k_(k) {
+  KthLargest(int k, const vector<int>& nums) : k_(k) {
     for (int num : nums) {
       add(num);
     }
@@ -85,7 +88,7 @@ class KthLargest {
     // top k; do nothing.
 
     if (min_heap_.empty()) {
-      throw std::logic_error("add() called with k <= 0 or no elements retained.");
+      throw logic_error("add() called with k <= 0 or no elements retained.");
     }
     return min_heap_.top();
   }
@@ -94,26 +97,26 @@ class KthLargest {
   int k_;
   // Min-heap holding (at most) the k largest elements seen so far. Its top
   // is always the smallest of those k, i.e. the k-th largest overall.
-  std::priority_queue<int, std::vector<int>, std::greater<int>> min_heap_;
+  priority_queue<int, vector<int>, greater<int>> min_heap_;
 };
 
 int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     // Classic LeetCode example.
-    std::vector<int> nums = {4, 5, 8, 2};
+    vector<int> nums = {4, 5, 8, 2};
     KthLargest kth(3, nums);
 
     check(kth.add(3) == 4, "add(3) -> 4");
@@ -125,7 +128,7 @@ int main() {
 
   {
     // k = 1: the "k-th largest" is just the running maximum.
-    std::vector<int> nums = {};
+    vector<int> nums = {};
     KthLargest kth(1, nums);
     check(kth.add(-3) == -3, "k=1, add(-3) -> -3");
     check(kth.add(-2) == -2, "k=1, add(-2) -> -2");
@@ -136,7 +139,7 @@ int main() {
 
   {
     // Starting with exactly k initial elements already.
-    std::vector<int> nums = {3, 1, 5};
+    vector<int> nums = {3, 1, 5};
     KthLargest kth(2, nums);
     // Top 2 so far: {3, 5}, 2nd largest = 3.
     check(kth.add(2) == 3, "k=2, initial [3,1,5], add(2) -> 3 (top2={3,5})");
@@ -146,13 +149,13 @@ int main() {
 
   {
     // Duplicate values should be handled like any other value.
-    std::vector<int> nums = {8, 8, 8};
+    vector<int> nums = {8, 8, 8};
     KthLargest kth(2, nums);
     // Top 2 so far: {8, 8}, 2nd largest = 8.
     check(kth.add(8) == 8, "k=2, all duplicates -> 8");
     check(kth.add(1) == 8, "k=2, add smaller duplicate-ish value -> still 8");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

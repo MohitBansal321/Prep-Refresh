@@ -23,9 +23,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+using namespace std;
 
 // --- Portability shim -------------------------------------------------------
-// std::optional is C++17, but libstdc++ only shipped <optional> in GCC 7. On
+// optional is C++17, but libstdc++ only shipped <optional> in GCC 7. On
 // GCC 6 the same facility lives in <experimental/optional>. Alias whichever is
 // available so this file builds on both. Everything below uses `opt::optional`.
 // The experimental version predates the member function has_value(), so the
@@ -67,7 +68,7 @@ bool has_value(const optional<T>& maybe) { return static_cast<bool>(maybe); }
 // again), or is refused outright as a no-op. Total swaps + total cursor
 // advances are both bounded by n, giving O(n) time overall.
 // ----------------------------------------------------------------------------
-void cyclic_sort(std::vector<int>& nums) {
+void cyclic_sort(vector<int>& nums) {
   const int n = static_cast<int>(nums.size());
   int i = 0;
 
@@ -82,7 +83,7 @@ void cyclic_sort(std::vector<int>& nums) {
     if (in_range && nums[i] != nums[correct_index]) {
       // The current value is not yet home, and its home slot does not
       // already hold an identical value, so swapping makes real progress.
-      std::swap(nums[i], nums[correct_index]);
+      swap(nums[i], nums[correct_index]);
       // Deliberately do NOT advance i: re-check whatever just landed here.
     } else {
       // Either out of range, or already correctly placed, or a duplicate
@@ -110,7 +111,7 @@ void cyclic_sort(std::vector<int>& nums) {
 // interpreting the mismatch differently (the missing value, the duplicate
 // value, etc.).
 // ----------------------------------------------------------------------------
-opt::optional<size_t> find_first_misplaced(const std::vector<int>& nums) {
+opt::optional<size_t> find_first_misplaced(const vector<int>& nums) {
   for (size_t i = 0; i < nums.size(); ++i) {
     if (nums[i] != static_cast<int>(i + 1)) {
       return i;
@@ -126,35 +127,35 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
-  std::cout << "--- cyclic_sort: complete permutation, no mismatches ---\n";
+  cout << "--- cyclic_sort: complete permutation, no mismatches ---\n";
   {
-    std::vector<int> nums = {3, 1, 5, 4, 2};
+    vector<int> nums = {3, 1, 5, 4, 2};
     cyclic_sort(nums);
-    std::vector<int> expected = {1, 2, 3, 4, 5};
+    vector<int> expected = {1, 2, 3, 4, 5};
     check(nums == expected, "[3,1,5,4,2] -> [1,2,3,4,5]");
     check(!opt::has_value(find_first_misplaced(nums)),
           "fully sorted permutation -> no misplaced index");
   }
 
-  std::cout << "\n--- cyclic_sort: duplicate value implies a missing value ---\n";
+  cout << "\n--- cyclic_sort: duplicate value implies a missing value ---\n";
   {
     // 2 appears twice, 3 is missing.
-    std::vector<int> nums = {1, 2, 2, 4};
+    vector<int> nums = {1, 2, 2, 4};
     cyclic_sort(nums);
     // Index 2 (0-indexed) cannot hold both a placed 3 and the duplicate 2;
     // the duplicate is left in place because its home (index 1) already
     // holds a 2.
-    std::vector<int> expected = {1, 2, 2, 4};
+    vector<int> expected = {1, 2, 2, 4};
     check(nums == expected, "[1,2,2,4] settles with the duplicate left in place");
 
     auto mismatch = find_first_misplaced(nums);
@@ -162,15 +163,15 @@ int main() {
           "first misplaced index is 2 (holds 2, should hold 3 -> reveals dup/missing)");
   }
 
-  std::cout << "\n--- cyclic_sort: out-of-range values are left untouched ---\n";
+  cout << "\n--- cyclic_sort: out-of-range values are left untouched ---\n";
   {
     // 0 is below range, and there is no value 4 anywhere -> 0 stays put,
     // and whichever slot cannot be filled reveals the story.
-    std::vector<int> nums = {3, 0, 1};
+    vector<int> nums = {3, 0, 1};
     cyclic_sort(nums);
     // n = 3, valid range is [1,3]. 0 is out of range and skipped. Values 3
     // and 1 can still be placed at their homes (index 2 and index 0).
-    std::vector<int> expected = {1, 0, 3};
+    vector<int> expected = {1, 0, 3};
     check(nums == expected, "[3,0,1] -> [1,0,3] (0 is out of range, left in place)");
 
     auto mismatch = find_first_misplaced(nums);
@@ -178,6 +179,6 @@ int main() {
           "first misplaced index is 1 (holds out-of-range 0, should hold 2)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

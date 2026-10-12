@@ -14,7 +14,10 @@
 #include <string>
 #include <vector>
 
-std::string longestPalindromicSubstring(const std::string& s) {
+using namespace std;
+
+
+string longestPalindromicSubstring(const string& s) {
   if (s.empty()) return "";
 
   int start = 0;
@@ -40,11 +43,11 @@ std::string longestPalindromicSubstring(const std::string& s) {
   return s.substr(start, maxLen);
 }
 
-int longestPalindromicSubsequenceLength(const std::string& s) {
+int longestPalindromicSubsequenceLength(const string& s) {
   int n = static_cast<int>(s.size());
   if (n == 0) return 0;
 
-  std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
+  vector<vector<int>> dp(n, vector<int>(n, 0));
 
   // Fill by increasing interval length: i decreasing, j increasing from i+1.
   // dp[i][j] depends on dp[i+1][j-1], a strictly smaller interval, so this
@@ -55,7 +58,7 @@ int longestPalindromicSubsequenceLength(const std::string& s) {
       if (s[i] == s[j]) {
         dp[i][j] = dp[i + 1][j - 1] + 2;
       } else {
-        dp[i][j] = std::max(dp[i + 1][j], dp[i][j - 1]);
+        dp[i][j] = max(dp[i + 1][j], dp[i][j - 1]);
       }
     }
   }
@@ -67,12 +70,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -97,6 +100,6 @@ int main() {
   check(longestPalindromicSubsequenceLength("") == 0,
         "longestPalindromicSubsequenceLength(\"\") -> 0");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

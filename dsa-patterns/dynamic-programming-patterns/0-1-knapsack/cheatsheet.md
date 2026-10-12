@@ -16,13 +16,14 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // 2D table version — dp[i][w]: best value, first i items, capacity w.
 // dp is (n+1) x (capacity+1), zero-initialized = base row/column.
 for (int i = 1; i <= n; ++i) {
     for (int w = 0; w <= capacity; ++w) {
         dp[i][w] = dp[i - 1][w];                       // skip item i-1
         if (weights[i - 1] <= w) {                     // note i-1 shift!
-            dp[i][w] = std::max(dp[i][w],
+            dp[i][w] = max(dp[i][w],
                 dp[i - 1][w - weights[i - 1]] + values[i - 1]);
         }
     }
@@ -30,10 +31,10 @@ for (int i = 1; i <= n; ++i) {
 // answer: dp[n][capacity]
 
 // 1D space-optimized — MUST sweep capacity BACKWARD (high to low).
-std::vector<int> dp(capacity + 1, 0);
+vector<int> dp(capacity + 1, 0);
 for (size_t i = 0; i < weights.size(); ++i) {
     for (int w = capacity; w >= weights[i]; --w) {
-        dp[w] = std::max(dp[w], dp[w - weights[i]] + values[i]);
+        dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
     }
 }
 // answer: dp[capacity]

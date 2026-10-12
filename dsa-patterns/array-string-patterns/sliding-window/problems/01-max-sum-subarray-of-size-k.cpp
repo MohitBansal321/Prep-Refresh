@@ -43,7 +43,10 @@
 #include <iostream>
 #include <vector>
 
-int maxSumSubarrayOfSizeK(const std::vector<int>& arr, int k) {
+using namespace std;
+
+
+int maxSumSubarrayOfSizeK(const vector<int>& arr, int k) {
     int n = static_cast<int>(arr.size());
     if (k <= 0 || k > n) {
         // Not a valid window size for this array; caller error.
@@ -64,7 +67,7 @@ int maxSumSubarrayOfSizeK(const std::vector<int>& arr, int k) {
     for (int right = k; right < n; ++right) {
         windowSum += arr[right];       // add the incoming element
         windowSum -= arr[right - k];   // remove the outgoing element
-        maxSum = std::max(maxSum, windowSum);
+        maxSum = max(maxSum, windowSum);
     }
 
     return static_cast<int>(maxSum);
@@ -74,7 +77,7 @@ int maxSumSubarrayOfSizeK(const std::vector<int>& arr, int k) {
 // Brute-force reference implementation (for comparison / sanity checking).
 // Recomputes each window's sum from scratch: O(n * k) time.
 // ----------------------------------------------------------------------------
-int maxSumSubarrayBruteForce(const std::vector<int>& arr, int k) {
+int maxSumSubarrayBruteForce(const vector<int>& arr, int k) {
     int n = static_cast<int>(arr.size());
     if (k <= 0 || k > n) return INT_MIN;
 
@@ -84,7 +87,7 @@ int maxSumSubarrayBruteForce(const std::vector<int>& arr, int k) {
         for (int i = start; i < start + k; ++i) {
             sum += arr[i];
         }
-        maxSum = std::max(maxSum, sum);
+        maxSum = max(maxSum, sum);
     }
     return static_cast<int>(maxSum);
 }
@@ -94,37 +97,37 @@ int maxSumSubarrayBruteForce(const std::vector<int>& arr, int k) {
 // ----------------------------------------------------------------------------
 static int failures = 0;
 
-static void check(int actual, int expected, const std::string& label) {
+static void check(int actual, int expected, const string& label) {
     bool pass = (actual == expected);
-    std::cout << (pass ? "[PASS] " : "[FAIL] ") << label
+    cout << (pass ? "[PASS] " : "[FAIL] ") << label
               << " -> got " << actual << ", expected " << expected << '\n';
     if (!pass) ++failures;
 }
 
 int main() {
-    std::cout << "=== Maximum Sum Subarray of Size K ===\n\n";
+    cout << "=== Maximum Sum Subarray of Size K ===\n\n";
 
     {
-        std::vector<int> arr{2, 1, 5, 1, 3, 2};
+        vector<int> arr{2, 1, 5, 1, 3, 2};
         check(maxSumSubarrayOfSizeK(arr, 3), 9, "sliding window, k=3");
         check(maxSumSubarrayBruteForce(arr, 3), 9, "brute force,    k=3");
     }
     {
-        std::vector<int> arr{2, 3, 4, 1, 5};
+        vector<int> arr{2, 3, 4, 1, 5};
         check(maxSumSubarrayOfSizeK(arr, 2), 7, "sliding window, k=2");
         check(maxSumSubarrayBruteForce(arr, 2), 7, "brute force,    k=2");
     }
     {
         // k equals array length: only one window, its sum is the answer.
-        std::vector<int> arr{4, 2, 1, 7};
+        vector<int> arr{4, 2, 1, 7};
         check(maxSumSubarrayOfSizeK(arr, 4), 14, "k == n (single window)");
     }
     {
         // k == 1: the answer is just the maximum single element.
-        std::vector<int> arr{5, 1, 9, 3};
+        vector<int> arr{5, 1, 9, 3};
         check(maxSumSubarrayOfSizeK(arr, 1), 9, "k == 1 (max element)");
     }
 
-    std::cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
+    cout << '\n' << (failures == 0 ? "All tests PASSED." : "Some tests FAILED.") << '\n';
     return failures == 0 ? 0 : 1;
 }

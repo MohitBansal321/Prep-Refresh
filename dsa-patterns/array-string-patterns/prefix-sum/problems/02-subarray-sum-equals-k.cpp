@@ -22,8 +22,11 @@
 #include <unordered_map>
 #include <vector>
 
-int subarraySum(const std::vector<int>& nums, int k) {
-  std::unordered_map<long long, int> seen;
+using namespace std;
+
+
+int subarraySum(const vector<int>& nums, int k) {
+  unordered_map<long long, int> seen;
   seen[0] = 1;  // empty prefix (before the array starts), seen once
 
   long long curr = 0;
@@ -46,12 +49,12 @@ int subarraySum(const std::vector<int>& nums, int k) {
 int main() {
   int pass_count = 0;
   int fail_count = 0;
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -62,6 +65,6 @@ int main() {
   check(subarraySum({0, 0, 0, 0, 0}, 0) == 15, "[0,0,0,0,0], k=0 -> 15");
   check(subarraySum({-1, -1, 1}, 0) == 1, "[-1,-1,1], k=0 -> 1");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

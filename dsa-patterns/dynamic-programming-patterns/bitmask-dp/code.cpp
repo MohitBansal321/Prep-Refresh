@@ -14,10 +14,13 @@
 #include <limits>
 #include <vector>
 
-int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
+using namespace std;
+
+
+int minHamiltonianCost(const vector<vector<int>>& cost) {
   int n = static_cast<int>(cost.size());
-  const int kInf = std::numeric_limits<int>::max() / 2;
-  std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, kInf));
+  const int kInf = numeric_limits<int>::max() / 2;
+  vector<vector<int>> dp(1 << n, vector<int>(n, kInf));
 
   dp[1][0] = 0;
 
@@ -29,7 +32,7 @@ int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
         if (mask & (1 << next)) continue;
         int nextMask = mask | (1 << next);
         dp[nextMask][next] =
-            std::min(dp[nextMask][next], dp[mask][last] + cost[last][next]);
+            min(dp[nextMask][next], dp[mask][last] + cost[last][next]);
       }
     }
   }
@@ -38,7 +41,7 @@ int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
   int best = kInf;
   for (int last = 0; last < n; ++last) {
     if (dp[full][last] < kInf) {
-      best = std::min(best, dp[full][last] + cost[last][0]);
+      best = min(best, dp[full][last] + cost[last][0]);
     }
   }
   return best;
@@ -50,14 +53,14 @@ int minHamiltonianCost(const std::vector<std::vector<int>>& cost) {
 // progress groups; dp[mask] == -1 means that mask is not reachable by any
 // valid placement. Reaching dp[full_mask] == 0 means every group closed out
 // exactly on target, with nothing left over.
-bool canPartitionIntoKSubsets(const std::vector<int>& nums, int k) {
+bool canPartitionIntoKSubsets(const vector<int>& nums, int k) {
   int n = static_cast<int>(nums.size());
   int total = 0;
   for (int x : nums) total += x;
   if (k <= 0 || total % k != 0) return false;
   int target = total / k;
 
-  std::vector<int> dp(1 << n, -1);
+  vector<int> dp(1 << n, -1);
   dp[0] = 0;
 
   for (int mask = 0; mask < (1 << n); ++mask) {
@@ -80,19 +83,19 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
     // 4-city symmetric TSP; optimal tour 0-1-3-2-0 costs 10+25+30+15=80.
-    std::vector<std::vector<int>> cost = {
+    vector<vector<int>> cost = {
         {0, 10, 15, 20},
         {10, 0, 35, 25},
         {15, 35, 0, 30},
@@ -103,7 +106,7 @@ int main() {
 
   {
     // 2-city trivial case: go there and back.
-    std::vector<std::vector<int>> cost = {{0, 5}, {5, 0}};
+    vector<vector<int>> cost = {{0, 5}, {5, 0}};
     check(minHamiltonianCost(cost) == 10, "2-city TSP: round trip costs 5+5=10");
   }
 
@@ -116,6 +119,6 @@ int main() {
           "total sum 11 is not divisible into 3 equal groups");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

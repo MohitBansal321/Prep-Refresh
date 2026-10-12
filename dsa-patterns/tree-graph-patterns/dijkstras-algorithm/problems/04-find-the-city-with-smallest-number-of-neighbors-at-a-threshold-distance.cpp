@@ -52,19 +52,22 @@
 #include <utility>
 #include <vector>
 
-const int kInf = std::numeric_limits<int>::max();
+using namespace std;
 
-typedef std::vector<std::vector<std::pair<int, int> > > AdjList;
+
+const int kInf = numeric_limits<int>::max();
+
+typedef vector<vector<pair<int, int> > > AdjList;
 
 // Textbook lazy-deletion Dijkstra; identical shape to ../code.cpp.
-std::vector<int> dijkstra(int n, int src, const AdjList& adj) {
-  std::vector<int> dist(n, kInf);
+vector<int> dijkstra(int n, int src, const AdjList& adj) {
+  vector<int> dist(n, kInf);
   dist[src] = 0;
 
-  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int> >,
-                      std::greater<> >
+  priority_queue<pair<int, int>, vector<pair<int, int> >,
+                      greater<> >
       pq;
-  pq.push(std::make_pair(0, src));
+  pq.push(make_pair(0, src));
 
   while (!pq.empty()) {
     // .first/.second instead of structured bindings (GCC 6.3 limitation).
@@ -78,14 +81,14 @@ std::vector<int> dijkstra(int n, int src, const AdjList& adj) {
       const int w = adj[u][i].second;
       if (dist[u] != kInf && dist[u] + w < dist[v]) {
         dist[v] = dist[u] + w;
-        pq.push(std::make_pair(dist[v], v));
+        pq.push(make_pair(dist[v], v));
       }
     }
   }
   return dist;
 }
 
-int findTheCity(int n, const std::vector<std::vector<int> >& edges,
+int findTheCity(int n, const vector<vector<int> >& edges,
                 int distanceThreshold) {
   // Undirected graph: every edge appears in BOTH endpoints' lists.
   AdjList adj(n);
@@ -93,15 +96,15 @@ int findTheCity(int n, const std::vector<std::vector<int> >& edges,
     const int u = edges[i][0];
     const int v = edges[i][1];
     const int w = edges[i][2];
-    adj[u].push_back(std::make_pair(v, w));
-    adj[v].push_back(std::make_pair(u, w));
+    adj[u].push_back(make_pair(v, w));
+    adj[v].push_back(make_pair(u, w));
   }
 
   int bestCity = -1;
   int bestCount = kInf;  // minimize reachable count
 
   for (int src = 0; src < n; ++src) {
-    const std::vector<int> dist = dijkstra(n, src, adj);
+    const vector<int> dist = dijkstra(n, src, adj);
 
     // Count cities reachable within the threshold (src counts only if some
     // cycle brings it back within threshold; normally it contributes 0).
@@ -123,12 +126,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -136,7 +139,7 @@ int main() {
   {
     // Classic example; cities 0 and 3 tie at 2 reachable neighbors each,
     // so the larger id (3) wins.
-    std::vector<std::vector<int> > edges;
+    vector<vector<int> > edges;
     edges.push_back({0, 1, 3});
     edges.push_back({1, 2, 1});
     edges.push_back({1, 3, 4});
@@ -149,7 +152,7 @@ int main() {
     // Path graph 0-1-2-3-4 with every hop costing 2: threshold=2 admits
     // exactly ONE neighbour per city (distance 2); everyone ties at 1,
     // so the answer is the largest id, 4.
-    std::vector<std::vector<int> > edges;
+    vector<vector<int> > edges;
     edges.push_back({0, 1, 2});
     edges.push_back({1, 2, 2});
     edges.push_back({2, 3, 2});
@@ -162,7 +165,7 @@ int main() {
     // Two disconnected components {0,1} and {2,3}: no cross-component paths,
     // so unreachable cities never inflate anyone's count. Each city has
     // exactly 1 neighbour within threshold 5 -> tie -> answer 3.
-    std::vector<std::vector<int> > edges;
+    vector<vector<int> > edges;
     edges.push_back({0, 1, 1});
     edges.push_back({2, 3, 1});
     check(findTheCity(4, edges, 5) == 3,
@@ -172,18 +175,18 @@ int main() {
   {
     // Isolated city 4 with NO edges anywhere: every city has 0 reachable
     // neighbours, tie across ids -> largest id 4 wins.
-    std::vector<std::vector<int> > edges;
+    vector<vector<int> > edges;
     check(findTheCity(5, edges, 10) == 4,
           "no edges at all: everyone ties at 0 -> 4");
   }
 
   {
     // Single city, no edges: trivially the only candidate.
-    std::vector<std::vector<int> > edges;
+    vector<vector<int> > edges;
     check(findTheCity(1, edges, 100) == 0,
           "single city -> 0");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

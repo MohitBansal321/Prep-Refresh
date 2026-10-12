@@ -54,13 +54,16 @@
 #include <string>
 #include <vector>
 
-int longestPalindromeSubseq(const std::string& s) {
+using namespace std;
+
+
+int longestPalindromeSubseq(const string& s) {
   int n = static_cast<int>(s.size());
   if (n == 0) return 0;
 
   // dp[i][j] for i <= j; below-diagonal cells stay 0 and are read only by
   // the j == i+1 case (see banner above).
-  std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
+  vector<vector<int>> dp(n, vector<int>(n, 0));
 
   for (int i = n - 1; i >= 0; --i) {      // i DESCENDING: row i+1 ready first
     dp[i][i] = 1;                          // single char is a palindrome of len 1
@@ -68,7 +71,7 @@ int longestPalindromeSubseq(const std::string& s) {
       if (s[i] == s[j]) {
         dp[i][j] = dp[i + 1][j - 1] + 2;   // endpoints join inner palindrome
       } else {
-        dp[i][j] = std::max(dp[i + 1][j], dp[i][j - 1]);  // drop one endpoint
+        dp[i][j] = max(dp[i + 1][j], dp[i][j - 1]);  // drop one endpoint
       }
     }
   }
@@ -80,12 +83,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -136,6 +139,6 @@ int main() {
           "\"agbdba\" -> 5 (\"abdba\")");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

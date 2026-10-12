@@ -49,7 +49,10 @@
 #include <string>
 #include <vector>
 
-int maxProfit(const std::vector<int>& prices) {
+using namespace std;
+
+
+int maxProfit(const vector<int>& prices) {
   if (prices.empty()) return 0;
 
   int min_price_so_far = prices[0];
@@ -58,13 +61,13 @@ int maxProfit(const std::vector<int>& prices) {
   for (size_t i = 1; i < prices.size(); ++i) {
     // Profit if we sold today, having bought at the lowest price seen so far.
     int profit_if_sold_today = prices[i] - min_price_so_far;
-    best_profit = std::max(best_profit, profit_if_sold_today);
+    best_profit = max(best_profit, profit_if_sold_today);
 
     // Update the running floor -- a lower buy price found later always
     // strictly improves every future day's potential profit, the same way
     // vanilla Kadane's abandons a losing running sum in favor of a fresh
     // start.
-    min_price_so_far = std::min(min_price_so_far, prices[i]);
+    min_price_so_far = min(min_price_so_far, prices[i]);
   }
 
   return best_profit;
@@ -74,37 +77,37 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> prices = {7, 1, 5, 3, 6, 4};
+    vector<int> prices = {7, 1, 5, 3, 6, 4};
     check(maxProfit(prices) == 5, "[7,1,5,3,6,4] -> 5 (buy at 1, sell at 6)");
   }
   {
-    std::vector<int> prices = {7, 6, 4, 3, 1};
+    vector<int> prices = {7, 6, 4, 3, 1};
     check(maxProfit(prices) == 0, "[7,6,4,3,1] -> 0 (only falls, never buy)");
   }
   {
-    std::vector<int> prices = {2, 4, 1};
+    vector<int> prices = {2, 4, 1};
     check(maxProfit(prices) == 2, "[2,4,1] -> 2 (buy at 2, sell at 4)");
   }
   {
-    std::vector<int> prices = {1};
+    vector<int> prices = {1};
     check(maxProfit(prices) == 0, "[1] -> 0 (can't buy and sell on the same/only day)");
   }
   {
-    std::vector<int> prices = {3, 2, 6, 5, 0, 3};
+    vector<int> prices = {3, 2, 6, 5, 0, 3};
     check(maxProfit(prices) == 4, "[3,2,6,5,0,3] -> 4 (buy at 2, sell at 6)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

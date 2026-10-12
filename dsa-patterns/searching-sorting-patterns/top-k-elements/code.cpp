@@ -14,8 +14,8 @@
 //   - For "K most frequent" -> same min-heap-of-size-K shape, but the ordering key is
 //     frequency (computed once via a hash map) instead of the raw value.
 //
-// std::priority_queue<T> is a MAX-heap by default (biggest on top). Passing the
-// comparator std::greater<T> flips it into a MIN-heap (smallest on top). That single
+// priority_queue<T> is a MAX-heap by default (biggest on top). Passing the
+// comparator greater<T> flips it into a MIN-heap (smallest on top). That single
 // template argument is the entire mechanism behind "K largest uses a min-heap."
 
 #include <algorithm>
@@ -25,6 +25,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+using namespace std;
+
 
 // ---------------------------------------------------------------------------
 // topKLargest — the canonical size-K min-heap template.
@@ -38,12 +41,12 @@
 // Space: O(k)         -- the heap itself; input is read, not copied.
 // ---------------------------------------------------------------------------
 template <typename T>
-std::vector<T> topKLargest(const std::vector<T>& nums, int k) {
+vector<T> topKLargest(const vector<T>& nums, int k) {
     if (k <= 0) return {};
 
-    // Min-heap: std::greater<T> makes the SMALLEST element rise to the top,
+    // Min-heap: greater<T> makes the SMALLEST element rise to the top,
     // which is exactly the element we want easy access to for eviction.
-    std::priority_queue<T, std::vector<T>, std::greater<T>> minHeap;
+    priority_queue<T, vector<T>, greater<T>> minHeap;
 
     for (const T& value : nums) {
         minHeap.push(value);
@@ -56,13 +59,13 @@ std::vector<T> topKLargest(const std::vector<T>& nums, int k) {
     // a priority_queue only guarantees the top element, not full ordering.
     // Extracting into a sorted vector costs an extra O(k log k), only pay it
     // if the caller actually needs sorted output.
-    std::vector<T> result;
+    vector<T> result;
     result.reserve(minHeap.size());
     while (!minHeap.empty()) {
         result.push_back(minHeap.top());
         minHeap.pop();
     }
-    std::sort(result.begin(), result.end(), std::greater<T>());  // largest first
+    sort(result.begin(), result.end(), greater<T>());  // largest first
     return result;
 }
 
@@ -76,12 +79,12 @@ std::vector<T> topKLargest(const std::vector<T>& nums, int k) {
 // with a max-heap -- always the OPPOSITE of what intuition first suggests.
 // ---------------------------------------------------------------------------
 template <typename T>
-std::vector<T> topKSmallest(const std::vector<T>& nums, int k) {
+vector<T> topKSmallest(const vector<T>& nums, int k) {
     if (k <= 0) return {};
 
-    // Default std::priority_queue<T> is already a max-heap (largest on top) --
+    // Default priority_queue<T> is already a max-heap (largest on top) --
     // no comparator argument needed here, unlike topKLargest above.
-    std::priority_queue<T> maxHeap;
+    priority_queue<T> maxHeap;
 
     for (const T& value : nums) {
         maxHeap.push(value);
@@ -90,13 +93,13 @@ std::vector<T> topKSmallest(const std::vector<T>& nums, int k) {
         }
     }
 
-    std::vector<T> result;
+    vector<T> result;
     result.reserve(maxHeap.size());
     while (!maxHeap.empty()) {
         result.push_back(maxHeap.top());
         maxHeap.pop();
     }
-    std::sort(result.begin(), result.end());  // smallest first
+    sort(result.begin(), result.end());  // smallest first
     return result;
 }
 
@@ -112,19 +115,19 @@ std::vector<T> topKSmallest(const std::vector<T>& nums, int k) {
 // Time:  O(n + d log k), which is O(n log k) in the worst case where d is close to n.
 // Space: O(d) for the frequency map plus O(k) for the heap.
 // ---------------------------------------------------------------------------
-std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
+vector<int> topKFrequent(const vector<int>& nums, int k) {
     if (k <= 0) return {};
 
-    std::unordered_map<int, int> frequency;  // value -> count
+    unordered_map<int, int> frequency;  // value -> count
     for (int value : nums) {
         ++frequency[value];
     }
 
-    // Min-heap of (frequency, value) pairs. std::pair's default operator<
+    // Min-heap of (frequency, value) pairs. pair's default operator<
     // compares .first before .second, so ordering by frequency falls out
-    // naturally; std::greater<> flips it to a min-heap on that same ordering.
-    using FreqValue = std::pair<int, int>;  // (frequency, value)
-    std::priority_queue<FreqValue, std::vector<FreqValue>, std::greater<FreqValue>> minHeap;
+    // naturally; greater<> flips it to a min-heap on that same ordering.
+    using FreqValue = pair<int, int>;  // (frequency, value)
+    priority_queue<FreqValue, vector<FreqValue>, greater<FreqValue>> minHeap;
 
     for (const auto& entry : frequency) {
         minHeap.push({entry.second, entry.first});  // (frequency, value)
@@ -133,7 +136,7 @@ std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
         }
     }
 
-    std::vector<int> result;
+    vector<int> result;
     result.reserve(minHeap.size());
     while (!minHeap.empty()) {
         result.push_back(minHeap.top().second);
@@ -141,7 +144,7 @@ std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
     }
     // Most frequent first -- purely a presentation choice, the heap logic above
     // does not depend on this final ordering.
-    std::sort(result.begin(), result.end(), [&frequency](int a, int b) {
+    sort(result.begin(), result.end(), [&frequency](int a, int b) {
         return frequency.at(a) > frequency.at(b);
     });
     return result;
@@ -154,14 +157,14 @@ std::vector<int> topKFrequent(const std::vector<int>& nums, int k) {
 // ---------------------------------------------------------------------------
 namespace {
 
-void check(bool condition, const std::string& label) {
-    std::cout << (condition ? "[PASS] " : "[FAIL] ") << label << '\n';
+void check(bool condition, const string& label) {
+    cout << (condition ? "[PASS] " : "[FAIL] ") << label << '\n';
 }
 
 template <typename T>
-bool sameElementsIgnoringOrder(std::vector<T> a, std::vector<T> b) {
-    std::sort(a.begin(), a.end());
-    std::sort(b.begin(), b.end());
+bool sameElementsIgnoringOrder(vector<T> a, vector<T> b) {
+    sort(a.begin(), a.end());
+    sort(b.begin(), b.end());
     return a == b;
 }
 
@@ -170,48 +173,48 @@ bool sameElementsIgnoringOrder(std::vector<T> a, std::vector<T> b) {
 int main() {
     // --- topKLargest ---
     {
-        std::vector<int> nums = {3, 1, 5, 12, 2, 11, 9, 7};
+        vector<int> nums = {3, 1, 5, 12, 2, 11, 9, 7};
         auto result = topKLargest(nums, 3);
-        check(result == std::vector<int>({12, 11, 9}),
+        check(result == vector<int>({12, 11, 9}),
               "topKLargest({3,1,5,12,2,11,9,7}, 3) == {12,11,9}");
     }
     {
-        std::vector<int> nums = {4, 4, 4, 4};
+        vector<int> nums = {4, 4, 4, 4};
         auto result = topKLargest(nums, 2);
-        check(result == std::vector<int>({4, 4}), "topKLargest with duplicate values");
+        check(result == vector<int>({4, 4}), "topKLargest with duplicate values");
     }
     {
-        std::vector<int> nums = {5};
+        vector<int> nums = {5};
         auto result = topKLargest(nums, 3);  // k larger than n -- should just return all
-        check(result == std::vector<int>({5}), "topKLargest with k > n returns all elements");
+        check(result == vector<int>({5}), "topKLargest with k > n returns all elements");
     }
 
     // --- topKSmallest ---
     {
-        std::vector<int> nums = {3, 1, 5, 12, 2, 11, 9, 7};
+        vector<int> nums = {3, 1, 5, 12, 2, 11, 9, 7};
         auto result = topKSmallest(nums, 3);
-        check(result == std::vector<int>({1, 2, 3}),
+        check(result == vector<int>({1, 2, 3}),
               "topKSmallest({3,1,5,12,2,11,9,7}, 3) == {1,2,3}");
     }
     {
-        std::vector<double> nums = {2.5, 0.1, 9.9, -3.2, 4.4};
+        vector<double> nums = {2.5, 0.1, 9.9, -3.2, 4.4};
         auto result = topKSmallest(nums, 2);
-        check(result == std::vector<double>({-3.2, 0.1}), "topKSmallest works over double (template check)");
+        check(result == vector<double>({-3.2, 0.1}), "topKSmallest works over double (template check)");
     }
 
     // --- topKFrequent ---
     {
-        std::vector<int> nums = {1, 1, 1, 2, 2, 3};
+        vector<int> nums = {1, 1, 1, 2, 2, 3};
         auto result = topKFrequent(nums, 2);
         check(sameElementsIgnoringOrder(result, {1, 2}),
               "topKFrequent({1,1,1,2,2,3}, 2) contains {1,2}");
     }
     {
-        std::vector<int> nums = {1};
+        vector<int> nums = {1};
         auto result = topKFrequent(nums, 1);
-        check(result == std::vector<int>({1}), "topKFrequent with a single distinct value");
+        check(result == vector<int>({1}), "topKFrequent with a single distinct value");
     }
 
-    std::cout << "\nAll topKLargest / topKSmallest / topKFrequent checks executed.\n";
+    cout << "\nAll topKLargest / topKSmallest / topKFrequent checks executed.\n";
     return 0;
 }

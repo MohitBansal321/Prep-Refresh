@@ -35,9 +35,12 @@
 #include <string>
 #include <vector>
 
-std::vector<std::vector<int>> insert(std::vector<std::vector<int>> intervals,
-                                      std::vector<int> newInterval) {
-  std::vector<std::vector<int>> result;
+using namespace std;
+
+
+vector<vector<int>> insert(vector<vector<int>> intervals,
+                                      vector<int> newInterval) {
+  vector<vector<int>> result;
   size_t i = 0;
   size_t n = intervals.size();
 
@@ -49,8 +52,8 @@ std::vector<std::vector<int>> insert(std::vector<std::vector<int>> intervals,
 
   // Phase 2: existing intervals that overlap newInterval — absorb them.
   while (i < n && intervals[i][0] <= newInterval[1]) {
-    newInterval[0] = std::min(newInterval[0], intervals[i][0]);
-    newInterval[1] = std::max(newInterval[1], intervals[i][1]);
+    newInterval[0] = min(newInterval[0], intervals[i][0]);
+    newInterval[1] = max(newInterval[1], intervals[i][1]);
     ++i;
   }
   result.push_back(newInterval);
@@ -64,11 +67,11 @@ std::vector<std::vector<int>> insert(std::vector<std::vector<int>> intervals,
   return result;
 }
 
-std::string toString(const std::vector<std::vector<int>>& intervals) {
-  std::string out = "[";
+string toString(const vector<vector<int>>& intervals) {
+  string out = "[";
   for (size_t i = 0; i < intervals.size(); ++i) {
-    out += "[" + std::to_string(intervals[i][0]) + "," +
-           std::to_string(intervals[i][1]) + "]";
+    out += "[" + to_string(intervals[i][0]) + "," +
+           to_string(intervals[i][1]) + "]";
     if (i + 1 < intervals.size()) out += ",";
   }
   out += "]";
@@ -79,13 +82,13 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](const std::vector<std::vector<int>>& actual,
-                    const std::vector<std::vector<int>>& expected,
-                    const std::string& label) {
+  auto check = [&](const vector<vector<int>>& actual,
+                    const vector<vector<int>>& expected,
+                    const string& label) {
     bool ok = (actual == expected);
-    std::cout << (ok ? "[PASS] " : "[FAIL] ") << label << "\n";
-    std::cout << "       got:      " << toString(actual) << "\n";
-    std::cout << "       expected: " << toString(expected) << "\n";
+    cout << (ok ? "[PASS] " : "[FAIL] ") << label << "\n";
+    cout << "       got:      " << toString(actual) << "\n";
+    cout << "       expected: " << toString(expected) << "\n";
     ok ? ++pass_count : ++fail_count;
   };
 
@@ -107,6 +110,6 @@ int main() {
 
   check(insert({{1, 3}, {6, 9}}, {2, 6}), {{1, 9}}, "new interval bridges both existing intervals via touching endpoints");
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

@@ -42,15 +42,18 @@
 #include <string>
 #include <vector>
 
-int maxSubArray(const std::vector<int>& nums) {
+using namespace std;
+
+
+int maxSubArray(const vector<int>& nums) {
   int current_sum = nums[0];
   int best_sum = nums[0];
 
   for (size_t i = 1; i < nums.size(); ++i) {
     // Extend the previous run, or restart at nums[i] alone.
-    current_sum = std::max(nums[i], current_sum + nums[i]);
+    current_sum = max(nums[i], current_sum + nums[i]);
     // best_sum is checked every iteration, not just at a restart.
-    best_sum = std::max(best_sum, current_sum);
+    best_sum = max(best_sum, current_sum);
   }
 
   return best_sum;
@@ -60,38 +63,38 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+    vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
     check(maxSubArray(nums) == 6, "[-2,1,-3,4,-1,2,1,-5,4] -> 6");
   }
   {
-    std::vector<int> nums = {1};
+    vector<int> nums = {1};
     check(maxSubArray(nums) == 1, "[1] -> 1 (single element)");
   }
   {
-    std::vector<int> nums = {5, 4, -1, 7, 8};
+    vector<int> nums = {5, 4, -1, 7, 8};
     check(maxSubArray(nums) == 23, "[5,4,-1,7,8] -> 23 (whole array)");
   }
   {
     // All-negative edge case: answer must be the least-negative element, not 0.
-    std::vector<int> nums = {-3, -1, -2, -5};
+    vector<int> nums = {-3, -1, -2, -5};
     check(maxSubArray(nums) == -1, "[-3,-1,-2,-5] -> -1 (least-negative, NOT 0)");
   }
   {
-    std::vector<int> nums = {-1};
+    vector<int> nums = {-1};
     check(maxSubArray(nums) == -1, "[-1] -> -1");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

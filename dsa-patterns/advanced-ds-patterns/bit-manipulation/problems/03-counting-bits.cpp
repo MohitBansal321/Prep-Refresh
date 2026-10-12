@@ -52,11 +52,14 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 // Returns a vector v of size n + 1 where v[i] == popcount(i).
-std::vector<int> countBits(int n) {
+vector<int> countBits(int n) {
   // bits[0] stays 0 — zero has no set bits. Every later index reads an
   // earlier entry, so plain left-to-right filling is valid.
-  std::vector<int> bits(n + 1, 0);
+  vector<int> bits(n + 1, 0);
 
   for (int i = 1; i <= n; ++i) {
     // i >> 1 : i with its lowest bit discarded  -> smaller, already solved.
@@ -71,39 +74,39 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> expected = {0};
+    vector<int> expected = {0};
     check(countBits(0) == expected, "n=0 -> [0]");
   }
 
   {
-    std::vector<int> result = countBits(2);
-    std::vector<int> expected = {0, 1, 1};  // 0b0, 0b1, 0b10
+    vector<int> result = countBits(2);
+    vector<int> expected = {0, 1, 1};  // 0b0, 0b1, 0b10
     check(result == expected, "n=2 -> [0,1,1]");
   }
 
   {
     // The canonical example — includes both parities at each shift level.
-    std::vector<int> result = countBits(5);
-    std::vector<int> expected = {0, 1, 1, 2, 1, 2};
+    vector<int> result = countBits(5);
+    vector<int> expected = {0, 1, 1, 2, 1, 2};
     check(result == expected, "n=5 -> [0,1,1,2,1,2]");
   }
 
   {
     // A power-of-two boundary: 8 starts a fresh binary digit. Its popcount
     // must be 1, while 7 (0b111) peaks at 3 just before it.
-    std::vector<int> result = countBits(8);
-    std::vector<int> expected = {0, 1, 1, 2, 1, 2, 2, 3, 1};
+    vector<int> result = countBits(8);
+    vector<int> expected = {0, 1, 1, 2, 1, 2, 2, 3, 1};
     check(result == expected, "n=8 -> power-of-two boundary handled");
   }
 
@@ -111,7 +114,7 @@ int main() {
     // Cross-check against an independent definition (Kernighan's loop from
     // problems/02) over a longer range — catches subtle recurrence bugs.
     bool all_match = true;
-    std::vector<int> result = countBits(64);
+    vector<int> result = countBits(64);
     for (int i = 0; i <= 64 && all_match; ++i) {
       int reference = 0;
       unsigned int u = static_cast<unsigned int>(i);
@@ -126,6 +129,6 @@ int main() {
     check(all_match, "n=64 matches independent Kernighan reference");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

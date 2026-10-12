@@ -4,14 +4,15 @@
 > **In one line:** `dp[i][j]` = LCS length of the first `i` and first `j` characters — extend the diagonal on a match, else take the better of dropping one character from either side.
 
 ```cpp
-std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
+using namespace std;
+vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
 
 for (size_t i = 1; i <= n; ++i) {
   for (size_t j = 1; j <= m; ++j) {
     if (a[i - 1] == b[j - 1]) {
       dp[i][j] = dp[i - 1][j - 1] + 1;              // extend the diagonal match
     } else {
-      dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);  // best of dropping one side
+      dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);  // best of dropping one side
     }
   }
 }

@@ -38,9 +38,12 @@
 #include <string>
 #include <vector>
 
-int maximumDetonation(const std::vector<std::vector<int>>& bombs) {
+using namespace std;
+
+
+int maximumDetonation(const vector<vector<int>>& bombs) {
   int n = static_cast<int>(bombs.size());
-  std::vector<std::vector<bool>> reach(n, std::vector<bool>(n, false));
+  vector<vector<bool>> reach(n, vector<bool>(n, false));
 
   // Build direct edges: bomb i triggers bomb j iff j's center lies within
   // i's blast radius. This is checked per ORDERED pair -- i triggering j
@@ -76,7 +79,7 @@ int maximumDetonation(const std::vector<std::vector<int>>& bombs) {
     for (int j = 0; j < n; ++j) {
       if (i != j && reach[i][j]) ++count;
     }
-    best = std::max(best, count);
+    best = max(best, count);
   }
   return best;
 }
@@ -88,12 +91,12 @@ int maximumDetonation(const std::vector<std::vector<int>>& bombs) {
 int g_pass = 0;
 int g_fail = 0;
 
-void check(bool condition, const std::string& label) {
+void check(bool condition, const string& label) {
   if (condition) {
-    std::cout << "[PASS] " << label << "\n";
+    cout << "[PASS] " << label << "\n";
     ++g_pass;
   } else {
-    std::cout << "[FAIL] " << label << "\n";
+    cout << "[FAIL] " << label << "\n";
     ++g_fail;
   }
 }
@@ -105,7 +108,7 @@ int main() {
     // (distance 20). Bombs 1 and 2 have tiny radii (1) that reach nothing
     // back. This isolates the asymmetry cleanly: 0 -> 1 and 0 -> 2 exist,
     // but neither 1 nor 2 can trigger anything at all.
-    std::vector<std::vector<int>> bombs = {{0, 0, 25}, {10, 0, 1}, {20, 0, 1}};
+    vector<vector<int>> bombs = {{0, 0, 25}, {10, 0, 1}, {20, 0, 1}};
     check(maximumDetonation(bombs) == 3,
           "asymmetric radii: only bomb 0's large radius reaches both others -> 3 total");
   }
@@ -113,7 +116,7 @@ int main() {
   {
     // No bomb reaches any other -- detonating any single bomb only
     // detonates itself.
-    std::vector<std::vector<int>> bombs = {{0, 0, 1}, {100, 100, 1}};
+    vector<vector<int>> bombs = {{0, 0, 1}, {100, 100, 1}};
     check(maximumDetonation(bombs) == 1,
           "no bomb's radius reaches another -> best is detonating just 1");
   }
@@ -125,17 +128,17 @@ int main() {
     // 0 at (0,0) r=5, 1 at (5,0) r=5, 2 at (10,0) r=1.
     // 0->1: distance 5 <= 5, triggers. 1->2: distance 5 <= 5, triggers.
     // 0->2 directly: distance 10 > 5, does NOT trigger directly.
-    std::vector<std::vector<int>> bombs = {{0, 0, 5}, {5, 0, 5}, {10, 0, 1}};
+    vector<vector<int>> bombs = {{0, 0, 5}, {5, 0, 5}, {10, 0, 1}};
     check(maximumDetonation(bombs) == 3,
           "0 reaches 2 only transitively via 1 -> starting at 0 detonates all 3");
   }
 
   {
     // Single bomb: detonating it always counts as 1.
-    std::vector<std::vector<int>> bombs = {{0, 0, 1}};
+    vector<vector<int>> bombs = {{0, 0, 1}};
     check(maximumDetonation(bombs) == 1, "single bomb -> always 1");
   }
 
-  std::cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
+  cout << "\n" << g_pass << " passed, " << g_fail << " failed.\n";
   return g_fail == 0 ? 0 : 1;
 }

@@ -60,15 +60,18 @@
 #include <string>
 #include <vector>
 
-int maxArea(const std::vector<int>& height) {
+using namespace std;
+
+
+int maxArea(const vector<int>& height) {
   int left = 0;
   int right = static_cast<int>(height.size()) - 1;
   long long best = 0;
 
   while (left < right) {
     long long width = static_cast<long long>(right - left);
-    long long limiting_wall = std::min(height[left], height[right]);
-    best = std::max(best, width * limiting_wall);
+    long long limiting_wall = min(height[left], height[right]);
+    best = max(best, width * limiting_wall);
 
     // Always advance the pointer at the shorter wall — see the proof above.
     if (height[left] < height[right]) {
@@ -85,38 +88,38 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
 
   {
-    std::vector<int> height = {1, 8, 6, 2, 5, 4, 8, 3, 7};
+    vector<int> height = {1, 8, 6, 2, 5, 4, 8, 3, 7};
     check(maxArea(height) == 49, "[1,8,6,2,5,4,8,3,7] -> 49");
   }
 
   {
-    std::vector<int> height = {1, 1};
+    vector<int> height = {1, 1};
     check(maxArea(height) == 1, "[1,1] -> 1 (only one possible container)");
   }
 
   {
-    std::vector<int> height = {4, 3, 2, 1, 4};
+    vector<int> height = {4, 3, 2, 1, 4};
     check(maxArea(height) == 16, "[4,3,2,1,4] -> 16 (outer two walls win)");
   }
 
   {
-    std::vector<int> height = {1, 2, 1};
+    vector<int> height = {1, 2, 1};
     check(maxArea(height) == 2, "[1,2,1] -> 2");
   }
 
   {
-    std::vector<int> height = {2, 3, 4, 5, 18, 17, 6};
+    vector<int> height = {2, 3, 4, 5, 18, 17, 6};
     // Best pair: indices 3 (height 5) and 4 (height 18) -> width 1, area 5
     // vs indices 1 (3) and 4 (18) -> width 3, height min(3,18)=3, area 9
     // vs indices 0 (2) and 4 (18) -> width 4, height 2, area 8
@@ -127,6 +130,6 @@ int main() {
     check(maxArea(height) == 17, "[2,3,4,5,18,17,6] -> 17");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

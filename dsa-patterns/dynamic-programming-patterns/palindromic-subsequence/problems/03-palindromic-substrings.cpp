@@ -46,7 +46,10 @@
 #include <iostream>
 #include <string>
 
-int countSubstrings(const std::string& s) {
+using namespace std;
+
+
+int countSubstrings(const string& s) {
   int n = static_cast<int>(s.size());
   int count = 0;
 
@@ -72,12 +75,12 @@ int main() {
   int pass_count = 0;
   int fail_count = 0;
 
-  auto check = [&](bool condition, const std::string& label) {
+  auto check = [&](bool condition, const string& label) {
     if (condition) {
-      std::cout << "[PASS] " << label << "\n";
+      cout << "[PASS] " << label << "\n";
       ++pass_count;
     } else {
-      std::cout << "[FAIL] " << label << "\n";
+      cout << "[FAIL] " << label << "\n";
       ++fail_count;
     }
   };
@@ -122,6 +125,6 @@ int main() {
           "\"xabax\" -> 7 (singles + \"aba\" + whole string)");
   }
 
-  std::cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
+  cout << "\n" << pass_count << " passed, " << fail_count << " failed.\n";
   return fail_count == 0 ? 0 : 1;
 }

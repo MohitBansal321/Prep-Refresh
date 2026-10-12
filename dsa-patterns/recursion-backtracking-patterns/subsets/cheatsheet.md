@@ -16,10 +16,11 @@
 ### Template Skeleton
 
 ```cpp
+using namespace std;
 // (a) Recursive include/exclude — the shape Backtracking extends.
-void subsetsHelper(const std::vector<int>& nums, size_t index,
-                   std::vector<int>& current,                 // ONE shared buffer
-                   std::vector<std::vector<int>>& result) {
+void subsetsHelper(const vector<int>& nums, size_t index,
+                   vector<int>& current,                 // ONE shared buffer
+                   vector<vector<int>>& result) {
     if (index == nums.size()) {      // every element decided -> one complete subset
         result.push_back(current);   // COPY, not a reference: current keeps mutating
         return;
@@ -32,14 +33,14 @@ void subsetsHelper(const std::vector<int>& nums, size_t index,
 }
 
 // (b) Iterative doubling — no recursion; one pass per element.
-std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
-    std::vector<std::vector<int>> result = {{}};      // the empty subset counts!
+vector<vector<int>> subsetsIterative(const vector<int>& nums) {
+    vector<vector<int>> result = {{}};      // the empty subset counts!
     for (int num : nums) {
         size_t existing = result.size();               // SNAPSHOT before appending --
         for (size_t i = 0; i < existing; ++i) {        // re-reading result.size() here
-            std::vector<int> extended = result[i];     // never terminates
+            vector<int> extended = result[i];     // never terminates
             extended.push_back(num);
-            result.push_back(std::move(extended));
+            result.push_back(move(extended));
         }
     }
     return result;                                     // exactly 2^n subsets
@@ -47,7 +48,7 @@ std::vector<std::vector<int>> subsetsIterative(const std::vector<int>& nums) {
 
 // (c) Bitmask enumeration — subset <-> integer in [0, 2^n).
 for (unsigned mask = 0; mask < (1u << n); ++mask) {
-    std::vector<int> subset;
+    vector<int> subset;
     for (unsigned i = 0; i < n; ++i)
         if (mask & (1u << i)) subset.push_back(nums[i]);   // bit i set => take nums[i]
     result.push_back(subset);
@@ -55,9 +56,9 @@ for (unsigned mask = 0; mask < (1u << n); ++mask) {
 
 // (d) DUPLICATE INPUTS: sort first, then the start-index loop shape, and skip a value
 //     equal to its predecessor AT THE SAME LEVEL (i > start), not anywhere in current.
-void subsetsWithDupes(const std::vector<int>& nums /* SORTED */, size_t start,
-                      std::vector<int>& current,
-                      std::vector<std::vector<int>>& result) {
+void subsetsWithDupes(const vector<int>& nums /* SORTED */, size_t start,
+                      vector<int>& current,
+                      vector<vector<int>>& result) {
     result.push_back(current);                        // every node is an answer here
     for (size_t i = start; i < nums.size(); ++i) {
         if (i > start && nums[i] == nums[i - 1]) continue;   // <-- the whole lesson
